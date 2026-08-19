@@ -56,6 +56,21 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
     genReqId: () => randomUUID(),
   });
 
+  app.setErrorHandler((error, request, reply) => {
+    if (error && typeof error === 'object' && 'validation' in error) {
+      return reply.status(400).send({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'The request does not match the operation contract' },
+      });
+    }
+
+    request.log.error({ err: error }, 'Unhandled API request failure');
+    return reply.status(500).send({
+      success: false,
+      error: { code: 'INTERNAL_ERROR', message: 'The request could not be completed' },
+    });
+  });
+
   await app.register(helmet);
   await app.register(rateLimit, { max: 120, timeWindow: '1 minute' });
   await app.register(cors, {

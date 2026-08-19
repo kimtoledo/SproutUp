@@ -47,6 +47,7 @@ Create further packages only when code has a real cross-application boundary. Av
 - Inject services and vendor adapters at the API composition root so domain code is testable.
 - Validate inputs and outputs with shared Zod schemas.
 - Generate OpenAPI from Fastify routes and attach reviewable actor, capability, retry, side-effect, and audit metadata to privileged operations.
+- Keep Fastify/OpenAPI JSON schemas aligned with shared Zod/domain validation; schema-level failures must use stable non-leaking error envelopes.
 - Keep database access inside explicit domain services rather than scattering queries through handlers.
 - Use database constraints as well as application validation.
 - Check database readiness before serving traffic and shut down gracefully.

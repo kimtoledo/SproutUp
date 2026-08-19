@@ -11,7 +11,8 @@
 - Added owner-bound onboarding case routes with journey-specific capabilities, database uniqueness for duplicate create retries, optimistic version conflicts for stale submission retries, and atomic state/event/audit writes.
 - Added generated OpenAPI 3.1 at `/openapi.json` with product metadata, a session-cookie security scheme, tags, and automated route-group/secret regression coverage in the normal CI test gate.
 - Added a reusable operation metadata contract and annotated all eight onboarding operations with unique IDs, cookie security, actor boundary, capability set/mode, retry model, side effects, and audit event; CI walks and validates every annotation.
-- Full per-operation request/response/error JSON schemas, metadata on the earlier auth/access routes, private-file and webhook contracts, version/deprecation policy, and remaining domain operations remain; this task stays **WIP**.
+- Added enforced path/query/body and success/structured-error JSON schemas for all eight onboarding operations plus a stable non-leaking Fastify validation-error envelope. CI checks command request bodies, path parameters, and response declarations.
+- Metadata/schemas on the earlier auth/access routes, private-file and webhook contracts, version/deprecation policy, and remaining domain operations remain; this task stays **WIP**.
 
 ## Scope
 

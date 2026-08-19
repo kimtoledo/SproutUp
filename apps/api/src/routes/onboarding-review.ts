@@ -5,6 +5,17 @@ import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
 import type { OnboardingReviewService } from '../onboarding/review-service.js';
 import { operation } from '../openapi/operation.js';
+import {
+  caseIdParameters,
+  caseSummarySchema,
+  commonErrors,
+  informationRequestBody,
+  reviewQueueQuery,
+  staffCaseDetailSchema,
+  staffCaseSummarySchema,
+  successResponse,
+  versionBody,
+} from '../openapi/onboarding-schemas.js';
 
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).max(10_000).default(1),
@@ -57,6 +68,25 @@ export async function registerOnboardingReviewRoutes(app: FastifyInstance, optio
         sideEffects: [],
         auditEvent: null,
       },
+      http: {
+        querystring: reviewQueueQuery,
+        response: {
+          200: successResponse({
+            type: 'object',
+            additionalProperties: false,
+            required: ['cases', 'page', 'pageSize', 'total'],
+            properties: {
+              cases: { type: 'array', items: staffCaseSummarySchema },
+              page: { type: 'integer', minimum: 1 },
+              pageSize: { type: 'integer', minimum: 1, maximum: 100 },
+              total: { type: 'integer', minimum: 0 },
+            },
+          }),
+          400: commonErrors[400],
+          401: commonErrors[401],
+          403: commonErrors[403],
+        },
+      },
     }),
   }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
@@ -89,6 +119,16 @@ export async function registerOnboardingReviewRoutes(app: FastifyInstance, optio
         sideEffects: [],
         auditEvent: null,
       },
+      http: {
+        params: caseIdParameters,
+        response: {
+          200: successResponse(staffCaseDetailSchema),
+          400: commonErrors[400],
+          401: commonErrors[401],
+          403: commonErrors[403],
+          404: commonErrors[404],
+        },
+      },
     }),
   }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
@@ -115,6 +155,18 @@ export async function registerOnboardingReviewRoutes(app: FastifyInstance, optio
         retryModel: 'optimistic_version',
         sideEffects: ['assign reviewer', 'transition onboarding case', 'append case event', 'append audit event'],
         auditEvent: 'onboarding_case.review_started',
+      },
+      http: {
+        params: caseIdParameters,
+        body: versionBody,
+        response: {
+          200: successResponse(caseSummarySchema),
+          400: commonErrors[400],
+          401: commonErrors[401],
+          403: commonErrors[403],
+          404: commonErrors[404],
+          409: commonErrors[409],
+        },
       },
     }),
   }, async (request, reply) => {
@@ -149,6 +201,18 @@ export async function registerOnboardingReviewRoutes(app: FastifyInstance, optio
         retryModel: 'optimistic_version',
         sideEffects: ['transition onboarding case', 'append case event', 'append audit event'],
         auditEvent: 'onboarding_case.information_requested',
+      },
+      http: {
+        params: caseIdParameters,
+        body: informationRequestBody,
+        response: {
+          200: successResponse(caseSummarySchema),
+          400: commonErrors[400],
+          401: commonErrors[401],
+          403: commonErrors[403],
+          404: commonErrors[404],
+          409: commonErrors[409],
+        },
       },
     }),
   }, async (request, reply) => {

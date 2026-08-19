@@ -101,6 +101,8 @@ The API contract test composes every current service boundary and verifies that 
 
 Use `apps/api/src/openapi/operation.ts` for protected operation metadata. The current onboarding routes declare unique operation IDs plus `x-sproutup` actor, permission set/mode, retry model, side effects, and audit event (`null` for safe reads). Contract tests must enumerate each annotated operation. Do not claim an operation is fully specified until request, success, and error JSON schemas are also present.
 
+Reusable onboarding JSON schemas live in `apps/api/src/openapi/onboarding-schemas.ts`. They document and validate UUID path parameters, bounded queue filters, command bodies, case/event responses, pagination, and structured 4xx errors. Keep these schemas and the handler Zod/domain rules aligned in the same commit. Fastify schema failures use the stable `400 VALIDATION_ERROR` envelope; domain errors remain route/service-owned.
+
 ## Database workflow
 
 Schemas belong in `packages/db/src/schema/`. Every schema change must be tied to an approved task.

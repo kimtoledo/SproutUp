@@ -10,6 +10,15 @@ import type { OnboardingCaseService } from '../onboarding/case-service.js';
 import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
 import { operation } from '../openapi/operation.js';
+import {
+  caseIdParameters,
+  caseSummarySchema,
+  commonErrors,
+  createCaseBody,
+  ownCaseDetailSchema,
+  successResponse,
+  versionBody,
+} from '../openapi/onboarding-schemas.js';
 
 const createSchema = z.object({ caseType: onboardingCaseTypeSchema });
 const parametersSchema = z.object({ caseId: z.uuid() });
@@ -75,6 +84,13 @@ export async function registerOnboardingCaseRoutes(app: FastifyInstance, options
         sideEffects: [],
         auditEvent: null,
       },
+      http: {
+        response: {
+          200: successResponse({ type: 'array', items: caseSummarySchema }),
+          401: commonErrors[401],
+          403: commonErrors[403],
+        },
+      },
     }),
   }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
@@ -99,6 +115,16 @@ export async function registerOnboardingCaseRoutes(app: FastifyInstance, options
         retryModel: 'safe_read',
         sideEffects: [],
         auditEvent: null,
+      },
+      http: {
+        params: caseIdParameters,
+        response: {
+          200: successResponse(ownCaseDetailSchema),
+          400: commonErrors[400],
+          401: commonErrors[401],
+          403: commonErrors[403],
+          404: commonErrors[404],
+        },
       },
     }),
   }, async (request, reply) => {
@@ -131,6 +157,16 @@ export async function registerOnboardingCaseRoutes(app: FastifyInstance, options
         retryModel: 'unique_open_case',
         sideEffects: ['create onboarding case', 'append case event', 'append audit event'],
         auditEvent: 'onboarding_case.created',
+      },
+      http: {
+        body: createCaseBody,
+        response: {
+          201: successResponse(caseSummarySchema),
+          400: commonErrors[400],
+          401: commonErrors[401],
+          403: commonErrors[403],
+          409: commonErrors[409],
+        },
       },
     }),
   }, async (request, reply) => {
@@ -165,6 +201,18 @@ export async function registerOnboardingCaseRoutes(app: FastifyInstance, options
         retryModel: 'optimistic_version',
         sideEffects: ['transition onboarding case', 'append case event', 'append audit event'],
         auditEvent: 'onboarding_case.submitted',
+      },
+      http: {
+        params: caseIdParameters,
+        body: versionBody,
+        response: {
+          200: successResponse(caseSummarySchema),
+          400: commonErrors[400],
+          401: commonErrors[401],
+          403: commonErrors[403],
+          404: commonErrors[404],
+          409: commonErrors[409],
+        },
       },
     }),
   }, async (request, reply) => {

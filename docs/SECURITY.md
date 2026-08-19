@@ -8,6 +8,8 @@ Better Auth is mounted behind the Fastify API at `/v1/auth/*`. The web applicati
 
 Every implemented onboarding operation declares its authenticated actor boundary and required capability set in the generated contract. These declarations are documentation checked by CI; runtime authorization remains the server-resolved permission check in each handler/service and is independently covered by denial tests.
 
+Onboarding path, query, body, success, and structured error schemas are now enforced by Fastify and published in OpenAPI. Schema failures return a generic stable validation message rather than echoing submitted values or internal validator details; deeper state/ownership checks still execute in the domain services.
+
 - Email/password credentials use Better Auth's memory-hard scrypt hashing.
 - Password length is 12–128 characters.
 - Session tokens are stored in the database and transported through HTTP-only, SameSite=Lax cookies; production cookies are Secure.

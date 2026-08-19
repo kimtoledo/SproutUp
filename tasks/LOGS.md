@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Enforced onboarding OpenAPI schemas
+
+**Status:** Done
+
+### Updated
+
+- Added reusable JSON schemas for onboarding UUID parameters, bounded queue filters, create/version/information-request bodies, case summaries/details, immutable events, pagination, and structured errors.
+- Attached request, success, and applicable 400/401/403/404/409 response schemas to all eight onboarding operations.
+- Enabled Fastify schema enforcement and added a stable generic `VALIDATION_ERROR` envelope that does not echo submitted values or internal validation details.
+- Preserved Zod/domain checks for journey capability, ownership, state, assignment, and optimistic concurrency.
+- Extended contract tests to require responses on every onboarding operation, request bodies on every command, and path parameters on every case-ID route.
+- Updated developer, security, technology-stack, API-task, and handoff documentation.
+
+### Decisions
+
+- Fastify JSON schema handles transport shape; Zod/domain services remain authoritative for permission, ownership, workflow, and business invariants.
+- Schema validation errors are deliberately generic to avoid reflecting sensitive input; stable domain errors remain specific enough for client recovery.
+- JSON and Zod schemas must change together until a single-source schema adapter is reviewed for Zod 4/OpenAPI compatibility.
+
+### Open items
+
+- Add equivalent operation metadata and schemas to health, auth/session, role, approval, and access-catalogue routes.
+- Decide API version/deprecation policy and generate typed client artifacts only after contract coverage is complete.
+- Define webhook signature/replay and private-file contracts after providers are selected.
+
+### Next
+
+- Migrate session and role-administration operations to the same contract helper and extend the global coverage assertion.
+
 ## 2026-08-19 — Enforced onboarding operation metadata
 
 **Status:** Done

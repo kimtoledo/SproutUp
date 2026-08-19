@@ -19,8 +19,10 @@ export function operation(input: {
   summary: string;
   tags: string[];
   metadata: SproutUpOperationMetadata;
+  http?: Pick<FastifySchema, 'body' | 'querystring' | 'params' | 'response'>;
 }): SproutUpFastifySchema {
   return {
+    ...input.http,
     operationId: input.operationId,
     summary: input.summary,
     tags: input.tags,

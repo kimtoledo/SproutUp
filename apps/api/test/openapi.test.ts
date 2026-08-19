@@ -63,6 +63,9 @@ describe('OpenAPI contract generation', () => {
         paths: Record<string, Record<string, {
           operationId?: string;
           security?: Array<Record<string, unknown>>;
+          parameters?: Array<{ name?: string; in?: string }>;
+          requestBody?: Record<string, unknown>;
+          responses?: Record<string, unknown>;
           'x-sproutup'?: {
             actor?: string;
             permissions?: string[];
@@ -127,6 +130,16 @@ describe('OpenAPI contract generation', () => {
           }),
         );
         expect(operation?.['x-sproutup']).toHaveProperty('auditEvent');
+        expect(operation?.responses).toBeDefined();
+        expect(Object.keys(operation?.responses ?? {})).toEqual(
+          expect.arrayContaining([expect.stringMatching(/^20[01]$/), '401', '403']),
+        );
+        if (method === 'post') expect(operation?.requestBody).toBeDefined();
+        if (path.includes('{caseId}')) {
+          expect(operation?.parameters).toEqual(
+            expect.arrayContaining([expect.objectContaining({ name: 'caseId', in: 'path' })]),
+          );
+        }
       }
     } finally {
       await app.close();
