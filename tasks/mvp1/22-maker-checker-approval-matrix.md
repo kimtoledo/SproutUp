@@ -8,8 +8,9 @@
 - **2026-08-19 — Reusable approval foundation and role assignment:** Added `approval_requests` for current workflow state and append-only `approval_actions` for proposed/approved/executed/expired evidence.
 - Role assignment is the first controlled command. Its exact canonical target/role payload is SHA-256 bound, expires after 24 hours, permits only one equivalent pending proposal, locks the request during approval, and creates the grant in the checker's transaction.
 - Role revocation now uses the same controlled boundary and locks all target grants before execution so an active account cannot lose its final role through concurrent/stale review.
+- Pending role changes now support reasoned rejection by a distinct authorized reviewer and maker-only cancellation. Both lock and hash-check pending state and cannot transition an already terminal request.
 - API and service tests prove capability denial, maker/checker separation, atomic execution, and restricted self-target/`super_admin` paths. Database tests prove approval actions cannot be updated, deleted, or truncated.
-- The cross-domain command/threshold matrix, rejection/cancellation/amendment flows, alerting, emergency override, and financial command integrations remain; this task stays **WIP**.
+- The cross-domain command/threshold matrix, amendment/supersession, alerting, emergency override, operator history APIs, and financial command integrations remain; this task stays **WIP**.
 
 ## Scope
 

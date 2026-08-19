@@ -54,10 +54,12 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `GET /v1/admin/role-revocations` | List unexpired pending role-revocation proposals; requires `roles.assign` |
 | `POST /v1/admin/role-revocations` | Propose removal of an existing target/role grant; requires `roles.assign` |
 | `POST /v1/admin/role-revocations/:approvalId/approve` | Approve and execute a revocation as a different authorized actor |
+| `POST /v1/admin/role-approvals/:approvalId/reject` | Reject a pending role change as a different authorized reviewer |
+| `POST /v1/admin/role-approvals/:approvalId/cancel` | Cancel a pending role change as its original maker |
 | `GET /v1/admin/roles` | List role status and effective permission keys; requires `roles.read` |
 | `GET /v1/admin/users` | List bounded user access summaries; requires `users.read` |
 
-Role-change proposals expire after 24 hours. The API rejects duplicate pending payloads, self-targeting, maker self-approval, checker self-approval, stale/non-pending requests, and hash mismatches. `super_admin` changes are intentionally unavailable until the bootstrap/emergency-access policy is approved. Revocation cannot leave an active user without a role.
+Role-change proposals expire after 24 hours. The API rejects duplicate pending payloads, self-targeting, maker self-approval, checker self-approval/rejection, stale/non-pending requests, and hash mismatches. A different authorized reviewer may reject with a reason; only the original maker may cancel. `super_admin` changes are intentionally unavailable until the bootstrap/emergency-access policy is approved. Revocation cannot leave an active user without a role.
 
 The user catalogue defaults to page 1 with 25 records and accepts `page`, `pageSize` (maximum 100), `query` (literal name/email search), and `status`. Its response is intentionally limited to identity, verification/status, role keys, and creation time; it never returns password hashes, account-provider records, session identifiers, or tokens.
 

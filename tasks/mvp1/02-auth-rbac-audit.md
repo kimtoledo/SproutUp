@@ -14,6 +14,7 @@
 - Added dual-controlled role assignment: an authorized maker proposes a hash-bound role grant, a different authorized checker approves and executes it, and append-only approval/audit evidence is committed with the grant. Duplicate pending requests, self-targeting, self-approval, expired/stale requests, and `super_admin` elevation are denied.
 - Added separately capability-protected role and user catalogues. Role results include effective permission keys; user results use bounded pagination and exclude credentials, provider accounts, sessions, and tokens.
 - Added dual-controlled role revocation with the same hash/expiry/lock/evidence boundary. It revalidates current grants under lock, rejects self-change and `super_admin` mutation, and prevents removal of an active user's final role.
+- Added role-change rejection and cancellation: a distinct authorized non-target reviewer may reject, only the maker may cancel, both require reasons, and terminal transitions append immutable action/audit evidence.
 - Password-reset/email-verification delivery, MFA/OTP, permission administration, audit integration into each privileged workflow, final grants, emergency access, and device UI remain; this task stays **WIP**.
 
 ## Scope

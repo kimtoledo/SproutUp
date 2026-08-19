@@ -35,6 +35,8 @@ Authorization is capability-based and deny-by-default. The initial permissions c
 
 Role grants and revocations are not exposed as direct mutations. A caller with `roles.assign` proposes an exact target/role payload and reason; a different caller with the same capability must approve it before the change executes. Proposals expire after 24 hours, are protected from duplicate pending payloads, are locked while being checked, and bind approval to a SHA-256 payload hash. The maker cannot target their own account, the checker cannot be the maker or target, and `super_admin` cannot be changed through this workflow until an emergency/bootstrap policy is approved. Revocation also locks and revalidates all current target grants and cannot remove the final role from an active account.
 
+Pending role changes may be rejected only by a different authorized non-target reviewer and cancelled only by their original maker. Both paths require a reason, lock and revalidate pending/hash-bound state, and append their workflow action and audit evidence atomically. Terminal requests cannot be decided again.
+
 Administrative read APIs enforce `roles.read` and `users.read` independently. User results are paginated and expose only the access-management summary; credential-provider data, password hashes, session IDs, and tokens are outside the response model.
 
 ## Audit evidence

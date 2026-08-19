@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Role approval rejection and cancellation
+
+**Status:** Done
+
+### Updated
+
+- Added protected endpoints for reasoned rejection and cancellation of pending role grant/revocation requests.
+- Enforced distinct maker/checker and non-target review on rejection; enforced original-maker ownership on cancellation.
+- Locked each request and revalidated supported command type, pending state, expiry, payload shape, and SHA-256 hash before transition.
+- Appended immutable `rejected`, `cancelled`, or `expired` action evidence and correlated business audit events in the same transaction as current-state updates.
+- Added route and embedded-PostgreSQL tests for capability denial, maker/target rejection denial, independent rejection, non-maker cancellation denial, maker cancellation, and terminal state/action evidence.
+- Updated developer, security, authentication, maker/checker, MVP, and handoff documentation.
+
+### Decisions
+
+- Rejection is an independent checker decision; the maker cannot reject their own request and the target cannot review their own role change.
+- Cancellation is a maker withdrawal, not a checker decision, and therefore only the original maker may perform it.
+- Lifecycle endpoints currently accept only `role.assign` and `role.revoke`; future domain approvals must opt in with their own capability and payload-validation policy.
+
+### Open items
+
+- Add an operator approval-history/detail view and amendment/supersession semantics.
+- Define the broader domain approval matrix, alerting, delegated limits, and emergency override.
+- Complete permission administration, account-status commands, recovery, verification, and MFA work.
+
+### Next
+
+- Add a protected approval history/detail API, then start the shared party/onboarding state foundation for borrower and investor journeys.
+
 ## 2026-08-19 — Dual-controlled role revocation
 
 **Status:** Done

@@ -6,6 +6,7 @@ import { createSessionService } from './auth/sessions-service.js';
 import { createRoleAssignmentService } from './auth/role-assignments-service.js';
 import { createAccessCatalogueService } from './auth/access-catalogue-service.js';
 import { createRoleRevocationService } from './auth/role-revocations-service.js';
+import { createApprovalLifecycleService } from './auth/approval-lifecycle-service.js';
 
 const config = loadConfig();
 const database = createDatabase(config.databaseUrl);
@@ -15,6 +16,7 @@ const sessions = createSessionService(database.db);
 const roleAssignments = createRoleAssignmentService(database.db);
 const catalogue = createAccessCatalogueService(database.db);
 const roleRevocations = createRoleRevocationService(database.db);
+const approvalLifecycle = createApprovalLifecycleService(database.db);
 
 const app = await buildApp({
   config,
@@ -26,6 +28,7 @@ const app = await buildApp({
     roleAssignments,
     catalogue,
     roleRevocations,
+    approvalLifecycle,
   },
 });
 
