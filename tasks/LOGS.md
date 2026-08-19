@@ -34,6 +34,27 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-20 — Onboarding queue aging display
+
+**Status:** Done
+
+### Updated
+
+- Added a per-row "Waiting since {submittedAt}" / "Updated {updatedAt}" line to `/admin/onboarding` queue cards, using the already-returned queue row timestamps (no new API call or field).
+
+### Decisions
+
+- This is a descriptive aging display only — no SLA threshold, breach coloring, or priority ordering, since those require an approved policy (tracked as an open item on task 20).
+
+### Open items
+
+- Same as prior entries: SLA/aging *policy* (thresholds, breach treatment), assignment transfer/escalation, saved views, bulk-action policy, and end-to-end responsive/accessibility/browser tests remain.
+- Could not visually verify rendering against live queue data — no local Postgres/API was running in this session; verified via typecheck, lint, unit tests, production build, and a dev-server smoke request only.
+
+### Next
+
+- Confirm SLA/aging policy with product/compliance, then add threshold-based indicators on top of this display.
+
 ## 2026-08-20 — Staff case detail/timeline UI
 
 **Status:** Done

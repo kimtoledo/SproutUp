@@ -21,6 +21,7 @@ const statuses: CaseStatus[] = [
   'draft', 'submitted', 'in_review', 'needs_information',
   'approved', 'rejected', 'withdrawn', 'expired',
 ];
+const openStatuses = new Set<CaseStatus>(['submitted', 'in_review', 'needs_information']);
 const eventLabels: Record<string, string> = {
   created: 'Case started',
   submitted: 'Submitted for review',
@@ -262,6 +263,11 @@ function AdminCaseCard({
         <span className={`case-status status-${item.status}`}>{item.status.replaceAll('_', ' ')}</span>
         <small>{item.caseType} · v{item.version}</small>
       </div>
+      <p className="case-meta">
+        {openStatuses.has(item.status) && item.submittedAt
+          ? `Waiting since ${new Date(item.submittedAt).toLocaleString('en-PH')}`
+          : `Updated ${new Date(item.updatedAt).toLocaleString('en-PH')}`}
+      </p>
       <div className="admin-case-actions">
         <button
           className="text-button"
