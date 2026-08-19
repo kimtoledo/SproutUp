@@ -87,7 +87,9 @@ Shared PHP money contracts reject JSON numbers, exponent notation, grouping/curr
 
 Ledger headers and lines are immutable database evidence. Deferred constraint triggers reject empty or unbalanced transactions at commit; entry amounts must be positive exact PHP values, transaction/account line identities are unique, and account code/normal-balance/currency cannot change.
 
-The posting service is the application write boundary. It requires distinct active PHP accounts, computes balance in exact centavos, takes shared account locks, hashes a canonical order-independent financial payload, and atomically appends the posting plus `ledger.transaction.posted` audit evidence. A global idempotency key returns only an exact matching payload and rejects reuse for a different effect. Owning domains must use the transaction-aware primitive when the posting accompanies a state change. Direct ledger inserts and ad hoc application SQL remain prohibited; full reversals require the still-pending dedicated command.
+The posting service is the application write boundary. It requires distinct active PHP accounts, computes balance in exact centavos, takes shared account locks, hashes a canonical order-independent financial payload, and atomically appends the posting plus `ledger.transaction.posted` audit evidence. A global idempotency key returns only an exact matching payload and rejects reuse for a different effect. Owning domains must use the transaction-aware primitive when the posting accompanies a state change. Direct ledger inserts and ad hoc application SQL remain prohibited.
+
+The full-reversal boundary locks the original, copies all lines with their directions exchanged, records the original relationship, and atomically appends `ledger.transaction.reversed` evidence. It rejects reversal-of-reversal and relies on both serialization and a unique database constraint to enforce one reversal. Historical account closure cannot erase the correction path, but no unrelated new posting may use a closed account.
 
 ## Secrets
 

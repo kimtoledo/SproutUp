@@ -16,6 +16,7 @@
 - Added canonical two-decimal PHP string contracts and an immutable `bigint`-centavo money value for exact parsing, formatting, signed addition/subtraction, comparison, transport conversion, and `numeric(30,2)` overflow enforcement. Rate/rounding operations remain deliberately unavailable.
 - Added generated ledger schema migration `0011_wide_nemesis.sql` and custom invariant migration `0012_ledger-invariants.sql`: stable PHP accounts, immutable posting headers/positive debit-credit lines, unique idempotency/reversal identities, and deferred exact balance enforcement at commit.
 - Added the transaction-aware ledger posting primitive with exact balance validation, canonical order-independent hashing, active PHP account locks, exact-retry/conflict semantics, and atomic immutable audit evidence.
+- Added transaction-aware full reversal with original-row serialization, exact opposite lines, one-reversal enforcement, exact retries, closed-account correction support, and atomic reversal audit evidence.
 
 ## Scope
 

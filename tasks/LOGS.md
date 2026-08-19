@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Idempotent full ledger reversal
+
+**Status:** Done
+
+### Updated
+
+- Added a transaction-aware full-reversal command and convenience service boundary to the API ledger service.
+- Locked the original transaction, copied every historical line with debit/credit exchanged, linked the reversal header, and appended `ledger.transaction.reversed` audit evidence atomically.
+- Added exact retry versus changed-payload conflict behavior, explicit missing/already-reversed/reversal-of-reversal outcomes, and service/database enforcement of one full reversal.
+- Added four embedded-PostgreSQL tests for mirrored entries and audit evidence, retry/conflict/one-reversal behavior, missing originals and caller rollback, and correction after account closure; the ledger service suite now has ten tests.
+- Updated ledger, developer, security, technology-stack, platform, wallet/ledger, MVP-index, and handoff documentation.
+
+### Decisions
+
+- A full reversal mirrors the complete original posting. Partial corrections remain a separate future domain command and cannot mutate or masquerade as a full reversal.
+- A reversal of a reversal is rejected. Re-posting an economic effect requires a new approved domain command with its own source and idempotency identity.
+- Original-row locking serializes application reversal attempts, while the unique reversal relationship is the final database authority.
+- Account closure does not remove the ability to reverse historical evidence. Only the reversal primitive receives this exception; new postings still require active accounts.
+
+### Open items
+
+- Approve and seed the production chart, account ownership, available/held/settled balance dimensions, and domain posting matrices.
+- Define controlled bank-transfer evidence, approval, payout, reconciliation, and exception workflows.
+- Approve task-specific calculation, value-date/cutoff, maker/checker, and partial-correction rules before exposing ledger commands through HTTP.
+
+### Next
+
+- Implement read-only exact ledger balance projections without introducing a mutable source-of-truth balance.
+
 ## 2026-08-19 — Atomic audited ledger posting
 
 **Status:** Done

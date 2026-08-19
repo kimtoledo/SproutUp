@@ -30,11 +30,15 @@ Direct application inserts are not allowed. `apps/api/src/ledger/posting-service
 6. reject an idempotency key reused for a different financial effect; and
 7. exposes a transaction-aware form so an owning domain mutation, posting, and audit event can share one database transaction.
 
-Lines are sorted by account ID before hashing and persistence, so request order does not change the financial identity or line numbering. A transaction contains at most one aggregated line per account. The hash binds the source reference, description, effective time, currency, and canonical lines; actor and request correlation are evidence about execution rather than part of the financial effect.
+Lines are sorted by account ID before hashing and persistence, so request order does not change the financial identity or line numbering. A transaction contains at most one aggregated line per account. The hash binds the source reference, description, effective time, currency, reversal relationship, and canonical lines; actor and request correlation are evidence about execution rather than part of the financial effect.
 
 Exact idempotent retries are resolved before checking the accounts' current active state, so a previously committed posting remains retrievable after an account is closed. A new posting takes shared locks on all referenced accounts and requires every account to exist, be active, and use PHP. Application preflight uses exact centavo arithmetic, while the deferred database trigger remains the final commit-time balance authority.
 
-The full reversal command is not implemented yet. It must copy every original line to the opposite direction, link the new transaction through `reversal_of_transaction_id`, enforce one full reversal at most, and append its audit event atomically. It must never edit existing evidence.
+## Implemented full reversal
+
+`reverseLedgerTransactionInTransaction` locks the original posting, rejects a missing original or an attempt to reverse a reversal, and copies every historical line with debit/credit exchanged. It links the new immutable posting through `reversal_of_transaction_id`, appends `ledger.transaction.reversed` audit evidence in the same transaction, and exposes the same transaction-owning convenience boundary as normal posting.
+
+The original-row lock serializes service-owned reversal attempts and the database unique constraint is the final one-reversal authority. An exact idempotency retry returns the existing reversal; a changed effect under the same key conflicts; a different key after reversal reports that the original was already reversed. Reversal uses the historical lines and therefore remains available after referenced accounts are closed. It does not reactivate accounts or permit a new unrelated posting to closed accounts.
 
 Financial/domain idempotency remains separate from transport/job idempotency. Balance queries must derive from entries and must not introduce a mutable source-of-truth balance column.
 

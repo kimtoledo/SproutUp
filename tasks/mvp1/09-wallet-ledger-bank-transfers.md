@@ -9,7 +9,8 @@
 - Numeric JSON, ambiguous formats, floating-point arithmetic, negative zero, and overflow are rejected. Multiplication, allocation, and rounding remain unavailable until the ledger/calculation rules are approved.
 - Added generic `ledger_accounts`, immutable `ledger_transactions`, and immutable positive debit/credit `ledger_entries` with PHP `numeric(30,2)`, global posting idempotency, source/reversal identity, and commit-deferred minimum-line/balance enforcement.
 - Added an atomic posting service with canonical order-independent payload hashing, exact retries, idempotency conflicts, shared active-account locks, exact centavo preflight, and immutable audit evidence. Owning domains can compose it inside their own transaction.
-- No production chart or domain posting rule is seeded. Full reversal, holds, transfer evidence, approval, balance derivation, and reconciliation remain unimplemented; this task stays **WIP**.
+- Added one-time atomic full reversal: the original is locked, every line is mirrored to the opposite direction, exact retries are stable, second/reversal-of-reversal attempts fail, and closed historical accounts remain correctable without permitting new postings.
+- No production chart or domain posting rule is seeded. Holds, transfer evidence, approval, balance derivation, and reconciliation remain unimplemented; this task stays **WIP**.
 
 ## Scope
 

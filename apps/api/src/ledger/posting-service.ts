@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { eq, inArray } from 'drizzle-orm';
+import { asc, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   addPhpMoney,
@@ -36,6 +36,17 @@ const ledgerPostingInputSchema = z.object({
   lines: z.array(ledgerLineInputSchema).min(2).max(100),
 }).strict();
 
+const ledgerReversalInputSchema = z.object({
+  originalTransactionId: z.uuid(),
+  idempotencyKey: z.string().trim().min(1).max(200),
+  sourceType: z.string().trim().min(1).max(120),
+  sourceId: z.string().trim().min(1).max(200),
+  description: z.string().trim().min(1).max(500),
+  effectiveAt: z.date().refine((value) => Number.isFinite(value.getTime()), 'Invalid effective date'),
+  actor: ledgerActorSchema,
+  requestId: z.uuid().optional(),
+}).strict();
+
 export type LedgerPostingInput = z.input<typeof ledgerPostingInputSchema> & {
   actor: { type: 'system' } | { type: 'user'; userId: string; roles: RoleKey[] };
 };
@@ -50,6 +61,21 @@ export type LedgerPostingResult =
       | 'unbalanced'
       | 'account_not_found'
       | 'account_inactive'
+      | 'idempotency_conflict';
+  };
+
+export type LedgerReversalInput = z.input<typeof ledgerReversalInputSchema> & {
+  actor: { type: 'system' } | { type: 'user'; userId: string; roles: RoleKey[] };
+};
+
+export type LedgerReversalResult =
+  | { ok: true; created: boolean; transactionId: string; payloadHash: string }
+  | {
+    ok: false;
+    reason:
+      | 'original_not_found'
+      | 'original_is_reversal'
+      | 'original_already_reversed'
       | 'idempotency_conflict';
   };
 
@@ -74,15 +100,29 @@ function canonicalize(input: z.output<typeof ledgerPostingInputSchema>): {
       memo: line.memo ?? null,
     }))
     .sort((left, right) => left.accountId.localeCompare(right.accountId));
-  const payloadHash = createHash('sha256').update(JSON.stringify({
+  const payloadHash = hashPostingPayload(input, lines);
+  return { lines, payloadHash };
+}
+
+function hashPostingPayload(
+  input: {
+    sourceType: string;
+    sourceId: string;
+    description: string;
+    effectiveAt: Date;
+  },
+  lines: CanonicalLine[],
+  reversalOfTransactionId: string | null = null,
+): string {
+  return createHash('sha256').update(JSON.stringify({
     sourceType: input.sourceType,
     sourceId: input.sourceId,
     description: input.description,
     effectiveAt: input.effectiveAt.toISOString(),
     currency: 'PHP',
+    reversalOfTransactionId,
     lines,
   })).digest('hex');
-  return { lines, payloadHash };
 }
 
 export async function postLedgerTransactionInTransaction(
@@ -194,6 +234,131 @@ export async function postLedgerTransactionInTransaction(
   return { ok: true, created: true, transactionId: created.id, payloadHash };
 }
 
+export async function reverseLedgerTransactionInTransaction(
+  database: LedgerPostingDatabase,
+  rawInput: LedgerReversalInput,
+  postedAt: Date = new Date(),
+): Promise<LedgerReversalResult> {
+  const input = ledgerReversalInputSchema.parse(rawInput);
+  const [original] = await database
+    .select({
+      id: schema.ledgerTransactions.id,
+      reversalOfTransactionId: schema.ledgerTransactions.reversalOfTransactionId,
+    })
+    .from(schema.ledgerTransactions)
+    .where(eq(schema.ledgerTransactions.id, input.originalTransactionId))
+    .for('update')
+    .limit(1);
+  if (!original) return { ok: false, reason: 'original_not_found' };
+  if (original.reversalOfTransactionId) return { ok: false, reason: 'original_is_reversal' };
+
+  const originalLines = await database
+    .select({
+      accountId: schema.ledgerEntries.accountId,
+      direction: schema.ledgerEntries.direction,
+      amount: schema.ledgerEntries.amount,
+      memo: schema.ledgerEntries.memo,
+    })
+    .from(schema.ledgerEntries)
+    .where(eq(schema.ledgerEntries.transactionId, original.id))
+    .orderBy(asc(schema.ledgerEntries.lineNumber));
+  const lines: CanonicalLine[] = originalLines
+    .map((line) => ({
+      accountId: line.accountId,
+      direction: line.direction === 'debit' ? 'credit' as const : 'debit' as const,
+      amount: line.amount,
+      memo: line.memo,
+    }))
+    .sort((left, right) => left.accountId.localeCompare(right.accountId));
+  const payloadHash = hashPostingPayload(input, lines, original.id);
+
+  const [existingIdempotency] = await database
+    .select({
+      id: schema.ledgerTransactions.id,
+      payloadHash: schema.ledgerTransactions.payloadHash,
+      reversalOfTransactionId: schema.ledgerTransactions.reversalOfTransactionId,
+    })
+    .from(schema.ledgerTransactions)
+    .where(eq(schema.ledgerTransactions.idempotencyKey, input.idempotencyKey))
+    .limit(1);
+  if (existingIdempotency) {
+    return existingIdempotency.payloadHash === payloadHash
+      && existingIdempotency.reversalOfTransactionId === original.id
+      ? { ok: true, created: false, transactionId: existingIdempotency.id, payloadHash }
+      : { ok: false, reason: 'idempotency_conflict' };
+  }
+
+  const [existingReversal] = await database
+    .select({ id: schema.ledgerTransactions.id })
+    .from(schema.ledgerTransactions)
+    .where(eq(schema.ledgerTransactions.reversalOfTransactionId, original.id))
+    .limit(1);
+  if (existingReversal) return { ok: false, reason: 'original_already_reversed' };
+
+  const [created] = await database
+    .insert(schema.ledgerTransactions)
+    .values({
+      idempotencyKey: input.idempotencyKey,
+      payloadHash,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+      description: input.description,
+      effectiveAt: input.effectiveAt,
+      postedAt,
+      reversalOfTransactionId: original.id,
+      actorUserId: input.actor.type === 'user' ? input.actor.userId : undefined,
+      requestId: input.requestId,
+    })
+    .onConflictDoNothing({ target: schema.ledgerTransactions.idempotencyKey })
+    .returning({ id: schema.ledgerTransactions.id });
+  if (!created) {
+    const [concurrent] = await database
+      .select({
+        id: schema.ledgerTransactions.id,
+        payloadHash: schema.ledgerTransactions.payloadHash,
+        reversalOfTransactionId: schema.ledgerTransactions.reversalOfTransactionId,
+      })
+      .from(schema.ledgerTransactions)
+      .where(eq(schema.ledgerTransactions.idempotencyKey, input.idempotencyKey))
+      .limit(1);
+    return concurrent?.payloadHash === payloadHash
+      && concurrent.reversalOfTransactionId === original.id
+      ? { ok: true, created: false, transactionId: concurrent.id, payloadHash }
+      : { ok: false, reason: 'idempotency_conflict' };
+  }
+
+  await database.insert(schema.ledgerEntries).values(lines.map((line, index) => ({
+    transactionId: created.id,
+    lineNumber: index + 1,
+    accountId: line.accountId,
+    direction: line.direction,
+    amount: line.amount,
+    currency: 'PHP' as const,
+    memo: line.memo,
+    createdAt: postedAt,
+  })));
+  await writeAudit(database, {
+    actorType: input.actor.type,
+    actorUserId: input.actor.type === 'user' ? input.actor.userId : undefined,
+    actorRoles: input.actor.type === 'user' ? input.actor.roles : [],
+    action: 'ledger.transaction.reversed',
+    outcome: 'succeeded',
+    resourceType: 'ledger_transaction',
+    resourceId: created.id,
+    requestId: input.requestId,
+    reason: input.description,
+    metadata: {
+      originalTransactionId: original.id,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+      payloadHash,
+      currency: 'PHP',
+    },
+  });
+
+  return { ok: true, created: true, transactionId: created.id, payloadHash };
+}
+
 export function createLedgerPostingService(
   database: Database,
   clock: () => Date = () => new Date(),
@@ -202,6 +367,11 @@ export function createLedgerPostingService(
     post(input: LedgerPostingInput): Promise<LedgerPostingResult> {
       return database.transaction(
         async (transaction) => postLedgerTransactionInTransaction(transaction, input, clock()),
+      );
+    },
+    reverse(input: LedgerReversalInput): Promise<LedgerReversalResult> {
+      return database.transaction(
+        async (transaction) => reverseLedgerTransactionInTransaction(transaction, input, clock()),
       );
     },
   };
