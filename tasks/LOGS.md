@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Atomic audited ledger posting
+
+**Status:** Done
+
+### Updated
+
+- Added an API ledger posting service that validates canonical positive PHP lines, distinct accounts, and exact debit/credit balance before writing.
+- Added deterministic account-sorted payload hashing, shared locks on active PHP accounts, atomic header/line/audit persistence, exact idempotent retries, and conflict detection for changed effects.
+- Exposed a transaction-aware primitive for owning-domain state changes and a convenience transaction-owning service method.
+- Added six embedded-PostgreSQL integration tests covering balanced persistence and canonical order, exact retry without duplicate evidence, changed-payload conflicts, malformed financial effects, inactive/missing accounts, retry after closure, and caller rollback.
+- Updated ledger, developer, security, technology-stack, platform, wallet/ledger, MVP-index, and handoff documentation.
+
+### Decisions
+
+- One posting may contain at most one line per account; callers aggregate same-account components before posting.
+- Financial identity binds source, description, effective time, currency, and sorted lines. Actor and request IDs remain execution evidence and do not change exact-retry identity.
+- Exact retries resolve before current account status checks. Newly created postings require every referenced account to be active and PHP-denominated.
+- Database deferred constraints remain the final balance authority even though the service rejects imbalance earlier.
+
+### Open items
+
+- Implement a full reversal primitive that copies every original line in the opposite direction, preserves history, enforces a single reversal, and writes audit evidence atomically.
+- Approve and seed the production chart, account ownership, available/held/settled dimensions, and domain posting matrices.
+- Define bank evidence/reconciliation, value-date/cutoff, maker/checker, and calculation rules in their owning tasks.
+
+### Next
+
+- Implement and test the idempotent full reversal command over the posting boundary.
+
 ## 2026-08-19 — Balanced append-only ledger schema
 
 **Status:** Done

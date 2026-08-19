@@ -85,7 +85,9 @@ The initial writer and schema are implemented, but every privileged/domain comma
 
 Shared PHP money contracts reject JSON numbers, exponent notation, grouping/currency text, non-two-decimal values, leading zeros, negative zero, and values outside `numeric(30,2)`. Exact runtime arithmetic uses `bigint` centavos. This removes binary floating-point drift and ambiguous textual representations but does not authorize any rate, tax, interest, allocation, or rounding formula; those remain owning-domain decisions.
 
-Ledger headers and lines are immutable database evidence. Deferred constraint triggers reject empty or unbalanced transactions at commit; entry amounts must be positive exact PHP values, transaction/account line identities are unique, and account code/normal-balance/currency cannot change. Application writes remain prohibited until the atomic audited posting service is present.
+Ledger headers and lines are immutable database evidence. Deferred constraint triggers reject empty or unbalanced transactions at commit; entry amounts must be positive exact PHP values, transaction/account line identities are unique, and account code/normal-balance/currency cannot change.
+
+The posting service is the application write boundary. It requires distinct active PHP accounts, computes balance in exact centavos, takes shared account locks, hashes a canonical order-independent financial payload, and atomically appends the posting plus `ledger.transaction.posted` audit evidence. A global idempotency key returns only an exact matching payload and rejects reuse for a different effect. Owning domains must use the transaction-aware primitive when the posting accompanies a state change. Direct ledger inserts and ad hoc application SQL remain prohibited; full reversals require the still-pending dedicated command.
 
 ## Secrets
 

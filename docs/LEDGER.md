@@ -18,9 +18,9 @@ Lines require a positive amount, one line number per transaction, and at most on
 
 Ledger transaction and entry rows are append-only: update, delete, and truncate are rejected. Account code, normal balance, and currency are immutable; name and active status may change without rewriting historical lines. At most one transaction may identify itself as the full reversal of an original transaction.
 
-## Required posting boundary
+## Implemented posting boundary
 
-Direct application inserts are not allowed. The posting service must:
+Direct application inserts are not allowed. `apps/api/src/ledger/posting-service.ts` is the only implemented posting primitive. It:
 
 1. validate canonical positive PHP string amounts and at least two distinct active accounts;
 2. canonicalize lines independently of request order and compute the payload hash;
@@ -28,7 +28,13 @@ Direct application inserts are not allowed. The posting service must:
 4. atomically insert the transaction, lines, and immutable audit event;
 5. return the existing transaction only when an idempotency retry has the same hash;
 6. reject an idempotency key reused for a different financial effect; and
-7. build a full reversal by copying every original line to the opposite direction, never by editing history.
+7. exposes a transaction-aware form so an owning domain mutation, posting, and audit event can share one database transaction.
+
+Lines are sorted by account ID before hashing and persistence, so request order does not change the financial identity or line numbering. A transaction contains at most one aggregated line per account. The hash binds the source reference, description, effective time, currency, and canonical lines; actor and request correlation are evidence about execution rather than part of the financial effect.
+
+Exact idempotent retries are resolved before checking the accounts' current active state, so a previously committed posting remains retrievable after an account is closed. A new posting takes shared locks on all referenced accounts and requires every account to exist, be active, and use PHP. Application preflight uses exact centavo arithmetic, while the deferred database trigger remains the final commit-time balance authority.
+
+The full reversal command is not implemented yet. It must copy every original line to the opposite direction, link the new transaction through `reversal_of_transaction_id`, enforce one full reversal at most, and append its audit event atomically. It must never edit existing evidence.
 
 Financial/domain idempotency remains separate from transport/job idempotency. Balance queries must derive from entries and must not introduce a mutable source-of-truth balance column.
 

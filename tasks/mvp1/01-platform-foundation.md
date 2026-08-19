@@ -9,12 +9,13 @@
 - Process liveness (`GET /health`) and database readiness (`GET /v1/health`) are implemented and tested, including the degraded `503` response.
 - CI now runs lint, strict type checks, tests, production builds, and a high-severity production dependency audit on Node 20.
 - Local setup, environment variables, health behavior, validation commands, and the migration workflow are documented in [`../../docs/DEVELOPER.md`](../../docs/DEVELOPER.md).
-- Authentication/RBAC, initial domain schema/migrations, and the provider-neutral durable-job persistence foundation are implemented. Worker execution/recovery, observability provider, backups, and financial primitives remain open; this task stays **WIP**.
+- Authentication/RBAC, initial domain schema/migrations, and the provider-neutral durable-job persistence foundation are implemented. Production job activation/topology, observability provider, backups, and remaining financial/domain controls remain open; this task stays **WIP**.
 - Added generated migration `0009_moaning_argent.sql` for idempotent background jobs, bounded priorities/retries, exclusive leases, terminal timestamps, and unique per-job attempt evidence. Startup readiness now requires both job relations.
 - Added a transaction-aware enqueue primitive and PostgreSQL job-control service for bounded concurrent claims, heartbeats, stale-worker denial, exponential retry, dead-lettering, expired-lease recovery, success, and unclaimed cancellation. Custom migration `0010_job-attempt-evidence.sql` protects completed attempt evidence.
 - Added a deny-by-default worker runtime with explicit versioned topic registration, bounded non-overlapping polling/concurrency, automatic heartbeats, safe error classification, and graceful drain/lease handoff. The application registry remains intentionally empty and the server starts no worker.
 - Added canonical two-decimal PHP string contracts and an immutable `bigint`-centavo money value for exact parsing, formatting, signed addition/subtraction, comparison, transport conversion, and `numeric(30,2)` overflow enforcement. Rate/rounding operations remain deliberately unavailable.
 - Added generated ledger schema migration `0011_wide_nemesis.sql` and custom invariant migration `0012_ledger-invariants.sql`: stable PHP accounts, immutable posting headers/positive debit-credit lines, unique idempotency/reversal identities, and deferred exact balance enforcement at commit.
+- Added the transaction-aware ledger posting primitive with exact balance validation, canonical order-independent hashing, active PHP account locks, exact-retry/conflict semantics, and atomic immutable audit evidence.
 
 ## Scope
 
