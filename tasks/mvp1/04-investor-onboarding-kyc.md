@@ -14,6 +14,7 @@
 - Investors can withdraw their own eligible open case with optimistic versioning and a required reason; the terminal state, event, and audit evidence remain immutable while allowing a later fresh journey.
 - The assigned compliance reviewer can reject an `in_review` investor case with a reason and exact version, preserving decision time and immutable event/audit evidence. Approval and eligibility effects remain unavailable.
 - The authenticated portal now renders the server-granted investor journey, lists owned cases, starts a draft, submits/resubmits the displayed version, and performs reasoned withdrawal. Suitability/profile/evidence forms remain absent.
+- Investors can expand an owned case to view its ordered immutable state/version timeline and reasons for information requests, withdrawal, or terminal decisions.
 - Investor subject classification, profile/evidence fields, suitability questionnaire versions, eligibility restrictions, bank verification, and approval remain unimplemented because the individual/institutional pilot scope and approved rules are still open; this task stays **WIP**.
 
 ## Scope

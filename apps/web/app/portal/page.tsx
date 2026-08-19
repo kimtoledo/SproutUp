@@ -6,11 +6,13 @@ import { ArrowRight, Building2, LogOut, RefreshCw, Sprout, TrendingUp } from 'lu
 import {
   createOnboardingCase,
   loadPortal,
+  loadPortalCaseDetail,
   signOut,
   submitOnboardingCase,
   withdrawOnboardingCase,
   type CaseType,
   type PortalCase,
+  type PortalCaseDetail,
   type PortalLoadResult,
 } from '@/lib/portal-client';
 import { product } from '@/lib/product';
@@ -26,6 +28,17 @@ const statusLabels: Record<PortalCase['status'], string> = {
   withdrawn: 'Withdrawn',
   expired: 'Expired',
 };
+const eventLabels: Record<string, string> = {
+  created: 'Case started',
+  submitted: 'Submitted for review',
+  review_started: 'Review started',
+  information_requested: 'More information requested',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  withdrawn: 'Withdrawn',
+  reopened: 'Reopened',
+  expired: 'Expired',
+};
 
 export default function PortalPage() {
   const [state, setState] = useState<PortalLoadResult | null>(null);
@@ -33,6 +46,8 @@ export default function PortalPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [withdrawCaseId, setWithdrawCaseId] = useState<string | null>(null);
   const [withdrawReason, setWithdrawReason] = useState('');
+  const [detail, setDetail] = useState<PortalCaseDetail | null>(null);
+  const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setState(await loadPortal());
@@ -62,6 +77,24 @@ export default function PortalPage() {
     }
     await refresh();
     setPendingAction(null);
+  }
+
+  async function toggleDetail(caseId: string) {
+    if (detail?.id === caseId) {
+      setDetail(null);
+      return;
+    }
+    if (detailLoadingId) return;
+    setDetailLoadingId(caseId);
+    setMessage(null);
+    const result = await loadPortalCaseDetail(caseId);
+    if (result.ok) {
+      setDetail(result.detail);
+    } else {
+      setMessage(result.message);
+      if (result.unauthenticated) setState({ ok: false, reason: 'unauthenticated' });
+    }
+    setDetailLoadingId(null);
   }
 
   if (!state) {
@@ -174,6 +207,16 @@ export default function PortalPage() {
                   </div>
                   <p className="case-meta">Updated {new Date(item.updatedAt).toLocaleString('en-PH')}</p>
                   <div className="case-actions">
+                    <button
+                      className="text-button"
+                      disabled={Boolean(detailLoadingId)}
+                      onClick={() => void toggleDetail(item.id)}
+                      type="button"
+                    >
+                      {detailLoadingId === item.id
+                        ? 'Loading history…'
+                        : detail?.id === item.id ? 'Hide history' : 'View history'}
+                    </button>
                     {submittable ? (
                       <button
                         className="compact-action button-reset"
@@ -220,6 +263,25 @@ export default function PortalPage() {
                         {pendingAction === `withdraw-${item.id}` ? 'Withdrawing…' : 'Confirm withdrawal'}
                       </button>
                     </form>
+                  ) : null}
+                  {detail?.id === item.id ? (
+                    <section className="case-timeline" aria-label={`${item.caseType} case history`}>
+                      <h3>Case history</h3>
+                      <ol>
+                        {detail.events.map((event) => (
+                          <li key={event.id}>
+                            <span className="timeline-marker" aria-hidden="true" />
+                            <div>
+                              <strong>{eventLabels[event.eventType] ?? event.eventType.replaceAll('_', ' ')}</strong>
+                              <small>
+                                {new Date(event.occurredAt).toLocaleString('en-PH')} · Version {event.caseVersion}
+                              </small>
+                              {event.reason ? <p>{event.reason}</p> : null}
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                    </section>
                   ) : null}
                 </article>
               );

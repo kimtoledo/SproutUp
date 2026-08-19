@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   loadPortal,
+  loadPortalCaseDetail,
   submitOnboardingCase,
   withdrawOnboardingCase,
 } from './portal-client';
@@ -75,6 +76,53 @@ describe('portal API client', () => {
       ok: false,
       unauthenticated: true,
       message: 'Your session expired. Sign in again.',
+    });
+  });
+
+  it('loads an owner-bound case timeline with cookie credentials', async () => {
+    const detail = {
+      id: 'case-1',
+      caseType: 'borrower',
+      status: 'needs_information',
+      version: 4,
+      assignedReviewerUserId: null,
+      submittedAt: null,
+      decidedAt: null,
+      createdAt: '2026-08-19T00:00:00.000Z',
+      updatedAt: '2026-08-19T00:00:00.000Z',
+      events: [{
+        id: 'event-1',
+        eventType: 'information_requested',
+        fromStatus: 'in_review',
+        toStatus: 'needs_information',
+        caseVersion: 4,
+        actorType: 'user',
+        actorUserId: 'reviewer-1',
+        reason: 'Provide clearer registration evidence',
+        occurredAt: '2026-08-19T00:00:00.000Z',
+      }],
+    };
+    const fetcher = vi.fn().mockResolvedValue(response(200, { success: true, data: detail }));
+    await expect(loadPortalCaseDetail('case-1', fetcher)).resolves.toEqual({ ok: true, detail });
+    expect(fetcher).toHaveBeenCalledWith(
+      'http://localhost:3001/v1/onboarding/cases/case-1',
+      expect.objectContaining({ method: 'GET', credentials: 'include' }),
+    );
+  });
+
+  it('maps missing and malformed case history to bounded messages', async () => {
+    const missing = vi.fn().mockResolvedValue(response(404, {
+      success: false,
+      error: { code: 'CASE_NOT_FOUND', message: 'ignored internal text' },
+    }));
+    const malformed = vi.fn().mockResolvedValue(response(200, { success: true, data: {} }));
+    await expect(loadPortalCaseDetail('case-1', missing)).resolves.toEqual({
+      ok: false,
+      message: 'That case is no longer available.',
+    });
+    await expect(loadPortalCaseDetail('case-1', malformed)).resolves.toEqual({
+      ok: false,
+      message: 'The case history could not be loaded. Please try again.',
     });
   });
 });

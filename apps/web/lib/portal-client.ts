@@ -27,12 +27,32 @@ export interface PortalCase {
   updatedAt: string;
 }
 
+export interface PortalCaseEvent {
+  id: string;
+  eventType: string;
+  fromStatus: CaseStatus | null;
+  toStatus: CaseStatus;
+  caseVersion: number;
+  actorType: 'user' | 'system';
+  actorUserId: string | null;
+  reason: string | null;
+  occurredAt: string;
+}
+
+export interface PortalCaseDetail extends PortalCase {
+  events: PortalCaseEvent[];
+}
+
 export type PortalLoadResult =
   | { ok: true; session: PortalSession; cases: PortalCase[] }
   | { ok: false; reason: 'unauthenticated' | 'unavailable' };
 
 export type PortalCommandResult =
   | { ok: true }
+  | { ok: false; message: string; unauthenticated?: boolean };
+
+export type PortalCaseDetailResult =
+  | { ok: true; detail: PortalCaseDetail }
   | { ok: false; message: string; unauthenticated?: boolean };
 
 interface FetchLike {
@@ -92,6 +112,34 @@ export async function loadPortal(fetcher: FetchLike = fetch): Promise<PortalLoad
     return { ok: true, session: sessionEnvelope.data, cases: casesEnvelope.data };
   } catch {
     return { ok: false, reason: 'unavailable' };
+  }
+}
+
+export async function loadPortalCaseDetail(
+  caseId: string,
+  fetcher: FetchLike = fetch,
+): Promise<PortalCaseDetailResult> {
+  try {
+    const response = await fetcher(
+      `${apiBaseUrl()}/v1/onboarding/cases/${caseId}`,
+      requestInit('GET'),
+    );
+    if (response.status === 401) {
+      return { ok: false, unauthenticated: true, message: 'Your session expired. Sign in again.' };
+    }
+    if (response.status === 404) {
+      return { ok: false, message: 'That case is no longer available.' };
+    }
+    if (!response.ok) {
+      return { ok: false, message: 'The case history could not be loaded. Please try again.' };
+    }
+    const envelope = await parseEnvelope<PortalCaseDetail>(response);
+    if (!envelope?.success || !envelope.data || !Array.isArray(envelope.data.events)) {
+      return { ok: false, message: 'The case history could not be loaded. Please try again.' };
+    }
+    return { ok: true, detail: envelope.data };
+  } catch {
+    return { ok: false, message: 'SproutUp is temporarily unavailable. Please try again.' };
   }
 }
 

@@ -35,6 +35,8 @@ The web registration and sign-in pages send JSON only to the configured API orig
 
 The portal does not infer access from URL, registration intent, or browser state. It loads the server-resolved session context, renders only returned borrower/investor capabilities, and then calls owner-bound APIs that re-authorize every action. A `401` clears authenticated rendering; failed or malformed loads do not retain partial account data. Optimistic commands use the displayed version, map stable error codes to bounded client messages, ignore server/internal exception text, and reload authoritative state after success or conflict.
 
+Case history is fetched lazily from the own-case detail boundary, which binds case ID, applicant ID, and permitted journey type in SQL. The web client displays only the allowlisted event fields already returned by that contract. Missing/foreign cases receive the same bounded message, and no staff queue or applicant identity search is used as a fallback.
+
 ## Authorization
 
 The API resolves roles and permissions from the authenticated user ID. Client-supplied role, permission, or ownership claims are never authoritative.

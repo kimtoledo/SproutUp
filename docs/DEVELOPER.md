@@ -36,6 +36,8 @@ Web routes currently include the public landing page, `/register`, `/login`, and
 
 The portal first resolves `/v1/session-context`, then loads `/v1/onboarding/cases`. A `401` removes authenticated content and offers sign-in; a dependency/contract failure renders a retry state without partial account data. Create, submit/resubmit, and reasoned withdrawal controls appear only when the returned permission keys and case states allow them, but the API re-authorizes every command. Commands send the exact displayed case version and reload authoritative state after completion or conflict.
 
+Each case can lazily load its owner-bound `/v1/onboarding/cases/:caseId` detail. The portal renders the immutable event order, case version, occurrence time, and any applicant-visible information-request, withdrawal, or decision reason. A hidden/foreign case maps to a bounded unavailable message and never falls back to a broader queue endpoint.
+
 In another terminal, start the API:
 
 ```bash

@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Owned onboarding case timeline UI
+
+**Status:** Done
+
+### Updated
+
+- Added lazy owned-case detail loading from `GET /v1/onboarding/cases/:caseId` with cookie credentials and no staff-queue fallback.
+- Added an expandable portal timeline showing ordered event labels, occurrence times, case versions, and applicant-visible information-request, withdrawal, and decision reasons.
+- Added bounded unauthenticated, missing/foreign, malformed-contract, dependency, and network error behavior without rendering server exception text.
+- Added two portal-client tests for exact owner-detail request behavior, preserved reason evidence, and safe missing/malformed responses; the web suite now has eleven tests.
+- Updated developer, security, borrower, investor, portal, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Case detail remains an on-demand own-case read. The portal does not preload every timeline or use staff APIs to enrich customer data.
+- Event ordering, version, timestamp, and reasons come from immutable server evidence; the web client does not synthesize transitions.
+- Reviewer user IDs remain in the existing API response contract but are not rendered in the customer UI; no broader reviewer identity is exposed.
+- A hidden or foreign case is indistinguishable from a missing case in the portal.
+
+### Open items
+
+- Add approved profile/evidence completion UI and explicit correction fields after tasks 03–05 policies are resolved.
+- Define and implement rejected/expired case reopen behavior and next-action content.
+- Add full browser journey tests against a running API/database once the deployed cookie/CORS topology is selected.
+
+### Next
+
+- Implement a responsive staff compliance workspace over the existing protected queue/detail/start-review/request-information/reject APIs.
+
 ## 2026-08-19 — Permission-driven onboarding portal shell
 
 **Status:** Done

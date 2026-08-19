@@ -15,6 +15,7 @@
 - Borrowers can withdraw their own `draft`, `submitted`, or `needs_information` case with an exact version and reason. The terminal event/audit trail is retained and a later fresh journey can use the released one-open-case slot.
 - The assigned compliance reviewer can reject an `in_review` case with an exact version and reason; decision timestamp, transition, and audit evidence commit atomically. Approval is intentionally unavailable.
 - The authenticated portal now renders the server-granted borrower journey, lists owned cases, starts a draft, submits/resubmits the displayed version, and performs reasoned withdrawal. Profile/evidence forms remain absent.
+- Borrowers can expand an owned case to view its ordered immutable state/version timeline and reasons for information requests, withdrawal, or terminal decisions.
 - No borrower profile, KYB evidence, completeness rules, or approval command is implemented yet; this task stays **WIP** pending the Philippine entity/document matrix and screening/escalation policy.
 
 ## Scope
