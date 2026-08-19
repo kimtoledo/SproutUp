@@ -8,6 +8,14 @@ import {
 } from '../auth/approval-history-service.js';
 import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
+import { operation } from '../openapi/operation.js';
+import {
+  approvalHistoryDetailSchema,
+  approvalHistoryListResponse,
+  approvalHistoryQuery,
+  approvalIdParameters,
+} from '../openapi/role-approval-schemas.js';
+import { commonErrors, successResponse } from '../openapi/onboarding-schemas.js';
 
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).max(10_000).default(1),
@@ -31,7 +39,24 @@ function forbidden(reply: FastifyReply) {
 }
 
 export async function registerApprovalHistoryRoutes(app: FastifyInstance, options: Options): Promise<void> {
-  app.get('/v1/admin/role-approvals', async (request, reply) => {
+  app.get('/v1/admin/role-approvals', {
+    schema: operation({
+      operationId: 'listRoleApprovalHistory',
+      summary: 'List bounded role-approval history with payload integrity status',
+      tags: ['role approvals'],
+      metadata: {
+        actor: 'staff', permissions: ['roles.assign'], permissionMode: 'all',
+        retryModel: 'safe_read', sideEffects: [], auditEvent: null,
+      },
+      http: {
+        querystring: approvalHistoryQuery,
+        response: {
+          200: approvalHistoryListResponse,
+          400: commonErrors[400], 401: commonErrors[401], 403: commonErrors[403],
+        },
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'roles.assign')) return forbidden(reply);
@@ -42,7 +67,25 @@ export async function registerApprovalHistoryRoutes(app: FastifyInstance, option
     return reply.send({ success: true, data: await options.history.list(parsed.data) });
   });
 
-  app.get('/v1/admin/role-approvals/:approvalId', async (request, reply) => {
+  app.get('/v1/admin/role-approvals/:approvalId', {
+    schema: operation({
+      operationId: 'getRoleApprovalHistory',
+      summary: 'Read one role approval and its immutable action timeline',
+      tags: ['role approvals'],
+      metadata: {
+        actor: 'staff', permissions: ['roles.assign'], permissionMode: 'all',
+        retryModel: 'safe_read', sideEffects: [], auditEvent: null,
+      },
+      http: {
+        params: approvalIdParameters,
+        response: {
+          200: successResponse(approvalHistoryDetailSchema),
+          400: commonErrors[400], 401: commonErrors[401], 403: commonErrors[403],
+          404: commonErrors[404],
+        },
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'roles.assign')) return forbidden(reply);

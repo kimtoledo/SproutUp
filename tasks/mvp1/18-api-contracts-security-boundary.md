@@ -13,7 +13,8 @@
 - Added a reusable operation metadata contract and annotated all eight onboarding operations with unique IDs, cookie security, actor boundary, capability set/mode, retry model, side effects, and audit event; CI walks and validates every annotation.
 - Added enforced path/query/body and success/structured-error JSON schemas for all eight onboarding operations plus a stable non-leaking Fastify validation-error envelope. CI checks command request bodies, path parameters, and response declarations.
 - Added full operation metadata and enforced response/error schemas to own-session listing, owned-session revocation, role catalogue, and bounded user catalogue. UUID session parameters and catalogue filters are also transport-validated; the session response schema cannot expose tokens.
-- Metadata/schemas on the remaining auth and role-approval routes, private-file and webhook contracts, version/deprecation policy, and remaining domain operations remain; this task stays **WIP**.
+- Added full contracts to all ten role-assignment, revocation, lifecycle, and history operations. The contract distinguishes database-unique pending proposals from row-locked decisions and publishes hash/integrity evidence without weakening maker/checker runtime enforcement.
+- The remaining session-context boundary, private-file and webhook contracts, version/deprecation policy, and future domain operations remain; this task stays **WIP**.
 
 ## Scope
 

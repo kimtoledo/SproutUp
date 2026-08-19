@@ -82,7 +82,7 @@ The MedicalHub snapshot currently mixes Zod 3 in the root/shared package with Zo
 
 The initial SproutUp scaffold resolves that mismatch on Zod 4. It also upgrades MedicalHub's Next.js 14/React 18 combination to Next.js 16/React 19 because the copied Next.js 14 release fails the production dependency audit with multiple high-severity advisories. The App Router architecture remains the same; future framework upgrades require passing tests, builds, and the production audit before adoption.
 
-The API uses exact-pinned `@fastify/swagger` 9.8.1, whose 9.x line is compatible with Fastify 5. Generated OpenAPI 3.1 route coverage is tested in CI; complete per-operation schemas and operational metadata remain an incremental Task 18 deliverable.
+The API uses exact-pinned `@fastify/swagger` 9.8.1, whose 9.x line is compatible with Fastify 5. Generated OpenAPI 3.1 route coverage is tested in CI. Onboarding, own-session, access-catalogue, and all role-approval operations now carry enforced schemas and operational metadata; the remaining session-context and future domain/provider boundaries stay incremental Task 18 work.
 
 ## Decisions still open
 

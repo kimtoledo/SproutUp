@@ -34,6 +34,34 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Role approval OpenAPI contracts
+
+**Status:** Done
+
+### Updated
+
+- Added protected operation metadata and enforced request/response/error schemas to all ten role-assignment, role-revocation, approval-decision, and approval-history operations.
+- Documented distinct `unique_pending_approval` and `locked_approval_decision` retry models matching the database unique index and transactional row locks already enforced by the services.
+- Added allowlisted pending/history/detail schemas for role payloads, hashes, actors, lifecycle timestamps, integrity status, and immutable action timelines.
+- Extended generated-contract CI coverage to enumerate each operation and require approval-ID path parameters, command bodies, security, metadata, and success/error responses.
+- Updated developer, security, technology-stack, authentication, API-contract, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Operational retry metadata describes the server invariant: duplicate pending proposals conflict, while repeated terminal decisions must refetch after a locked `409` rather than assume replayed execution.
+- The success audit event names the primary command outcome. Expiry encountered during a decision remains a documented domain conflict with its own immutable audit event in the service transaction.
+- History payloads remain observable even when malformed so `integrity: "invalid"` evidence can be investigated; command services still require the canonical role-change payload and matching SHA-256 hash before execution.
+
+### Open items
+
+- Add an explicit generated contract to the application-owned session-context endpoint.
+- Define a defensible contract strategy for Better Auth's framework-owned `/v1/auth/*` endpoints without promising unsupported wildcard schemas.
+- Decide API version/deprecation policy and provider-specific webhook/private-file contracts.
+
+### Next
+
+- Contract `GET /v1/session-context`, then make the contract test fail whenever any application-owned `/v1` operation lacks an operation ID, security declaration, SproutUp metadata, or schemas.
+
 ## 2026-08-19 — Session and access OpenAPI contracts
 
 **Status:** Done

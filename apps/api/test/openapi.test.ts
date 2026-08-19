@@ -106,6 +106,24 @@ describe('OpenAPI contract generation', () => {
         ['/v1/sessions/{sessionId}', 'delete', 'revokeOwnSession'],
         ['/v1/admin/roles', 'get', 'listRoleCatalogue'],
         ['/v1/admin/users', 'get', 'listUserAccessCatalogue'],
+        ['/v1/admin/role-assignments', 'get', 'listPendingRoleAssignments'],
+        ['/v1/admin/role-assignments', 'post', 'proposeRoleAssignment'],
+        [
+          '/v1/admin/role-assignments/{approvalId}/approve',
+          'post',
+          'approveRoleAssignment',
+        ],
+        ['/v1/admin/role-revocations', 'get', 'listPendingRoleRevocations'],
+        ['/v1/admin/role-revocations', 'post', 'proposeRoleRevocation'],
+        [
+          '/v1/admin/role-revocations/{approvalId}/approve',
+          'post',
+          'approveRoleRevocation',
+        ],
+        ['/v1/admin/role-approvals/{approvalId}/reject', 'post', 'rejectRoleApproval'],
+        ['/v1/admin/role-approvals/{approvalId}/cancel', 'post', 'cancelRoleApproval'],
+        ['/v1/admin/role-approvals', 'get', 'listRoleApprovalHistory'],
+        ['/v1/admin/role-approvals/{approvalId}', 'get', 'getRoleApprovalHistory'],
         ['/v1/onboarding/cases', 'get', 'listOwnOnboardingCases'],
         ['/v1/onboarding/cases/{caseId}', 'get', 'getOwnOnboardingCase'],
         ['/v1/onboarding/cases', 'post', 'createOwnOnboardingCase'],
@@ -130,7 +148,7 @@ describe('OpenAPI contract generation', () => {
             permissions: expect.any(Array),
             permissionMode: expect.stringMatching(/^(any|all)$/),
             retryModel: expect.stringMatching(
-              /^(safe_read|idempotent_delete|unique_open_case|optimistic_version)$/,
+              /^(safe_read|idempotent_delete|unique_open_case|unique_pending_approval|locked_approval_decision|optimistic_version)$/,
             ),
             sideEffects: expect.any(Array),
           }),
@@ -149,6 +167,11 @@ describe('OpenAPI contract generation', () => {
         if (path.includes('{sessionId}')) {
           expect(operation?.parameters).toEqual(
             expect.arrayContaining([expect.objectContaining({ name: 'sessionId', in: 'path' })]),
+          );
+        }
+        if (path.includes('{approvalId}')) {
+          expect(operation?.parameters).toEqual(
+            expect.arrayContaining([expect.objectContaining({ name: 'approvalId', in: 'path' })]),
           );
         }
       }

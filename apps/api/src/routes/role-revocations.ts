@@ -4,6 +4,15 @@ import { hasPermission, roleKeySchema } from '@sproutup/shared';
 import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { RoleRevocationService } from '../auth/role-revocations-service.js';
 import type { AuthServices } from '../auth/types.js';
+import { operation } from '../openapi/operation.js';
+import {
+  approvalIdParameters,
+  optionalApprovalReasonBody,
+  pendingRoleChangeListResponses,
+  pendingRoleChangeSchema,
+  roleChangeProposalBody,
+} from '../openapi/role-approval-schemas.js';
+import { commonErrors, successResponse } from '../openapi/onboarding-schemas.js';
 
 const proposalSchema = z.object({
   targetUserId: z.uuid(),
@@ -53,14 +62,45 @@ function failure(reply: FastifyReply, reason: string) {
 }
 
 export async function registerRoleRevocationRoutes(app: FastifyInstance, options: Options): Promise<void> {
-  app.get('/v1/admin/role-revocations', async (request, reply) => {
+  app.get('/v1/admin/role-revocations', {
+    schema: operation({
+      operationId: 'listPendingRoleRevocations',
+      summary: 'List unexpired pending role-revocation proposals',
+      tags: ['role approvals'],
+      metadata: {
+        actor: 'staff', permissions: ['roles.assign'], permissionMode: 'all',
+        retryModel: 'safe_read', sideEffects: [], auditEvent: null,
+      },
+      http: { response: pendingRoleChangeListResponses },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'roles.assign')) return forbidden(reply);
     return reply.send({ success: true, data: await options.roleRevocations.listPending() });
   });
 
-  app.post('/v1/admin/role-revocations', async (request, reply) => {
+  app.post('/v1/admin/role-revocations', {
+    schema: operation({
+      operationId: 'proposeRoleRevocation',
+      summary: 'Propose a hash-bound role revocation for independent approval',
+      tags: ['role approvals'],
+      metadata: {
+        actor: 'staff', permissions: ['roles.assign'], permissionMode: 'all',
+        retryModel: 'unique_pending_approval',
+        sideEffects: ['create approval request', 'append approval action', 'append audit event'],
+        auditEvent: 'role_revocation.proposed',
+      },
+      http: {
+        body: roleChangeProposalBody,
+        response: {
+          201: successResponse(pendingRoleChangeSchema),
+          400: commonErrors[400], 401: commonErrors[401], 403: commonErrors[403],
+          404: commonErrors[404], 409: commonErrors[409],
+        },
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'roles.assign')) return forbidden(reply);
@@ -78,7 +118,28 @@ export async function registerRoleRevocationRoutes(app: FastifyInstance, options
     return reply.status(201).send({ success: true, data: result.request });
   });
 
-  app.post('/v1/admin/role-revocations/:approvalId/approve', async (request, reply) => {
+  app.post('/v1/admin/role-revocations/:approvalId/approve', {
+    schema: operation({
+      operationId: 'approveRoleRevocation',
+      summary: 'Approve and execute a pending role revocation as an independent checker',
+      tags: ['role approvals'],
+      metadata: {
+        actor: 'staff', permissions: ['roles.assign'], permissionMode: 'all',
+        retryModel: 'locked_approval_decision',
+        sideEffects: ['revoke role', 'transition approval', 'append approval actions', 'append audit event'],
+        auditEvent: 'role_revocation.executed',
+      },
+      http: {
+        params: approvalIdParameters,
+        body: optionalApprovalReasonBody,
+        response: {
+          204: { type: 'null', description: 'Role revocation approved and executed' },
+          400: commonErrors[400], 401: commonErrors[401], 403: commonErrors[403],
+          404: commonErrors[404], 409: commonErrors[409],
+        },
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'roles.assign')) return forbidden(reply);

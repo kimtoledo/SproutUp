@@ -4,6 +4,12 @@ import { hasPermission } from '@sproutup/shared';
 import type { ApprovalLifecycleService } from '../auth/approval-lifecycle-service.js';
 import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
+import { operation } from '../openapi/operation.js';
+import {
+  approvalIdParameters,
+  requiredApprovalReasonBody,
+} from '../openapi/role-approval-schemas.js';
+import { commonErrors } from '../openapi/onboarding-schemas.js';
 
 const parametersSchema = z.object({ approvalId: z.uuid() });
 const decisionSchema = z.object({ reason: z.string().trim().min(10).max(500) });
@@ -36,7 +42,28 @@ function failure(reply: FastifyReply, reason: string) {
 }
 
 export async function registerApprovalLifecycleRoutes(app: FastifyInstance, options: Options): Promise<void> {
-  app.post('/v1/admin/role-approvals/:approvalId/reject', async (request, reply) => {
+  app.post('/v1/admin/role-approvals/:approvalId/reject', {
+    schema: operation({
+      operationId: 'rejectRoleApproval',
+      summary: 'Reject a pending role change as an independent reviewer',
+      tags: ['role approvals'],
+      metadata: {
+        actor: 'staff', permissions: ['roles.assign'], permissionMode: 'all',
+        retryModel: 'locked_approval_decision',
+        sideEffects: ['transition approval', 'append approval action', 'append audit event'],
+        auditEvent: 'approval.rejected',
+      },
+      http: {
+        params: approvalIdParameters,
+        body: requiredApprovalReasonBody,
+        response: {
+          204: { type: 'null', description: 'Role change rejected' },
+          400: commonErrors[400], 401: commonErrors[401], 403: commonErrors[403],
+          404: commonErrors[404], 409: commonErrors[409],
+        },
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'roles.assign')) return forbidden(reply);
@@ -56,7 +83,28 @@ export async function registerApprovalLifecycleRoutes(app: FastifyInstance, opti
     return reply.status(204).send();
   });
 
-  app.post('/v1/admin/role-approvals/:approvalId/cancel', async (request, reply) => {
+  app.post('/v1/admin/role-approvals/:approvalId/cancel', {
+    schema: operation({
+      operationId: 'cancelRoleApproval',
+      summary: 'Cancel a pending role change as its original maker',
+      tags: ['role approvals'],
+      metadata: {
+        actor: 'staff', permissions: ['roles.assign'], permissionMode: 'all',
+        retryModel: 'locked_approval_decision',
+        sideEffects: ['transition approval', 'append approval action', 'append audit event'],
+        auditEvent: 'approval.cancelled',
+      },
+      http: {
+        params: approvalIdParameters,
+        body: requiredApprovalReasonBody,
+        response: {
+          204: { type: 'null', description: 'Role change cancelled' },
+          400: commonErrors[400], 401: commonErrors[401], 403: commonErrors[403],
+          404: commonErrors[404], 409: commonErrors[409],
+        },
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'roles.assign')) return forbidden(reply);

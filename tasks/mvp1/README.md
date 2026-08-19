@@ -23,7 +23,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 - [ ] [15 — Admin Operations & Reports](./15-admin-operations-reports.md)
 - [ ] [16 — Migration, Reconciliation & Pilot Readiness](./16-migration-reconciliation-pilot.md)
 - [ ] [17 — Legacy Schema Baseline & Data Mapping](./17-legacy-schema-data-mapping.md)
-- [ ] [18 — API Contracts & Security Boundary](./18-api-contracts-security-boundary.md) — protected route/error/pagination patterns and CI-validated OpenAPI 3.1 route coverage implemented; complete operation/domain/webhook contracts remain
+- [ ] [18 — API Contracts & Security Boundary](./18-api-contracts-security-boundary.md) — onboarding, session/access, and role-approval operations have enforced CI-validated OpenAPI 3.1 contracts; session-context, future domain, file, webhook, and compatibility policy remain
 - [ ] [19 — Scheduler, Queues & Job Control](./19-scheduler-queues-job-control.md)
 - [ ] [20 — Admin Information Architecture & Work Queues](./20-admin-information-architecture-work-queues.md) — initial bounded compliance queue and safe reviewer claim implemented; policy, UI, and remaining domain queues remain
 - [ ] [21 — Borrower & Investor Portal Journeys](./21-borrower-investor-portal-journeys.md) — server-authoritative onboarding state and own-case API implemented; profile forms, screens, and end-to-end journeys remain

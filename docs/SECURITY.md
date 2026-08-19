@@ -6,7 +6,7 @@ Better Auth is mounted behind the Fastify API at `/v1/auth/*`. The web applicati
 
 `GET /openapi.json` publishes route/contract metadata only. It declares the HTTP-only session-cookie security scheme but contains no cookie values, credentials, environment secrets, or internal database configuration; the generated document is covered by a secret-regression test.
 
-Every contracted onboarding, own-session, and access-catalogue operation declares its authenticated actor boundary and required capability set in the generated contract. These declarations are documentation checked by CI; runtime authorization remains the server-resolved permission check in each handler/service and is independently covered by denial tests.
+Every contracted onboarding, own-session, access-catalogue, and role-approval operation declares its authenticated actor boundary and required capability set in the generated contract. These declarations are documentation checked by CI; runtime authorization remains the server-resolved permission check in each handler/service and is independently covered by denial tests.
 
 Onboarding path, query, body, success, and structured error schemas are now enforced by Fastify and published in OpenAPI. Schema failures return a generic stable validation message rather than echoing submitted values or internal validator details; deeper state/ownership checks still execute in the domain services.
 
@@ -48,6 +48,8 @@ Role grants and revocations are not exposed as direct mutations. A caller with `
 Pending role changes may be rejected only by a different authorized non-target reviewer and cancelled only by their original maker. Both paths require a reason, lock and revalidate pending/hash-bound state, and append their workflow action and audit evidence atomically. Terminal requests cannot be decided again.
 
 Role approval list/detail APIs require `roles.assign` because proposal and decision reasons are privileged operational data. They return the immutable action timeline and an integrity result recomputed from the canonical payload; an invalid result is visible for investigation and cannot be executed by the command services.
+
+The generated contract identifies proposal creation as unique-pending and every approval/rejection/cancellation as a locked decision. Request schemas enforce UUID identities, canonical role keys, and bounded reasons before domain checks; response schemas expose the payload hash and integrity result needed for investigation without exposing credentials or session material.
 
 Administrative read APIs enforce `roles.read` and `users.read` independently. User results are paginated and expose only the access-management summary; credential-provider data, password hashes, session IDs, and tokens are outside the response model.
 

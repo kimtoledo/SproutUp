@@ -4,6 +4,15 @@ import { hasPermission, roleKeySchema } from '@sproutup/shared';
 import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { RoleAssignmentService } from '../auth/role-assignments-service.js';
 import type { AuthServices } from '../auth/types.js';
+import { operation } from '../openapi/operation.js';
+import {
+  approvalIdParameters,
+  optionalApprovalReasonBody,
+  pendingRoleChangeListResponses,
+  pendingRoleChangeSchema,
+  roleChangeProposalBody,
+} from '../openapi/role-approval-schemas.js';
+import { commonErrors, successResponse } from '../openapi/onboarding-schemas.js';
 
 const proposalSchema = z.object({
   targetUserId: z.uuid(),
@@ -99,7 +108,18 @@ export async function registerRoleAssignmentRoutes(
   app: FastifyInstance,
   options: RegisterRoleAssignmentRoutesOptions,
 ): Promise<void> {
-  app.get('/v1/admin/role-assignments', async (request, reply) => {
+  app.get('/v1/admin/role-assignments', {
+    schema: operation({
+      operationId: 'listPendingRoleAssignments',
+      summary: 'List unexpired pending role-assignment proposals',
+      tags: ['role approvals'],
+      metadata: {
+        actor: 'staff', permissions: ['roles.assign'], permissionMode: 'all',
+        retryModel: 'safe_read', sideEffects: [], auditEvent: null,
+      },
+      http: { response: pendingRoleChangeListResponses },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'roles.assign')) return forbidden(reply);
@@ -107,7 +127,27 @@ export async function registerRoleAssignmentRoutes(
     return reply.send({ success: true, data: await options.roleAssignments.listPending() });
   });
 
-  app.post('/v1/admin/role-assignments', async (request, reply) => {
+  app.post('/v1/admin/role-assignments', {
+    schema: operation({
+      operationId: 'proposeRoleAssignment',
+      summary: 'Propose a hash-bound role assignment for independent approval',
+      tags: ['role approvals'],
+      metadata: {
+        actor: 'staff', permissions: ['roles.assign'], permissionMode: 'all',
+        retryModel: 'unique_pending_approval',
+        sideEffects: ['create approval request', 'append approval action', 'append audit event'],
+        auditEvent: 'role_assignment.proposed',
+      },
+      http: {
+        body: roleChangeProposalBody,
+        response: {
+          201: successResponse(pendingRoleChangeSchema),
+          400: commonErrors[400], 401: commonErrors[401], 403: commonErrors[403],
+          404: commonErrors[404], 409: commonErrors[409],
+        },
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'roles.assign')) return forbidden(reply);
@@ -131,7 +171,28 @@ export async function registerRoleAssignmentRoutes(
     return reply.status(201).send({ success: true, data: result.request });
   });
 
-  app.post('/v1/admin/role-assignments/:approvalId/approve', async (request, reply) => {
+  app.post('/v1/admin/role-assignments/:approvalId/approve', {
+    schema: operation({
+      operationId: 'approveRoleAssignment',
+      summary: 'Approve and execute a pending role assignment as an independent checker',
+      tags: ['role approvals'],
+      metadata: {
+        actor: 'staff', permissions: ['roles.assign'], permissionMode: 'all',
+        retryModel: 'locked_approval_decision',
+        sideEffects: ['grant role', 'transition approval', 'append approval actions', 'append audit event'],
+        auditEvent: 'role_assignment.executed',
+      },
+      http: {
+        params: approvalIdParameters,
+        body: optionalApprovalReasonBody,
+        response: {
+          204: { type: 'null', description: 'Role assignment approved and executed' },
+          400: commonErrors[400], 401: commonErrors[401], 403: commonErrors[403],
+          404: commonErrors[404], 409: commonErrors[409],
+        },
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'roles.assign')) return forbidden(reply);
