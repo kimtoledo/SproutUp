@@ -2,7 +2,7 @@
 
 ## Current scope
 
-The provider-neutral persistence and control service are implemented through PostgreSQL `background_jobs` and `background_job_attempts` plus `apps/api/src/jobs/job-control-service.ts`. They are the common durability boundary for future notifications, provider calls, signing, financial orchestration, reconciliation, and exports. No external queue or scheduler provider has been selected, no worker loop is started by the application, and no production job topic is registered yet.
+The provider-neutral persistence, control service, and worker runtime are implemented through PostgreSQL `background_jobs` and `background_job_attempts` plus `apps/api/src/jobs`. They are the common durability boundary for future notifications, provider calls, signing, financial orchestration, reconciliation, and exports. No external queue or scheduler provider has been selected, no worker loop is started by the application, and the application topic-registry factory intentionally returns an empty registry.
 
 Domain services will enqueue a job in the same database transaction as the state change that requires asynchronous work. The globally unique `idempotency_key` must be namespaced by domain and command identity, for example `onboarding:case-submitted:<case-id>:<version>`. Payloads contain only the minimum identifiers and non-sensitive execution context; credentials, tokens, cookies, raw private documents, and secrets are prohibited.
 
@@ -27,12 +27,18 @@ Every settlement requires the current worker ID, attempt number, and an unexpire
 
 Leased work cannot be cancelled synchronously because its external side effect may already have started. Future cooperative cancellation must use a separate requested state/handler handshake rather than falsely marking in-flight work cancelled.
 
-## Required next runtime boundary
+## Worker runtime
 
-The runtime must add all of the following before this foundation is production-operational:
+`createJobWorkerRuntime` requires at least one explicitly registered lowercase topic before it can start. Every topic binds a Zod payload schema and handler; every payload must carry a positive `schemaVersion`. Unknown topics and invalid versions/payloads are safely dead-lettered by code, never dispatched heuristically.
 
-- a topic registry with versioned payload validation and handler ownership;
-- a worker loop that stops claims during shutdown and safely finishes or hands off leases;
+Each poll first recovers a bounded expired-lease batch, then claims no more than both the configured batch and available concurrency. Poll cycles cannot overlap. Long handlers are heartbeated; loss of the lease aborts the handler signal and prevents stale settlement. Classified handler failures persist only a safe code/retry classification, while unexpected errors become `UNHANDLED_JOB_ERROR` without persisting exception text.
+
+Stopping prevents new claims and waits up to a bounded timeout for active handlers. A timed-out handler receives an abort signal and is not settled by the stale process; its lease remains authoritative for recovery by another worker. Successful drains clear their timeout timer so shutdown does not remain artificially alive.
+
+The following still must be added before this foundation is production-operational:
+
+- approved production topics/handlers with owners, service objectives, and domain idempotency;
+- an explicit deployed worker process/composition path and version-controlled capacity configuration;
 - append-only business audit evidence for operator replay/cancellation;
 - redacted structured logs, metrics, alerts, and a tested recovery runbook; and
 - retention/archival rules and an approved operational replay API.

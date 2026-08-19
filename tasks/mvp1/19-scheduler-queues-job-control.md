@@ -12,7 +12,10 @@
 - Added bounded priority/availability claims with `FOR UPDATE SKIP LOCKED`, worker leases/heartbeats, stale settlement denial, exponential retry, attempt-budget dead-lettering, expired-lease recovery, terminal success, and cancellation limited to unleased work.
 - Added custom migration `0010_job-attempt-evidence.sql` so active attempts may heartbeat/settle once while completed evidence cannot be changed, deleted, or truncated.
 - Seven service integration tests cover atomic rollback, duplicate/conflicting enqueue, sensitive payload denial, exclusive/ordered claims, heartbeats/success, retry/dead-letter, lease recovery/stale workers, and cancellation.
-- Topic registry/handlers, worker loop/scheduler, operational replay API/audit, metrics/alerts, provider choice, retention, and per-job runbooks remain; this task stays **WIP**.
+- Added explicit lowercase topic registration with required Zod/version validation plus a bounded non-overlapping worker poll loop. Unknown/malformed work is dead-lettered, expected/unexpected failures persist only safe codes, and long work receives automatic lease heartbeats.
+- Added bounded graceful shutdown: stop prevents new claims, drains active handlers when possible, then abort-signals timed-out work without stale settlement so another worker can recover the lease.
+- Five runtime tests cover empty/duplicate/invalid registration, dispatch and payload denial, safe error classification, concurrency/heartbeats, graceful drain, and timed lease handoff.
+- Production topic handlers, deployed worker/scheduler composition, operational replay API/audit, metrics/alerts, provider choice, retention, and per-job runbooks remain; this task stays **WIP**.
 
 ## Scope
 

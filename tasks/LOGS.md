@@ -34,6 +34,37 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Deny-by-default graceful job worker runtime
+
+**Status:** Done
+
+### Updated
+
+- Added an explicit job-topic registry binding lowercase topic identifiers to versioned Zod payload schemas and typed handlers; duplicate or malformed registrations are rejected.
+- Added a provider-neutral worker runtime with bounded batch/concurrency, non-overlapping polls, expired-lease recovery before claims, automatic heartbeats, and current-lease settlement through the existing control service.
+- Unknown topics and invalid payload versions/contracts are non-retryably dead-lettered. Classified failures persist safe codes/retryability; unexpected exceptions persist only `UNHANDLED_JOB_ERROR`, not exception messages.
+- Added graceful stop behavior that blocks new claims, drains within a bounded timeout, clears successful-drain timers, and abort-signals timed-out handlers without stale settlement so leases can be recovered.
+- Added the empty application registry factory and intentionally did not activate a worker in the API server.
+- Added five runtime tests; the API suite now has 70 tests across 24 files.
+- Updated job, developer, security, technology-stack, platform, scheduler, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Worker dispatch is deny-by-default. No job executes without an exact registered topic, positive `schemaVersion`, and successful topic schema validation.
+- Poll cycles do not overlap; claims are additionally capped by available concurrency. This bounds local load while PostgreSQL leases coordinate multiple future processes.
+- Shutdown timeout causes lease handoff, not false failure/success settlement. Handlers must observe the abort signal; their domain/provider idempotency remains authoritative if an external call has already started.
+- No production topic or worker process is activated until its owning domain, handler idempotency, runbook, capacity, and alerts are approved.
+
+### Open items
+
+- Register approved production domain topics and handler owners as their tasks become implementable.
+- Add a deployed worker entrypoint/configuration, structured metrics/alerts, and recovery/retention runbooks.
+- Add audited operator dead-letter inspection/replay/cancellation after the break-glass model is approved.
+
+### Next
+
+- Inventory MVP 1 job topics and mark each as blocked, synchronous-for-pilot, or ready for handler implementation without inventing unresolved provider/domain policy.
+
 ## 2026-08-19 — Transactional job control and lease recovery
 
 **Status:** Done

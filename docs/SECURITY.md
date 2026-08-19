@@ -77,6 +77,8 @@ Audit metadata is rejected before persistence when a key indicates a password, t
 
 Durable job payloads must contain only minimum identifiers and non-sensitive execution context. Credentials, session material, raw private documents, and provider secrets are rejected by the enqueue boundary. The database enforces idempotency, retry, lease, terminal-state, and attempt-number invariants; completed attempt evidence cannot be edited, deleted, or truncated. Settlement requires the current worker/attempt and an unexpired lease. Worker process identity, audited operator replay/cancellation, redacted error handling, and alerting remain required before production job execution.
 
+Worker dispatch is deny-by-default: the runtime refuses to start with an empty registry, accepts only explicit lowercase topic names, validates a positive payload schema version plus the topic's Zod contract, and dead-letters unknown/invalid work. Unexpected exception text is not persisted. Shutdown or lost leases abort handler signals and prevent the stale process from recording success.
+
 The initial writer and schema are implemented, but every privileged/domain command must integrate audit writes in its own transaction or reliable outbox workflow before that command is considered complete.
 
 ## Secrets
