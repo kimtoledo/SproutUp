@@ -15,6 +15,7 @@
 - Added separately capability-protected role and user catalogues. Role results include effective permission keys; user results use bounded pagination and exclude credentials, provider accounts, sessions, and tokens.
 - Added dual-controlled role revocation with the same hash/expiry/lock/evidence boundary. It revalidates current grants under lock, rejects self-change and `super_admin` mutation, and prevents removal of an active user's final role.
 - Added role-change rejection and cancellation: a distinct authorized non-target reviewer may reject, only the maker may cancel, both require reasons, and terminal transitions append immutable action/audit evidence.
+- Added bounded role-approval history/detail APIs with command/status filters, immutable action timelines, and independently recomputed payload-integrity results; privileged reasons require `roles.assign`.
 - Password-reset/email-verification delivery, MFA/OTP, permission administration, audit integration into each privileged workflow, final grants, emergency access, and device UI remain; this task stays **WIP**.
 
 ## Scope

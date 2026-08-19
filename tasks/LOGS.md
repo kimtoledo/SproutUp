@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Role approval history and integrity view
+
+**Status:** Done
+
+### Updated
+
+- Added a protected, paginated role-approval history endpoint with bounded page size and validated command/status filters.
+- Added a protected approval-detail endpoint returning current request state and the ordered append-only proposed/approved/executed/rejected/cancelled/expired action timeline.
+- Recomputed the canonical role-change payload hash on every list/detail result and exposed an explicit `valid` or `invalid` integrity result.
+- Restricted both endpoints to `roles.assign` because role-change reasons and review evidence are privileged operational data.
+- Added route and embedded-PostgreSQL tests for permission denial, filter validation, history filtering, integrity verification, and ordered rejection evidence.
+- Updated developer, security, authentication, maker/checker, MVP, and handoff documentation.
+
+### Decisions
+
+- An invalid stored payload/hash pair remains visible as a security exception; history reads do not conceal or rewrite it, and command execution already denies it.
+- The history API includes only the currently implemented role-change command types. New domain approval types must opt in through their own reviewed access and payload contract.
+- Offset pagination is acceptable for the controlled-pilot operator view; immutable action ordering uses occurrence time plus opaque ID as a deterministic tie-breaker.
+
+### Open items
+
+- Define alert routing for integrity failures and suspicious denied approval activity.
+- Add amendment/supersession, delegated limits, and emergency override after policy approval.
+- Apply the approval framework to onboarding and financial commands according to the final matrix.
+
+### Next
+
+- Begin the shared party and onboarding-state database foundation for borrower and investor journeys, keeping regulated KYC fields and provider decisions behind explicit open-policy gates.
+
 ## 2026-08-19 — Role approval rejection and cancellation
 
 **Status:** Done

@@ -37,6 +37,8 @@ Role grants and revocations are not exposed as direct mutations. A caller with `
 
 Pending role changes may be rejected only by a different authorized non-target reviewer and cancelled only by their original maker. Both paths require a reason, lock and revalidate pending/hash-bound state, and append their workflow action and audit evidence atomically. Terminal requests cannot be decided again.
 
+Role approval list/detail APIs require `roles.assign` because proposal and decision reasons are privileged operational data. They return the immutable action timeline and an integrity result recomputed from the canonical payload; an invalid result is visible for investigation and cannot be executed by the command services.
+
 Administrative read APIs enforce `roles.read` and `users.read` independently. User results are paginated and expose only the access-management summary; credential-provider data, password hashes, session IDs, and tokens are outside the response model.
 
 ## Audit evidence

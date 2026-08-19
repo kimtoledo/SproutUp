@@ -17,6 +17,8 @@ import type { RoleRevocationService } from './auth/role-revocations-service.js';
 import { registerRoleRevocationRoutes } from './routes/role-revocations.js';
 import type { ApprovalLifecycleService } from './auth/approval-lifecycle-service.js';
 import { registerApprovalLifecycleRoutes } from './routes/approval-lifecycle.js';
+import type { ApprovalHistoryService } from './auth/approval-history-service.js';
+import { registerApprovalHistoryRoutes } from './routes/approval-history.js';
 
 export interface AppDependencies {
   config: Pick<ApiConfig, 'appOrigin' | 'environment'>;
@@ -29,6 +31,7 @@ export interface AppDependencies {
     catalogue?: AccessCatalogueService;
     roleRevocations?: RoleRevocationService;
     approvalLifecycle?: ApprovalLifecycleService;
+    approvalHistory?: ApprovalHistoryService;
   };
   logger?: boolean;
 }
@@ -115,6 +118,12 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
       await registerApprovalLifecycleRoutes(app, {
         auth: dependencies.auth.service,
         lifecycle: dependencies.auth.approvalLifecycle,
+      });
+    }
+    if (dependencies.auth.approvalHistory) {
+      await registerApprovalHistoryRoutes(app, {
+        auth: dependencies.auth.service,
+        history: dependencies.auth.approvalHistory,
       });
     }
   }
