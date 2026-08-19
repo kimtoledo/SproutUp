@@ -84,6 +84,8 @@ The initial SproutUp scaffold resolves that mismatch on Zod 4. It also upgrades 
 
 The API uses exact-pinned `@fastify/swagger` 9.8.1, whose 9.x line is compatible with Fastify 5. Generated OpenAPI 3.1 coverage is tested in CI across every application-owned operation, including public health and authenticated session context. The framework-owned Better Auth wildcard is explicitly excluded rather than assigned a misleading generic payload contract; future domain/provider routes must satisfy the global assertion when registered.
 
+Major API compatibility is path-based (`/v1`) and every versioned response publishes `SproutUp-API-Version`. Retirement uses RFC 9745 `Deprecation` plus RFC 8594 `Sunset`, with a code-enforced minimum 180-day notice period; current `v1` emits neither retirement header.
+
 ## Decisions still open
 
 The application stack above is approved. These infrastructure choices remain deliberately provider-neutral until requirements and operating constraints are confirmed:

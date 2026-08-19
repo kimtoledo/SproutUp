@@ -26,6 +26,7 @@ import type { OnboardingReviewService } from './onboarding/review-service.js';
 import { registerOnboardingReviewRoutes } from './routes/onboarding-review.js';
 import { operation } from './openapi/operation.js';
 import { healthResponseSchema } from './openapi/system-schemas.js';
+import { apiVersionHeaders, currentApiVersionPolicy } from './openapi/api-version.js';
 
 export interface AppDependencies {
   config: Pick<ApiConfig, 'appOrigin' | 'environment'>;
@@ -107,6 +108,19 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
         { name: 'onboarding', description: 'Borrower and investor onboarding workflows' },
       ],
     },
+  });
+
+  const currentVersionHeaders = apiVersionHeaders(currentApiVersionPolicy);
+  app.addHook('onSend', async (request, reply) => {
+    const pathname = request.url.split('?', 1)[0] ?? request.url;
+    if (
+      pathname === currentApiVersionPolicy.pathPrefix
+      || pathname.startsWith(`${currentApiVersionPolicy.pathPrefix}/`)
+    ) {
+      for (const [name, value] of Object.entries(currentVersionHeaders)) {
+        reply.header(name, value);
+      }
+    }
   });
 
   app.get('/health', {

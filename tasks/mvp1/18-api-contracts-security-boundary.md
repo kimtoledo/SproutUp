@@ -15,7 +15,8 @@
 - Added full operation metadata and enforced response/error schemas to own-session listing, owned-session revocation, role catalogue, and bounded user catalogue. UUID session parameters and catalogue filters are also transport-validated; the session response schema cannot expose tokens.
 - Added full contracts to all ten role-assignment, revocation, lifecycle, and history operations. The contract distinguishes database-unique pending proposals from row-locked decisions and publishes hash/integrity evidence without weakening maker/checker runtime enforcement.
 - Contracted public liveness/readiness and authenticated session context, then added a global CI walk that rejects missing operation IDs, response schemas, or operational metadata on every application-owned route.
-- The Better Auth wildcard remains provider-owned and explicitly excluded; private-file and webhook contracts, version/deprecation policy, and future domain operations remain, so this task stays **WIP**.
+- Added the path-major compatibility policy, a version response header on all `/v1` responses, and tested RFC 9745/RFC 8594 retirement-header generation with a minimum 180-day notice invariant. Current `v1` is explicitly not deprecated.
+- The Better Auth wildcard remains provider-owned and explicitly excluded; private-file and webhook contracts plus future domain operations remain, so this task stays **WIP**.
 
 ## Scope
 
@@ -41,4 +42,5 @@
 ## Open decisions
 
 - Fastify with resource-oriented, Zod-validated routes under `/v1` is the approved API technology/style; liveness remains unversioned at `/health`.
-- Version support policy, complete OpenAPI operation metadata, and provider-specific webhook requirements remain open.
+- `/v1` remains backward compatible; breaking changes use a parallel major path. Security-corrective narrowing requires documented risk/client notice. Deprecation and sunset require a replacement/migration plan and at least 180 days between their announced dates.
+- Provider-specific webhook requirements remain open.

@@ -70,6 +70,8 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `POST /v1/admin/onboarding/cases/:caseId/start-review` | Claim a submitted case and begin review; requires `onboarding_cases.review` |
 | `POST /v1/admin/onboarding/cases/:caseId/request-information` | Return an assigned in-review case for applicant correction with a reason |
 
+All `/v1` responses carry `SproutUp-API-Version: 1`, including error and Better Auth adapter responses. The current version is not deprecated. Read [API_COMPATIBILITY.md](./API_COMPATIBILITY.md) before changing a request, response, validation rule, enum, retry model, or route path.
+
 Role-change proposals expire after 24 hours. The API rejects duplicate pending payloads, self-targeting, maker self-approval, checker self-approval/rejection, stale/non-pending requests, and hash mismatches. A different authorized reviewer may reject with a reason; only the original maker may cancel. `super_admin` changes are intentionally unavailable until the bootstrap/emergency-access policy is approved. Revocation cannot leave an active user without a role.
 
 Role approval history defaults to 25 records per page (maximum 100) and may be filtered by `commandType` (`role.assign` or `role.revoke`) and lifecycle `status`. Detail responses include the append-only action timeline. Both list and detail recompute the canonical payload hash and return `integrity: "valid"` or `"invalid"`; invalid evidence must be treated as a security exception, never silently repaired.
@@ -104,6 +106,8 @@ Use `apps/api/src/openapi/operation.ts` for public and protected operation metad
 Reusable onboarding JSON schemas live in `apps/api/src/openapi/onboarding-schemas.ts`; token-free session and allowlisted access-catalogue schemas live in `apps/api/src/openapi/access-schemas.ts`; hash-bound role-change and immutable approval-history schemas live in `apps/api/src/openapi/role-approval-schemas.ts`. They document and validate UUID path parameters, bounded filters, command bodies, response projections, pagination, and structured 4xx errors. Keep these schemas and the handler Zod/domain rules aligned in the same commit. Fastify schema failures use the stable `400 VALIDATION_ERROR` envelope; domain errors remain route/service-owned.
 
 The `/v1/auth/*` route is a transparent, rate-limited Better Auth proxy and is intentionally excluded from the application-owned operation assertion. Its endpoint-specific contracts belong to the pinned Better Auth version; SproutUp must not publish a fabricated wildcard request/response schema. Application-owned session and authorization projections remain fully contracted around that adapter.
+
+API retirement signaling is centralized in `apps/api/src/openapi/api-version.ts`. Keep the current policy free of deprecation dates until a replacement and migration plan are approved. A deprecated version uses RFC 9745's structured timestamp, RFC 8594's HTTP-date sunset, and a code-enforced minimum 180-day notice period.
 
 Role-change proposal operations use `unique_pending_approval`: the database admits at most one pending command-type/payload-hash pair, so a duplicate retry returns a stable conflict. Approval, rejection, and cancellation use `locked_approval_decision`: the service locks and revalidates the request, payload hash, actor separation, expiry, and terminal state before committing effects and evidence. Clients must refetch after a `409`; they must not assume a repeated decision executed twice.
 

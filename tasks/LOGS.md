@@ -34,6 +34,34 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — API compatibility and retirement policy
+
+**Status:** Done
+
+### Updated
+
+- Added a centralized current `/v1` policy and `SproutUp-API-Version: 1` on every versioned response, including errors and provider-adapter responses.
+- Added standards-based generation for RFC 9745 `Deprecation` structured dates and RFC 8594 `Sunset` HTTP dates without emitting either header for current `v1`.
+- Enforced valid positive major versions, a required deprecation date for deprecated versions, chronological dates, and a minimum 180-day sunset notice.
+- Added five regression tests for current/unversioned headers, retirement formatting, invalid dates/order, and insufficient notice; the API suite now has 58 tests across 22 files.
+- Added the API compatibility policy and updated developer, security, technology-stack, API-task, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Major compatibility is URI-based. Backward-compatible additions stay under `/v1`; routine breaking changes require a parallel path such as `/v2`.
+- Confirmed security corrections may narrow current-major behavior only with a documented risk decision, non-disclosing errors, release notes, and direct controlled-pilot client notice.
+- `v1` is current and has no deprecation/sunset schedule. Retirement headers require an approved replacement, migration plan, affected-client list, and at least 180 days between deprecation and sunset.
+
+### Open items
+
+- Define private-file authorization contracts after object storage and malware-scanning decisions.
+- Define signed webhook verification/replay contracts after external providers are approved.
+- Future domain operations must be classified and tested against this compatibility policy as they are implemented.
+
+### Next
+
+- Continue with the next policy-independent MVP foundation slice; do not invent provider-specific file or webhook contracts while those selections remain open.
+
 ## 2026-08-19 — Complete current application-owned API contracts
 
 **Status:** Done

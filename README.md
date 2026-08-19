@@ -16,11 +16,11 @@ The approved implementation baseline is adapted from the reviewed MedicalHub rep
 
 SproutUp adds financial-grade requirements that MedicalHub does not supply by itself: exact decimal money, append-only ledgers, idempotency, concurrency controls, durable queues/outbox processing, maker/checker approvals, and reconciliation.
 
-See [`docs/TECH_STACK.md`](./docs/TECH_STACK.md) for the authoritative reviewed stack and [`AGENTS.md`](./AGENTS.md) for repository working rules.
+See [`docs/TECH_STACK.md`](./docs/TECH_STACK.md) for the authoritative reviewed stack, [`docs/API_COMPATIBILITY.md`](./docs/API_COMPATIBILITY.md) for the `/v1` compatibility and retirement policy, and [`AGENTS.md`](./AGENTS.md) for repository working rules.
 
 ## Current state
 
-This repository currently contains discovery, schema, and dependency-ordered MVP planning documents. Application scaffolding has not yet been created.
+The platform foundation is implemented with production builds, database migrations, authentication/RBAC/audit controls, dual-controlled role administration, owner-bound borrower/investor onboarding workflows, a compliance review/correction loop, and generated OpenAPI contracts. The controlled-pilot MVP remains in progress: regulated onboarding data, provider integrations, financial ledger/campaign/repayment domains, user interfaces, operations, and release readiness still follow the dependency-ordered task plan.
 
 Start with [`tasks/README.md`](./tasks/README.md) and the latest entry in [`tasks/LOGS.md`](./tasks/LOGS.md).
 

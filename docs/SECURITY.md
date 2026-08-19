@@ -12,6 +12,8 @@ Every contracted onboarding, own-session, access-catalogue, and role-approval op
 
 The framework-owned Better Auth wildcard is a rate-limited byte-preserving adapter and is excluded from SproutUp's per-operation assertion because its concrete endpoints and payloads are version-owned by Better Auth. This exception does not apply to any application-owned route; CI walks all of those routes and rejects missing trust metadata or response schemas.
 
+API compatibility does not preserve known-unsafe behavior. A security-corrective change may narrow `v1` behavior only with a documented risk decision, stable non-disclosing error behavior, release notes, and controlled-pilot client notification. Routine breaking changes require a parallel major version and the deprecation/sunset process in `API_COMPATIBILITY.md`.
+
 Onboarding path, query, body, success, and structured error schemas are now enforced by Fastify and published in OpenAPI. Schema failures return a generic stable validation message rather than echoing submitted values or internal validator details; deeper state/ownership checks still execute in the domain services.
 
 Own-session responses are schema-allowlisted to opaque session identity and display metadata and cannot serialize session tokens. Role and user catalogue responses likewise enforce the documented access-management projection, excluding credentials, provider accounts, sessions, and tokens. Session IDs and user-catalogue filters are bounded at the transport boundary before ownership or permission checks continue.
