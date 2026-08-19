@@ -24,6 +24,8 @@ beforeAll(async () => {
     '0010_job-attempt-evidence.sql',
     '0011_wide_nemesis.sql',
     '0012_ledger-invariants.sql',
+    '0013_robust_corsair.sql',
+    '0014_consent-evidence-invariants.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
@@ -51,6 +53,8 @@ describe('initial authentication migration', () => {
         'audit_events',
         'background_job_attempts',
         'background_jobs',
+        'consent_acceptances',
+        'consent_documents',
         'ledger_accounts',
         'ledger_entries',
         'ledger_transactions',
@@ -153,6 +157,47 @@ describe('initial authentication migration', () => {
          'Empty migration test', now());
       commit;
     `)).rejects.toThrow('requires at least two entries');
+  });
+
+  it('preserves immutable versioned consent documents and exact acceptance hashes', async () => {
+    const userId = '00000000-0000-4000-8000-000000000c01';
+    const documentId = '00000000-0000-4000-8000-000000000c02';
+    const acceptanceId = '00000000-0000-4000-8000-000000000c03';
+    await database.query(
+      `insert into users (id, name, email)
+       values ($1, 'Consent User', 'consent-migration@sproutup.ph')`,
+      [userId],
+    );
+    await database.query(
+      `insert into consent_documents
+        (id, document_key, version, title, content, content_sha256, effective_at, published_at)
+       values ($1, 'pilot.terms', 1, 'Pilot Terms', 'Exact immutable terms', repeat('a', 64), now(), now())`,
+      [documentId],
+    );
+    await database.query(
+      `insert into consent_acceptances
+        (id, user_id, consent_document_id, accepted_content_sha256)
+       values ($1, $2, $3, repeat('a', 64))`,
+      [acceptanceId, userId, documentId],
+    );
+
+    await expect(database.query(
+      `insert into consent_acceptances
+        (user_id, consent_document_id, accepted_content_sha256)
+       values ($1, $2, repeat('b', 64))`,
+      [userId, documentId],
+    )).rejects.toThrow('consent acceptance content hash does not match its immutable document');
+    await expect(database.query(
+      'update consent_documents set title = $1 where id = $2',
+      ['Changed Terms', documentId],
+    )).rejects.toThrow('consent_documents is append-only');
+    await expect(database.query(
+      'delete from consent_acceptances where id = $1',
+      [acceptanceId],
+    )).rejects.toThrow('consent_acceptances is append-only');
+    await expect(database.exec('truncate table consent_documents cascade')).rejects.toThrow(
+      'consent_documents is append-only',
+    );
   });
 
   it('enforces durable job idempotency, lease, retry, and attempt invariants', async () => {

@@ -3,6 +3,12 @@
 **Status:** WIP  
 **Outcome:** Compliance and loan documents are stored, versioned, reviewed, and retrievable securely.
 
+## Implementation progress
+
+- **2026-08-19 — Immutable consent evidence schema:** Added policy-neutral `consent_documents` and `consent_acceptances` with canonical key/locale/version identity, exact text and SHA-256 content evidence, publication/effective attribution, and optional request/client-context hashes.
+- PostgreSQL prevents document/acceptance update, deletion, and truncation; unique constraints prevent duplicate user/version acceptance; a trigger rejects an accepted hash that differs from the referenced immutable document.
+- No legal content is seeded and no publication/read/acceptance route exists. Required document policy, legal approval authority, re-consent/withdrawal, retention, private upload, scanning, storage, and e-signature controls remain unimplemented; this task stays **WIP**.
+
 ## Scope
 
 - Typed uploads for borrower, investor, credit, campaign, and repayment evidence.
@@ -30,5 +36,6 @@
 
 ## Open decisions
 
+- Required consent-document keys, content owners/approvers, localization, effective/re-consent rules, and consent withdrawal semantics.
 - E-signature provider and legally required document set.
 - Retention periods, deletion restrictions, and storage region.

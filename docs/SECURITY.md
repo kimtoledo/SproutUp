@@ -83,6 +83,8 @@ Worker dispatch is deny-by-default: the runtime refuses to start with an empty r
 
 The initial writer and schema are implemented, but every privileged/domain command must integrate audit writes in its own transaction or reliable outbox workflow before that command is considered complete.
 
+Consent documents and acceptances are immutable database evidence. Versioned content is retained with its SHA-256 identity, and a database trigger rejects acceptance evidence whose duplicated hash differs from the referenced document. No legal content or consent API is active. A future publication service must compute the hash from exact content and enforce publishing authority; a future acceptance route must bind authenticated user, exact displayed document/hash, policy-effective version, request evidence, and audit in one transaction. Raw IP addresses and user-agent strings must not be stored in consent evidence.
+
 ## Financial input integrity
 
 Shared PHP money contracts reject JSON numbers, exponent notation, grouping/currency text, non-two-decimal values, leading zeros, negative zero, and values outside `numeric(30,2)`. Exact runtime arithmetic uses `bigint` centavos. This removes binary floating-point drift and ambiguous textual representations but does not authorize any rate, tax, interest, allocation, or rounding formula; those remain owning-domain decisions.

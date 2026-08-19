@@ -34,6 +34,36 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Immutable consent evidence schema
+
+**Status:** Done
+
+### Updated
+
+- Added generated migration `0013_robust_corsair.sql` and Drizzle schema for versioned consent documents plus per-user acceptance evidence.
+- Added key/locale/version, non-empty content, lowercase SHA-256, publication/effective attribution, one-acceptance-per-user/version, request correlation, and optional one-way client-context hash constraints.
+- Added custom migration `0014_consent-evidence-invariants.sql` blocking update/delete/truncate on both evidence tables and rejecting acceptance hashes that differ from the referenced document.
+- Added both relations to API startup readiness and shared embedded-PostgreSQL migration fixtures.
+- Added migration coverage for relation creation, matching acceptance, mismatched hash rejection, and immutable document/acceptance evidence; the database suite now has 15 tests.
+- Added the consent architecture document and updated developer, security, technology-stack, platform, document/consent, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Legal content and acceptance evidence are append-only. Corrections and replacements use a new document version; historical accepted text is never edited in place.
+- An acceptance duplicates the exact content hash and the database requires it to match the referenced immutable document, making version binding explicit.
+- Exact canonical text is retained in PostgreSQL. Private uploads and signed artifacts remain separate storage/security domains and must not overload consent tables.
+- No document keys/content are seeded and no API is exposed until legal ownership, required-version, authorization, re-consent, withdrawal, and retention policies are approved.
+
+### Open items
+
+- Implement an audited publication boundary that computes SHA-256 from exact UTF-8 content and enforces publishing authority.
+- Approve legal content owners, mandatory document matrix, localization, effective/re-consent/withdrawal behavior, and retention.
+- Implement separate private-file validation/storage/scanning and e-signature evidence after provider and policy decisions.
+
+### Next
+
+- Implement the internal consent publication and exact-acceptance services without exposing routes or seeding content, preserving the policy gates documented in `docs/CONSENTS.md`.
+
 ## 2026-08-19 — Assigned-reviewer onboarding rejection
 
 **Status:** Done

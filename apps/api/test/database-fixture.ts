@@ -15,6 +15,8 @@ export const migrationFiles = [
   '0010_job-attempt-evidence.sql',
   '0011_wide_nemesis.sql',
   '0012_ledger-invariants.sql',
+  '0013_robust_corsair.sql',
+  '0014_consent-evidence-invariants.sql',
 ] as const;
 
 export async function applyMigrations(database: PGlite): Promise<void> {
