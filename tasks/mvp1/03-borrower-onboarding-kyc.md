@@ -8,6 +8,7 @@
 - **2026-08-19 — Shared workflow foundation:** Added versioned `onboarding_cases` and append-only `onboarding_case_events` for borrower/investor journeys, without encoding unresolved entity types, required fields/documents, or provider policy.
 - The database permits one open borrower case per user, separates applicant/reviewer identities, and preserves every state transition. The shared state machine supports draft → submitted → review → information/decision plus correction/re-KYC reopening.
 - Email signup now accepts only an explicit borrower/investor intent and atomically maps borrower intent to the narrow `sme_borrower` customer role. That role receives own-case read/manage/submit capabilities but no staff review permission.
+- Added protected own-case create/list/detail/submit APIs. They bind ownership in database queries, enforce the borrower journey capability, prevent duplicate open cases, require optimistic version matches, and atomically append transition/audit evidence.
 - No borrower profile, KYB evidence, compliance queue API, or decision command is implemented yet; this task stays **WIP** pending the Philippine entity/document matrix and screening/escalation policy.
 
 ## Scope

@@ -60,6 +60,10 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `GET /v1/admin/role-approvals/:approvalId` | Read a role approval and its immutable action timeline |
 | `GET /v1/admin/roles` | List role status and effective permission keys; requires `roles.read` |
 | `GET /v1/admin/users` | List bounded user access summaries; requires `users.read` |
+| `GET /v1/onboarding/cases` | List only the authenticated user's permitted borrower/investor cases |
+| `GET /v1/onboarding/cases/:caseId` | Read an owned case and its immutable state timeline |
+| `POST /v1/onboarding/cases` | Open one permitted borrower/investor draft journey |
+| `POST /v1/onboarding/cases/:caseId/submit` | Submit an owned draft/information response using its exact current version |
 
 Role-change proposals expire after 24 hours. The API rejects duplicate pending payloads, self-targeting, maker self-approval, checker self-approval/rejection, stale/non-pending requests, and hash mismatches. A different authorized reviewer may reject with a reason; only the original maker may cancel. `super_admin` changes are intentionally unavailable until the bootstrap/emergency-access policy is approved. Revocation cannot leave an active user without a role.
 
@@ -102,6 +106,8 @@ npm run db:check
 `db:migrate` applies committed migrations and idempotently seeds the approved role/permission baseline. `db:check` verifies connectivity and every relation currently required by API startup, including approval workflow relations.
 
 The onboarding schema currently provides only `onboarding_cases` and append-only `onboarding_case_events`. Its shared state machine lives in `packages/shared/src/onboarding.ts`. Do not add entity types, KYC requirements, provider result payloads, suitability scoring, document categories, or retention behavior until the corresponding open decision in tasks 03–05 is approved.
+
+Onboarding create/read/submit routes use distinct borrower/investor own-case capabilities. Submission bodies contain `{ "version": <positive integer> }`; a stale version returns `409 STALE_CASE_VERSION`. Case creation returns `409 OPEN_CASE_EXISTS` when the database already contains an open case for that user/journey. API retries therefore cannot create duplicate open workflows or silently overwrite newer state.
 
 Commit schema and generated migration files together. Custom SQL, such as append-only audit triggers, belongs in an explicitly generated custom migration. Never edit a migration already applied to a shared environment, use schema push against shared environments, or run manual DDL as a substitute for a migration.
 

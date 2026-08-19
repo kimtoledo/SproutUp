@@ -8,8 +8,8 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 
 - [ ] [01 — Platform Foundation](./01-platform-foundation.md) — initial monorepo, web/API health slice, shared contracts, database boundary, and CI implemented; infrastructure and financial foundations remain
 - [ ] [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md) — password/session boundary, audited customer-intent bootstrap, access catalogue, own-session revocation, canonical RBAC, immutable audit, and dual-controlled role changes implemented; recovery/MFA and remaining controls remain
-- [ ] [03 — Borrower Onboarding & KYC](./03-borrower-onboarding-kyc.md) — shared versioned case/state/event foundation implemented; Philippine profile, evidence, queue, and decisions remain
-- [ ] [04 — Investor Onboarding & KYC](./04-investor-onboarding-kyc.md) — shared versioned case/state/event foundation implemented; classification, suitability, bank, and eligibility controls remain
+- [ ] [03 — Borrower Onboarding & KYC](./03-borrower-onboarding-kyc.md) — versioned case/state/events and protected own create/read/submit implemented; Philippine profile, evidence, queue, and decisions remain
+- [ ] [04 — Investor Onboarding & KYC](./04-investor-onboarding-kyc.md) — versioned case/state/events and protected own create/read/submit implemented; classification, suitability, bank, and eligibility controls remain
 - [ ] [05 — Document & Consent Management](./05-document-consent-management.md)
 - [ ] [06 — Credit Scoring & Underwriting](./06-credit-scoring-underwriting.md)
 - [ ] [07 — Campaign & Loan Management](./07-campaign-loan-management.md)
@@ -26,7 +26,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 - [ ] [18 — API Contracts & Security Boundary](./18-api-contracts-security-boundary.md) — protected versioned route/error/pagination patterns implemented; OpenAPI and domain/webhook contracts remain
 - [ ] [19 — Scheduler, Queues & Job Control](./19-scheduler-queues-job-control.md)
 - [ ] [20 — Admin Information Architecture & Work Queues](./20-admin-information-architecture-work-queues.md)
-- [ ] [21 — Borrower & Investor Portal Journeys](./21-borrower-investor-portal-journeys.md) — server-authoritative onboarding state contract implemented; portal screens and end-to-end journeys remain
+- [ ] [21 — Borrower & Investor Portal Journeys](./21-borrower-investor-portal-journeys.md) — server-authoritative onboarding state and own-case API implemented; profile forms, screens, and end-to-end journeys remain
 - [ ] [22 — Maker/Checker Approval Matrix](./22-maker-checker-approval-matrix.md) — hash-bound role grant/revocation, reject/cancel, and history/detail implemented; domain matrix, amendment, and emergency paths remain
 - [ ] [23 — Cross-App Contract, Compatibility & Cutover](./23-cross-app-contract-cutover.md)
 

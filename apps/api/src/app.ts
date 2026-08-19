@@ -19,6 +19,8 @@ import type { ApprovalLifecycleService } from './auth/approval-lifecycle-service
 import { registerApprovalLifecycleRoutes } from './routes/approval-lifecycle.js';
 import type { ApprovalHistoryService } from './auth/approval-history-service.js';
 import { registerApprovalHistoryRoutes } from './routes/approval-history.js';
+import type { OnboardingCaseService } from './onboarding/case-service.js';
+import { registerOnboardingCaseRoutes } from './routes/onboarding-cases.js';
 
 export interface AppDependencies {
   config: Pick<ApiConfig, 'appOrigin' | 'environment'>;
@@ -34,6 +36,9 @@ export interface AppDependencies {
     approvalHistory?: ApprovalHistoryService;
   };
   logger?: boolean;
+  onboarding?: {
+    cases: OnboardingCaseService;
+  };
 }
 
 function now(): string {
@@ -126,6 +131,13 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
         history: dependencies.auth.approvalHistory,
       });
     }
+  }
+
+  if (dependencies.auth && dependencies.onboarding) {
+    await registerOnboardingCaseRoutes(app, {
+      auth: dependencies.auth.service,
+      cases: dependencies.onboarding.cases,
+    });
   }
 
   return app;

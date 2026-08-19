@@ -8,6 +8,7 @@
 - **2026-08-19 — Initial protected API patterns:** Added versioned Zod-validated auth context, own-session, role-assignment approval, role catalogue, and paginated user catalogue routes.
 - The implemented routes resolve server-side authorization, require explicit capabilities, return stable structured error codes, use UUID request correlation, and have negative permission/validation tests.
 - The user catalogue caps pages at 100 records and returns only an allowlisted access summary. Credentials, provider-account data, session IDs, and tokens are not part of its response contract.
+- Added owner-bound onboarding case routes with journey-specific capabilities, database uniqueness for duplicate create retries, optimistic version conflicts for stale submission retries, and atomic state/event/audit writes.
 - OpenAPI generation/CI validation, idempotency standards, private-file and webhook contracts, version/deprecation policy, and all domain operations remain; this task stays **WIP**.
 
 ## Scope

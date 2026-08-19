@@ -49,6 +49,8 @@ Administrative read APIs enforce `roles.read` and `users.read` independently. Us
 
 The onboarding foundation stores workflow identity/state only; regulated profile fields, documents, suitability answers, and screening/provider results are not yet collected. The database prevents an applicant from reviewing their own case, permits only one open case per applicant/journey, versions every transition, and retains corrections as new events rather than overwriting history. Customer roles receive only their own matching onboarding capabilities; compliance queue read/review is granted only to Compliance Officer and Super Admin in the current baseline.
 
+Customer onboarding reads bind both case ID and authenticated applicant ID in the database query. Borrower capabilities cannot access investor journeys and investor capabilities cannot access borrower journeys. Submission locks the case, verifies ownership/type/current version and allowed transition, then commits state, append-only transition evidence, and business audit evidence atomically.
+
 Audit metadata is rejected before persistence when a key indicates a password, token, secret, authorization header, cookie, API key, or credential. Audit events preserve actor and role snapshots without a foreign key that could erase attribution when a user record changes.
 
 The initial writer and schema are implemented, but every privileged/domain command must integrate audit writes in its own transaction or reliable outbox workflow before that command is considered complete.

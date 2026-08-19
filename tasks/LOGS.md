@@ -34,6 +34,36 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Owner-bound onboarding case API
+
+**Status:** Done
+
+### Updated
+
+- Added authenticated onboarding endpoints to create, list, inspect, and submit the current user's permitted borrower/investor case.
+- Enforced separate journey capabilities so borrower access cannot open/read/submit investor cases and vice versa.
+- Bound case ID, applicant user ID, and allowed case types in database reads/commands; another user's opaque case ID resolves as not found.
+- Used the partial unique database index plus conflict-safe insert to prevent duplicate open cases under retry/concurrency.
+- Added row locking and optimistic version matching on submission, returning stable stale-version/invalid-transition conflicts without overwriting current state.
+- Committed create/submit current state, append-only case event, and immutable business audit evidence in one transaction.
+- Added route and embedded-PostgreSQL service tests; updated developer, security, borrower, investor, API, portal, MVP, and handoff documentation.
+
+### Decisions
+
+- The case API remains policy-neutral and collects no regulated profile/evidence fields yet.
+- Ownership is enforced in SQL in addition to route capability checks; inaccessible cases use not-found semantics.
+- Case version is the concurrency token for every state-changing request; clients must reload after `STALE_CASE_VERSION`.
+
+### Open items
+
+- Approve and implement borrower/investor profile fields, evidence requirements, consent, and completeness validation before submission is release-ready.
+- Implement the compliance queue, assignment, information request, and controlled decision commands.
+- Add OpenAPI generation and portal UI/journey tests.
+
+### Next
+
+- Implement the staff compliance work queue and reviewer assignment/review-start transition without adding unapproved KYC decision rules.
+
 ## 2026-08-19 — Audited applicant role bootstrap
 
 **Status:** Done
