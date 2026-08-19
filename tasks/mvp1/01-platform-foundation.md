@@ -17,6 +17,7 @@
 - Added generated ledger schema migration `0011_wide_nemesis.sql` and custom invariant migration `0012_ledger-invariants.sql`: stable PHP accounts, immutable posting headers/positive debit-credit lines, unique idempotency/reversal identities, and deferred exact balance enforcement at commit.
 - Added the transaction-aware ledger posting primitive with exact balance validation, canonical order-independent hashing, active PHP account locks, exact-retry/conflict semantics, and atomic immutable audit evidence.
 - Added transaction-aware full reversal with original-row serialization, exact opposite lines, one-reversal enforcement, exact retries, closed-account correction support, and atomic reversal audit evidence.
+- Added an internal read-only account projection deriving exact posted debit/credit totals and signed normal balance from immutable entries, with no mutable balance column or premature HTTP exposure.
 
 ## Scope
 

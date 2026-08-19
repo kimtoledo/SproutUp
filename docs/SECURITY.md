@@ -91,6 +91,8 @@ The posting service is the application write boundary. It requires distinct acti
 
 The full-reversal boundary locks the original, copies all lines with their directions exchanged, records the original relationship, and atomically appends `ledger.transaction.reversed` evidence. It rejects reversal-of-reversal and relies on both serialization and a unique database constraint to enforce one reversal. Historical account closure cannot erase the correction path, but no unrelated new posting may use a closed account.
 
+The account balance projection reads only account metadata and aggregate ledger entries and performs exact signed normal-balance arithmetic. It has no HTTP exposure. Account ownership and read permissions must be approved and enforced before any ledger projection is exposed to staff or customers; account codes, aggregate balances, and internal chart structure must not leak through a generic authenticated route.
+
 ## Secrets
 
 `BETTER_AUTH_SECRET` must contain at least 32 random characters and must come from environment-specific secret management. Generate a local value with:

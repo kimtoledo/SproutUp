@@ -136,6 +136,8 @@ The posting service validates canonical positive amounts and exact balance, cano
 
 Full correction uses `reverseLedgerTransactionInTransaction` or the convenience `reverse` method. It locks the original, creates exact opposite lines, links one reversal, and writes the reversal audit event atomically. A reversal of a reversal and a second full reversal are rejected. Closed accounts may receive only this historical corrective reversal through the service; they remain unavailable to new postings.
 
+`apps/api/src/ledger/balance-service.ts` provides a read-only current account projection from all posted immutable entries. It returns exact debit/credit totals and the signed normal balance, including zero totals for empty or closed accounts. It is intentionally internal: do not add an HTTP route or call the result `available`, `held`, `settled`, or customer-owned until the chart, ownership, authorization, hold, and cutoff policies are approved.
+
 The onboarding schema currently provides only `onboarding_cases` and append-only `onboarding_case_events`. Its shared state machine lives in `packages/shared/src/onboarding.ts`. Do not add entity types, KYC requirements, provider result payloads, suitability scoring, document categories, or retention behavior until the corresponding open decision in tasks 03–05 is approved.
 
 Onboarding create/read/submit routes use distinct borrower/investor own-case capabilities. Submission bodies contain `{ "version": <positive integer> }`; a stale version returns `409 STALE_CASE_VERSION`. Case creation returns `409 OPEN_CASE_EXISTS` when the database already contains an open case for that user/journey. API retries therefore cannot create duplicate open workflows or silently overwrite newer state.

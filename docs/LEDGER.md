@@ -40,6 +40,12 @@ Exact idempotent retries are resolved before checking the accounts' current acti
 
 The original-row lock serializes service-owned reversal attempts and the database unique constraint is the final one-reversal authority. An exact idempotency retry returns the existing reversal; a changed effect under the same key conflicts; a different key after reversal reports that the original was already reversed. Reversal uses the historical lines and therefore remains available after referenced accounts are closed. It does not reactivate accounts or permit a new unrelated posting to closed accounts.
 
+## Implemented account projection
+
+`apps/api/src/ledger/balance-service.ts` derives a single account's current posted debit total, credit total, and signed normal balance directly from immutable entries. A debit-normal account reports debit minus credit; a credit-normal account reports credit minus debit. Results remain canonical PHP strings and may be negative. Empty and closed accounts return their real metadata with `0.00` totals instead of being omitted.
+
+This is a generic internal query primitive, not a wallet balance API. It does not define available, held, settled, pending, customer-owned, effective-date, cutoff, or statement-period semantics. No HTTP route exists because account ownership, permission, and safe public projection decisions are unresolved. Callers must not relabel this technical all-posted-entry result as an investor or borrower spendable balance.
+
 Financial/domain idempotency remains separate from transport/job idempotency. Balance queries must derive from entries and must not introduce a mutable source-of-truth balance column.
 
 ## Deliberately unresolved

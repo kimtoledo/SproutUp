@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Exact ledger account projection
+
+**Status:** Done
+
+### Updated
+
+- Added an internal API service deriving a ledger account's current posted debit total, credit total, and signed normal balance directly from immutable entries.
+- Preserved canonical PHP string results and exact `bigint` centavo subtraction after PostgreSQL performs exact numeric aggregation.
+- Included real metadata and `0.00` totals for empty or closed accounts and a stable not-found result for missing accounts.
+- Added four embedded-PostgreSQL tests for debit-normal and credit-normal negative balances, empty closed accounts, and missing accounts.
+- Updated ledger, developer, security, technology-stack, platform, wallet/ledger, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Normal balance is debit minus credit for debit-normal accounts and credit minus debit for credit-normal accounts. A negative result is valid technical ledger information and remains a signed canonical amount.
+- The projection covers all currently posted entries. It does not imply available, held, settled, pending, value-date, cutoff, ownership, or statement semantics.
+- No HTTP route is added until chart ownership and exact staff/customer authorization and response projections are approved.
+- The immutable ledger remains the source of truth; no mutable account-balance column or cache was introduced.
+
+### Open items
+
+- Approve the production chart and account ownership model before customer or staff exposure.
+- Define available/held/settled dimensions, hold lifecycle, effective-date/cutoff behavior, and reconciliation views.
+- Define controlled bank-transfer evidence, approval, payout, and exception workflows.
+
+### Next
+
+- Resolve and document the controlled-pilot chart-of-accounts and ownership decisions required before wallet/transfer domain implementation.
+
 ## 2026-08-19 — Idempotent full ledger reversal
 
 **Status:** Done
