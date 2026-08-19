@@ -102,6 +102,7 @@ describe('OpenAPI contract generation', () => {
       expect(response.body).not.toMatch(/registration-test-secret|password-hash|session-token-value/i);
 
       const contractedOperations = [
+        ['/v1/session-context', 'get', 'getSessionContext'],
         ['/v1/sessions', 'get', 'listOwnSessions'],
         ['/v1/sessions/{sessionId}', 'delete', 'revokeOwnSession'],
         ['/v1/admin/roles', 'get', 'listRoleCatalogue'],
@@ -155,8 +156,15 @@ describe('OpenAPI contract generation', () => {
         );
         expect(operation?.['x-sproutup']).toHaveProperty('auditEvent');
         expect(operation?.responses).toBeDefined();
+        const expectedResponses: Array<string | ReturnType<typeof expect.stringMatching>> = [
+          expect.stringMatching(/^20[014]$/),
+          '401',
+        ];
+        if ((operation?.['x-sproutup']?.permissions?.length ?? 0) > 0) {
+          expectedResponses.push('403');
+        }
         expect(Object.keys(operation?.responses ?? {})).toEqual(
-          expect.arrayContaining([expect.stringMatching(/^20[014]$/), '401', '403']),
+          expect.arrayContaining(expectedResponses),
         );
         if (method === 'post') expect(operation?.requestBody).toBeDefined();
         if (path.includes('{caseId}')) {
@@ -173,6 +181,41 @@ describe('OpenAPI contract generation', () => {
           expect(operation?.parameters).toEqual(
             expect.arrayContaining([expect.objectContaining({ name: 'approvalId', in: 'path' })]),
           );
+        }
+      }
+
+      expect(document.paths['/health']?.get).toEqual(
+        expect.objectContaining({
+          operationId: 'getLiveness',
+          security: [],
+          'x-sproutup': expect.objectContaining({ actor: 'public', permissions: [] }),
+        }),
+      );
+      expect(document.paths['/v1/health']?.get).toEqual(
+        expect.objectContaining({
+          operationId: 'getReadiness',
+          security: [],
+          'x-sproutup': expect.objectContaining({ actor: 'public', permissions: [] }),
+        }),
+      );
+
+      const httpMethods = new Set(['get', 'post', 'put', 'patch', 'delete']);
+      for (const [path, pathItem] of Object.entries(document.paths)) {
+        if (path.startsWith('/v1/auth/')) continue;
+        for (const [method, documentedOperation] of Object.entries(pathItem)) {
+          if (!httpMethods.has(method)) continue;
+          expect(documentedOperation.operationId, `${method.toUpperCase()} ${path}`).toBeTruthy();
+          expect(documentedOperation.responses, `${method.toUpperCase()} ${path}`).toBeDefined();
+          expect(documentedOperation['x-sproutup'], `${method.toUpperCase()} ${path}`).toEqual(
+            expect.objectContaining({
+              actor: expect.stringMatching(/^(public|authenticated_user|authenticated_customer|staff)$/),
+              permissions: expect.any(Array),
+              permissionMode: expect.stringMatching(/^(any|all)$/),
+              retryModel: expect.any(String),
+              sideEffects: expect.any(Array),
+            }),
+          );
+          expect(documentedOperation['x-sproutup']).toHaveProperty('auditEvent');
         }
       }
     } finally {

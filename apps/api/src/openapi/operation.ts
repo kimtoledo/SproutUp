@@ -2,7 +2,7 @@ import type { FastifySchema } from 'fastify';
 import type { PermissionKey } from '@sproutup/shared';
 
 export interface SproutUpOperationMetadata {
-  actor: 'authenticated_user' | 'authenticated_customer' | 'staff';
+  actor: 'public' | 'authenticated_user' | 'authenticated_customer' | 'staff';
   permissions: PermissionKey[];
   permissionMode: 'any' | 'all';
   retryModel:
@@ -25,6 +25,7 @@ export function operation(input: {
   summary: string;
   tags: string[];
   metadata: SproutUpOperationMetadata;
+  authenticated?: boolean;
   http?: Pick<FastifySchema, 'body' | 'querystring' | 'params' | 'response'>;
 }): SproutUpFastifySchema {
   return {
@@ -32,7 +33,7 @@ export function operation(input: {
     operationId: input.operationId,
     summary: input.summary,
     tags: input.tags,
-    security: [{ sessionCookie: [] }],
+    security: input.authenticated === false ? [] : [{ sessionCookie: [] }],
     'x-sproutup': input.metadata,
   };
 }

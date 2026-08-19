@@ -66,3 +66,23 @@ export const sessionListResponses = {
   401: errorResponseSchema,
   403: errorResponseSchema,
 } as const;
+
+export const authorizationContextSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['user', 'roles', 'permissions'],
+  properties: {
+    user: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'email', 'name'],
+      properties: {
+        id: { type: 'string', format: 'uuid' },
+        email: { type: 'string', format: 'email' },
+        name: { type: 'string' },
+      },
+    },
+    roles: { type: 'array', items: { type: 'string', enum: [...roleKeys] } },
+    permissions: { type: 'array', items: { type: 'string', enum: [...permissionKeys] } },
+  },
+} as const;

@@ -53,13 +53,14 @@ describe('authentication boundary', () => {
   });
 
   it('returns only server-resolved roles and permissions', async () => {
+    const userId = '00000000-0000-4000-8000-000000000701';
     const auth = createAuth({
       getSession: async () => ({
-        session: { id: 'session-id', userId: 'user-id', expiresAt: new Date() },
-        user: { id: 'user-id', email: 'analyst@sproutup.ph', name: 'Credit Analyst' },
+        session: { id: 'session-id', userId, expiresAt: new Date() },
+        user: { id: userId, email: 'analyst@sproutup.ph', name: 'Credit Analyst' },
       }),
       resolveAuthorization: async () => ({
-        user: { id: 'user-id', email: 'analyst@sproutup.ph', name: 'Credit Analyst' },
+        user: { id: userId, email: 'analyst@sproutup.ph', name: 'Credit Analyst' },
         roles: ['credit_analyst'],
         permissions: ['users.read', 'roles.read'],
       }),

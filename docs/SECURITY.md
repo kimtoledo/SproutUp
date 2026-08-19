@@ -6,7 +6,11 @@ Better Auth is mounted behind the Fastify API at `/v1/auth/*`. The web applicati
 
 `GET /openapi.json` publishes route/contract metadata only. It declares the HTTP-only session-cookie security scheme but contains no cookie values, credentials, environment secrets, or internal database configuration; the generated document is covered by a secret-regression test.
 
+Liveness and readiness are explicitly public and return only service/dependency status. Every other application-owned operation declares session-cookie authentication. `GET /v1/session-context` requires an active account and schema-allowlists only server-resolved identity, canonical roles, and canonical permission keys.
+
 Every contracted onboarding, own-session, access-catalogue, and role-approval operation declares its authenticated actor boundary and required capability set in the generated contract. These declarations are documentation checked by CI; runtime authorization remains the server-resolved permission check in each handler/service and is independently covered by denial tests.
+
+The framework-owned Better Auth wildcard is a rate-limited byte-preserving adapter and is excluded from SproutUp's per-operation assertion because its concrete endpoints and payloads are version-owned by Better Auth. This exception does not apply to any application-owned route; CI walks all of those routes and rejects missing trust metadata or response schemas.
 
 Onboarding path, query, body, success, and structured error schemas are now enforced by Fastify and published in OpenAPI. Schema failures return a generic stable validation message rather than echoing submitted values or internal validator details; deeper state/ownership checks still execute in the domain services.
 

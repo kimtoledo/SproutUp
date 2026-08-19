@@ -24,6 +24,8 @@ import type { OnboardingCaseService } from './onboarding/case-service.js';
 import { registerOnboardingCaseRoutes } from './routes/onboarding-cases.js';
 import type { OnboardingReviewService } from './onboarding/review-service.js';
 import { registerOnboardingReviewRoutes } from './routes/onboarding-review.js';
+import { operation } from './openapi/operation.js';
+import { healthResponseSchema } from './openapi/system-schemas.js';
 
 export interface AppDependencies {
   config: Pick<ApiConfig, 'appOrigin' | 'environment'>;
@@ -101,18 +103,43 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
         { name: 'health', description: 'Process and dependency health' },
         { name: 'authentication', description: 'Identity and session boundary' },
         { name: 'access', description: 'RBAC and approval administration' },
+        { name: 'role approvals', description: 'Dual-controlled role change lifecycle' },
         { name: 'onboarding', description: 'Borrower and investor onboarding workflows' },
       ],
     },
   });
 
-  app.get('/health', async (): Promise<HealthResponse> => ({
+  app.get('/health', {
+    schema: operation({
+      operationId: 'getLiveness',
+      summary: 'Report API process liveness without dependency checks',
+      tags: ['health'],
+      authenticated: false,
+      metadata: {
+        actor: 'public', permissions: [], permissionMode: 'all', retryModel: 'safe_read',
+        sideEffects: [], auditEvent: null,
+      },
+      http: { response: { 200: healthResponseSchema } },
+    }),
+  }, async (): Promise<HealthResponse> => ({
     status: 'ok',
     service: 'api',
     timestamp: now(),
   }));
 
-  app.get('/v1/health', async (_request, reply): Promise<HealthResponse> => {
+  app.get('/v1/health', {
+    schema: operation({
+      operationId: 'getReadiness',
+      summary: 'Report API readiness and required database availability',
+      tags: ['health'],
+      authenticated: false,
+      metadata: {
+        actor: 'public', permissions: [], permissionMode: 'all', retryModel: 'safe_read',
+        sideEffects: ['check database availability'], auditEvent: null,
+      },
+      http: { response: { 200: healthResponseSchema, 503: healthResponseSchema } },
+    }),
+  }, async (_request, reply): Promise<HealthResponse> => {
     try {
       await dependencies.checkDatabase();
 

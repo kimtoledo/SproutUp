@@ -2,6 +2,9 @@ import { fromNodeHeaders } from 'better-auth/node';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
+import { authorizationContextSchema } from '../openapi/access-schemas.js';
+import { operation } from '../openapi/operation.js';
+import { errorResponseSchema, successResponse } from '../openapi/onboarding-schemas.js';
 
 interface RegisterAuthRoutesOptions {
   auth: AuthServices;
@@ -58,7 +61,27 @@ export async function registerAuthRoutes(
     },
   });
 
-  app.get('/v1/session-context', async (request, reply) => {
+  app.get('/v1/session-context', {
+    schema: operation({
+      operationId: 'getSessionContext',
+      summary: 'Resolve the active user and server-authoritative access context',
+      tags: ['authentication'],
+      metadata: {
+        actor: 'authenticated_user',
+        permissions: [],
+        permissionMode: 'all',
+        retryModel: 'safe_read',
+        sideEffects: [],
+        auditEvent: null,
+      },
+      http: {
+        response: {
+          200: successResponse(authorizationContextSchema),
+          401: errorResponseSchema,
+        },
+      },
+    }),
+  }, async (request, reply) => {
     const authorization = await resolveRequestAuthorization(request, options.auth);
     if (!authorization) {
       return reply.status(401).send({

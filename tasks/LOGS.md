@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Complete current application-owned API contracts
+
+**Status:** Done
+
+### Updated
+
+- Added an enforced authenticated session-context contract that exposes only server-resolved user identity, canonical roles, and canonical permissions.
+- Added explicit public liveness/readiness contracts with service/dependency response schemas and no session-cookie requirement.
+- Extended the operation helper to represent public actors and unauthenticated operations without weakening protected-route defaults.
+- Replaced subset-only coverage with a global OpenAPI walk that fails CI when any application-owned operation lacks an ID, response schema, actor/capability/retry/side-effect metadata, or audit declaration.
+- Added exact operation-ID assertions for session context and health while retaining the complete onboarding, session/access, and role-approval catalogue.
+- Updated developer, security, technology-stack, authentication, API-contract, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Public health operations carry the same operational metadata shape as protected operations, with `actor: "public"`, an empty capability set, and an empty OpenAPI security requirement.
+- Session context requires a valid active account but no additional capability; its empty capability set is distinct from a public operation because cookie security and `actor: "authenticated_user"` remain declared.
+- Better Auth's wildcard proxy is explicitly excluded from the application-owned operation assertion. Concrete auth payload contracts are controlled by the exact-pinned provider version; SproutUp will not publish a misleading catch-all schema.
+
+### Open items
+
+- Decide API version support/deprecation policy and compatibility reporting.
+- Define signed webhook replay contracts and private-file authorization contracts after provider/storage decisions are approved.
+- Apply the global operation assertion automatically to every future domain route as implementation expands.
+
+### Next
+
+- Establish and test the API version/deprecation compatibility policy that can be decided independently of the still-open provider integrations.
+
 ## 2026-08-19 — Role approval OpenAPI contracts
 
 **Status:** Done

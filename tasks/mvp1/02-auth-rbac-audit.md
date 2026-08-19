@@ -19,6 +19,7 @@
 - Added required borrower/investor registration intent to Better Auth email signup. A database trigger atomically grants only the matching customer role and appends registration audit evidence; staff/`super_admin` values are impossible through this field.
 - Added generated OpenAPI operation metadata and enforced allowlist schemas for own-session and access-catalogue APIs. Session tokens, credential records, and provider-account data are structurally absent from these response contracts.
 - Contracted all role-change APIs with bounded request schemas, allowlisted approval/evidence responses, structured errors, and explicit unique-pending or row-locked retry semantics. The contract regression test now covers proposals, execution, rejection, cancellation, and history/detail.
+- Contracted session context as an active-user boundary that returns only schema-allowlisted identity, roles, and permissions. The Better Auth wildcard remains an explicitly documented, rate-limited provider adapter rather than a fabricated generic API schema.
 - Password-reset/email-verification delivery, MFA/OTP, permission administration, audit integration into each privileged workflow, final grants, emergency access, and device UI remain; this task stays **WIP**.
 
 ## Scope

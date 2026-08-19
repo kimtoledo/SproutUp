@@ -14,7 +14,8 @@
 - Added enforced path/query/body and success/structured-error JSON schemas for all eight onboarding operations plus a stable non-leaking Fastify validation-error envelope. CI checks command request bodies, path parameters, and response declarations.
 - Added full operation metadata and enforced response/error schemas to own-session listing, owned-session revocation, role catalogue, and bounded user catalogue. UUID session parameters and catalogue filters are also transport-validated; the session response schema cannot expose tokens.
 - Added full contracts to all ten role-assignment, revocation, lifecycle, and history operations. The contract distinguishes database-unique pending proposals from row-locked decisions and publishes hash/integrity evidence without weakening maker/checker runtime enforcement.
-- The remaining session-context boundary, private-file and webhook contracts, version/deprecation policy, and future domain operations remain; this task stays **WIP**.
+- Contracted public liveness/readiness and authenticated session context, then added a global CI walk that rejects missing operation IDs, response schemas, or operational metadata on every application-owned route.
+- The Better Auth wildcard remains provider-owned and explicitly excluded; private-file and webhook contracts, version/deprecation policy, and future domain operations remain, so this task stays **WIP**.
 
 ## Scope
 
