@@ -9,6 +9,7 @@ import { createRoleRevocationService } from './auth/role-revocations-service.js'
 import { createApprovalLifecycleService } from './auth/approval-lifecycle-service.js';
 import { createApprovalHistoryService } from './auth/approval-history-service.js';
 import { createOnboardingCaseService } from './onboarding/case-service.js';
+import { createOnboardingReviewService } from './onboarding/review-service.js';
 
 const config = loadConfig();
 const database = createDatabase(config.databaseUrl);
@@ -21,6 +22,7 @@ const roleRevocations = createRoleRevocationService(database.db);
 const approvalLifecycle = createApprovalLifecycleService(database.db);
 const approvalHistory = createApprovalHistoryService(database.db);
 const onboardingCases = createOnboardingCaseService(database.db);
+const onboardingReview = createOnboardingReviewService(database.db);
 
 const app = await buildApp({
   config,
@@ -35,7 +37,7 @@ const app = await buildApp({
     approvalLifecycle,
     approvalHistory,
   },
-  onboarding: { cases: onboardingCases },
+  onboarding: { cases: onboardingCases, review: onboardingReview },
 });
 
 app.addHook('onClose', async () => {

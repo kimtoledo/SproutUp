@@ -51,6 +51,8 @@ The onboarding foundation stores workflow identity/state only; regulated profile
 
 Customer onboarding reads bind both case ID and authenticated applicant ID in the database query. Borrower capabilities cannot access investor journeys and investor capabilities cannot access borrower journeys. Submission locks the case, verifies ownership/type/current version and allowed transition, then commits state, append-only transition evidence, and business audit evidence atomically.
 
+The staff compliance queue and review command use independent read/review capabilities. Review start locks and version-checks submitted state, rejects applicant self-review, refuses to replace another assigned reviewer, and commits reviewer assignment, state, transition evidence, and audit evidence atomically.
+
 Audit metadata is rejected before persistence when a key indicates a password, token, secret, authorization header, cookie, API key, or credential. Audit events preserve actor and role snapshots without a foreign key that could erase attribution when a user record changes.
 
 The initial writer and schema are implemented, but every privileged/domain command must integrate audit writes in its own transaction or reliable outbox workflow before that command is considered complete.

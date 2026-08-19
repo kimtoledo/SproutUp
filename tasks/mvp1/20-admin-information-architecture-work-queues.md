@@ -3,6 +3,12 @@
 **Status:** WIP  
 **Outcome:** Staff can find, prioritize, and complete pilot operations through role-scoped queues instead of navigating a copy of the legacy module tree.
 
+## Implementation progress
+
+- **2026-08-19 — Initial compliance queue API:** Added a bounded borrower/investor onboarding queue with case-type, status, and assigned-to-me filters plus applicant identity context.
+- Queue read and review-start use separate capabilities. Review start claims submitted work with applicant/reviewer separation, assignment-takeover denial, optimistic versioning, and immutable event/audit evidence.
+- SLA/aging/priority definitions, assignment policy beyond first claim, saved views, escalation, bulk actions, UI/navigation, and other domain queues remain; this task stays **WIP**.
+
 ## Scope
 
 - Define admin navigation around KYC/compliance, underwriting, campaign readiness, funding, disbursement, collections, withdrawals, reconciliation, and exceptions.

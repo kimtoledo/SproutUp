@@ -21,6 +21,8 @@ import type { ApprovalHistoryService } from './auth/approval-history-service.js'
 import { registerApprovalHistoryRoutes } from './routes/approval-history.js';
 import type { OnboardingCaseService } from './onboarding/case-service.js';
 import { registerOnboardingCaseRoutes } from './routes/onboarding-cases.js';
+import type { OnboardingReviewService } from './onboarding/review-service.js';
+import { registerOnboardingReviewRoutes } from './routes/onboarding-review.js';
 
 export interface AppDependencies {
   config: Pick<ApiConfig, 'appOrigin' | 'environment'>;
@@ -38,6 +40,7 @@ export interface AppDependencies {
   logger?: boolean;
   onboarding?: {
     cases: OnboardingCaseService;
+    review?: OnboardingReviewService;
   };
 }
 
@@ -138,6 +141,12 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
       auth: dependencies.auth.service,
       cases: dependencies.onboarding.cases,
     });
+    if (dependencies.onboarding.review) {
+      await registerOnboardingReviewRoutes(app, {
+        auth: dependencies.auth.service,
+        review: dependencies.onboarding.review,
+      });
+    }
   }
 
   return app;

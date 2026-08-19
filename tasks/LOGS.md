@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Compliance queue and safe review claim
+
+**Status:** Done
+
+### Updated
+
+- Added a protected, bounded compliance work queue for borrower/investor cases with case type, status, and assigned-to-me filters plus applicant name/email context.
+- Kept queue read and review-start behind independent `onboarding_cases.read` and `onboarding_cases.review` capabilities.
+- Added optimistic review start from submitted state, binding the authenticated reviewer and case version under a row lock.
+- Denied applicant self-review and reviewer takeover with stable conflicts; stale and invalid state transitions remain non-mutating.
+- Committed reviewer assignment, `in_review` state/version, append-only `review_started` event, and immutable business audit evidence in one transaction.
+- Added route and embedded-PostgreSQL tests; updated developer, security, borrower, investor, admin-queue, MVP, and handoff documentation.
+
+### Decisions
+
+- A submitted case is claimed by the first authorized reviewer who successfully commits the expected version; assignment cannot be silently replaced.
+- Queue count and list use the same validated filters and bounded page contract.
+- This slice defines operational ownership only; SLA, priority, escalation, reassignment, and bulk-action policy remain open.
+
+### Open items
+
+- Approve reviewer reassignment/escalation and SLA policy.
+- Add staff case detail, information-request/resubmission, and decision commands after evidence/completeness rules are approved.
+- Build the accessible admin queue UI after its columns and operating policy are confirmed.
+
+### Next
+
+- Implement reasoned information request and applicant resubmission on the existing state/version boundary, without adding unapproved evidence rules.
+
 ## 2026-08-19 — Owner-bound onboarding case API
 
 **Status:** Done
