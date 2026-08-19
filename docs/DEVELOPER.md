@@ -97,7 +97,9 @@ npm run check
 
 This runs workspace linting, strict type checks, tests, and production builds. CI runs the same command and audits production dependencies.
 
-The API contract test composes every current service boundary and verifies that all implemented route groups appear in `/openapi.json`, OpenAPI 3.1 metadata and the session-cookie scheme are present, and obvious secret material is absent. When adding a route, add its path to `apps/api/test/openapi.test.ts`; Task 18 still requires full request/response, actor, permission, idempotency, side-effect, and audit metadata per operation.
+The API contract test composes every current service boundary and verifies that all implemented route groups appear in `/openapi.json`, OpenAPI 3.1 metadata and the session-cookie scheme are present, and obvious secret material is absent. When adding a route, add its path to `apps/api/test/openapi.test.ts`; Task 18 still requires full request/response/error schemas and operational metadata on the earlier non-onboarding routes.
+
+Use `apps/api/src/openapi/operation.ts` for protected operation metadata. The current onboarding routes declare unique operation IDs plus `x-sproutup` actor, permission set/mode, retry model, side effects, and audit event (`null` for safe reads). Contract tests must enumerate each annotated operation. Do not claim an operation is fully specified until request, success, and error JSON schemas are also present.
 
 ## Database workflow
 

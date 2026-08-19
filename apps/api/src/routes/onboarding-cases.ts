@@ -9,6 +9,7 @@ import {
 import type { OnboardingCaseService } from '../onboarding/case-service.js';
 import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
+import { operation } from '../openapi/operation.js';
 
 const createSchema = z.object({ caseType: onboardingCaseTypeSchema });
 const parametersSchema = z.object({ caseId: z.uuid() });
@@ -61,7 +62,21 @@ function failure(reply: FastifyReply, reason: string) {
 }
 
 export async function registerOnboardingCaseRoutes(app: FastifyInstance, options: Options): Promise<void> {
-  app.get('/v1/onboarding/cases', async (request, reply) => {
+  app.get('/v1/onboarding/cases', {
+    schema: operation({
+      operationId: 'listOwnOnboardingCases',
+      summary: 'List the authenticated customer onboarding cases',
+      tags: ['onboarding'],
+      metadata: {
+        actor: 'authenticated_customer',
+        permissions: ['borrower_onboarding.read_own', 'investor_onboarding.read_own'],
+        permissionMode: 'any',
+        retryModel: 'safe_read',
+        sideEffects: [],
+        auditEvent: null,
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     const permitted = allowedTypes(identity.authorization, 'read');
@@ -72,7 +87,21 @@ export async function registerOnboardingCaseRoutes(app: FastifyInstance, options
     });
   });
 
-  app.get('/v1/onboarding/cases/:caseId', async (request, reply) => {
+  app.get('/v1/onboarding/cases/:caseId', {
+    schema: operation({
+      operationId: 'getOwnOnboardingCase',
+      summary: 'Read an owned onboarding case and immutable timeline',
+      tags: ['onboarding'],
+      metadata: {
+        actor: 'authenticated_customer',
+        permissions: ['borrower_onboarding.read_own', 'investor_onboarding.read_own'],
+        permissionMode: 'any',
+        retryModel: 'safe_read',
+        sideEffects: [],
+        auditEvent: null,
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     const permitted = allowedTypes(identity.authorization, 'read');
@@ -90,7 +119,21 @@ export async function registerOnboardingCaseRoutes(app: FastifyInstance, options
     return reply.send({ success: true, data: detail });
   });
 
-  app.post('/v1/onboarding/cases', async (request, reply) => {
+  app.post('/v1/onboarding/cases', {
+    schema: operation({
+      operationId: 'createOwnOnboardingCase',
+      summary: 'Create one open onboarding case for a permitted customer journey',
+      tags: ['onboarding'],
+      metadata: {
+        actor: 'authenticated_customer',
+        permissions: ['borrower_onboarding.manage_own', 'investor_onboarding.manage_own'],
+        permissionMode: 'any',
+        retryModel: 'unique_open_case',
+        sideEffects: ['create onboarding case', 'append case event', 'append audit event'],
+        auditEvent: 'onboarding_case.created',
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     const parsed = createSchema.safeParse(request.body);
@@ -110,7 +153,21 @@ export async function registerOnboardingCaseRoutes(app: FastifyInstance, options
     return reply.status(201).send({ success: true, data: result.case });
   });
 
-  app.post('/v1/onboarding/cases/:caseId/submit', async (request, reply) => {
+  app.post('/v1/onboarding/cases/:caseId/submit', {
+    schema: operation({
+      operationId: 'submitOwnOnboardingCase',
+      summary: 'Submit an owned onboarding case using its current version',
+      tags: ['onboarding'],
+      metadata: {
+        actor: 'authenticated_customer',
+        permissions: ['borrower_onboarding.submit_own', 'investor_onboarding.submit_own'],
+        permissionMode: 'any',
+        retryModel: 'optimistic_version',
+        sideEffects: ['transition onboarding case', 'append case event', 'append audit event'],
+        auditEvent: 'onboarding_case.submitted',
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     const parameters = parametersSchema.safeParse(request.params);

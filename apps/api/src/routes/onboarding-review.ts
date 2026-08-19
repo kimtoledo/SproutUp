@@ -4,6 +4,7 @@ import { hasPermission, onboardingCaseStatusSchema, onboardingCaseTypeSchema } f
 import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
 import type { OnboardingReviewService } from '../onboarding/review-service.js';
+import { operation } from '../openapi/operation.js';
 
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).max(10_000).default(1),
@@ -43,7 +44,21 @@ function failure(reply: FastifyReply, reason: string) {
 }
 
 export async function registerOnboardingReviewRoutes(app: FastifyInstance, options: Options): Promise<void> {
-  app.get('/v1/admin/onboarding/cases', async (request, reply) => {
+  app.get('/v1/admin/onboarding/cases', {
+    schema: operation({
+      operationId: 'listOnboardingReviewQueue',
+      summary: 'List the bounded staff onboarding review queue',
+      tags: ['onboarding'],
+      metadata: {
+        actor: 'staff',
+        permissions: ['onboarding_cases.read'],
+        permissionMode: 'all',
+        retryModel: 'safe_read',
+        sideEffects: [],
+        auditEvent: null,
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'onboarding_cases.read')) return forbidden(reply);
@@ -61,7 +76,21 @@ export async function registerOnboardingReviewRoutes(app: FastifyInstance, optio
     });
   });
 
-  app.get('/v1/admin/onboarding/cases/:caseId', async (request, reply) => {
+  app.get('/v1/admin/onboarding/cases/:caseId', {
+    schema: operation({
+      operationId: 'getOnboardingReviewCase',
+      summary: 'Read an onboarding review case and immutable timeline',
+      tags: ['onboarding'],
+      metadata: {
+        actor: 'staff',
+        permissions: ['onboarding_cases.read'],
+        permissionMode: 'all',
+        retryModel: 'safe_read',
+        sideEffects: [],
+        auditEvent: null,
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'onboarding_cases.read')) return forbidden(reply);
@@ -74,7 +103,21 @@ export async function registerOnboardingReviewRoutes(app: FastifyInstance, optio
     return reply.send({ success: true, data: detail });
   });
 
-  app.post('/v1/admin/onboarding/cases/:caseId/start-review', async (request, reply) => {
+  app.post('/v1/admin/onboarding/cases/:caseId/start-review', {
+    schema: operation({
+      operationId: 'startOnboardingReview',
+      summary: 'Claim a submitted onboarding case and start review',
+      tags: ['onboarding'],
+      metadata: {
+        actor: 'staff',
+        permissions: ['onboarding_cases.review'],
+        permissionMode: 'all',
+        retryModel: 'optimistic_version',
+        sideEffects: ['assign reviewer', 'transition onboarding case', 'append case event', 'append audit event'],
+        auditEvent: 'onboarding_case.review_started',
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'onboarding_cases.review')) return forbidden(reply);
@@ -94,7 +137,21 @@ export async function registerOnboardingReviewRoutes(app: FastifyInstance, optio
     return reply.send({ success: true, data: result.case });
   });
 
-  app.post('/v1/admin/onboarding/cases/:caseId/request-information', async (request, reply) => {
+  app.post('/v1/admin/onboarding/cases/:caseId/request-information', {
+    schema: operation({
+      operationId: 'requestOnboardingInformation',
+      summary: 'Return an assigned onboarding case for applicant correction',
+      tags: ['onboarding'],
+      metadata: {
+        actor: 'staff',
+        permissions: ['onboarding_cases.review'],
+        permissionMode: 'all',
+        retryModel: 'optimistic_version',
+        sideEffects: ['transition onboarding case', 'append case event', 'append audit event'],
+        auditEvent: 'onboarding_case.information_requested',
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'onboarding_cases.review')) return forbidden(reply);

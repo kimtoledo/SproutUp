@@ -34,6 +34,34 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Enforced onboarding operation metadata
+
+**Status:** Done
+
+### Updated
+
+- Added a reusable Fastify/OpenAPI operation helper with typed SproutUp metadata for actor, permissions, permission mode, retry/idempotency model, side effects, and audit event.
+- Annotated all eight customer/staff onboarding operations with unique operation IDs, summaries, onboarding tags, and Better Auth session-cookie security.
+- Declared safe-read, database-unique-create, or optimistic-version retry behavior per operation and explicit `null` audit events for non-audited reads.
+- Extended the generated-contract test to walk every onboarding operation and fail on missing/invalid security or SproutUp metadata.
+- Updated developer, security, technology-stack, API-task, and handoff documentation.
+
+### Decisions
+
+- `x-sproutup` is the machine-readable extension for operational metadata not represented directly by core OpenAPI fields.
+- Contract metadata does not replace runtime authorization; route/service permission and ownership checks remain authoritative and separately tested.
+- An operation is not fully contracted until its request, success, and structured error schemas are present; this slice only completes operational metadata for onboarding.
+
+### Open items
+
+- Add request/response/error JSON schemas for onboarding operations and align them with shared Zod contracts.
+- Annotate the earlier authentication, session, role, approval, and access-catalogue operations.
+- Add a global CI assertion once every application operation is migrated to the helper.
+
+### Next
+
+- Add documented JSON schemas to the onboarding read and command operations without changing their existing stable runtime error bodies.
+
 ## 2026-08-19 — Generated OpenAPI route contract baseline
 
 **Status:** Done

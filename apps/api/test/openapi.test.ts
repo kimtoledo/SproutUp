@@ -60,7 +60,18 @@ describe('OpenAPI contract generation', () => {
       const document = response.json<{
         openapi: string;
         info: { title: string; version: string };
-        paths: Record<string, unknown>;
+        paths: Record<string, Record<string, {
+          operationId?: string;
+          security?: Array<Record<string, unknown>>;
+          'x-sproutup'?: {
+            actor?: string;
+            permissions?: string[];
+            permissionMode?: string;
+            retryModel?: string;
+            sideEffects?: string[];
+            auditEvent?: string | null;
+          };
+        }>>;
         components: { securitySchemes: Record<string, unknown> };
       }>();
 
@@ -86,6 +97,37 @@ describe('OpenAPI contract generation', () => {
       );
       expect(document.components.securitySchemes).toHaveProperty('sessionCookie');
       expect(response.body).not.toMatch(/registration-test-secret|password-hash|session-token-value/i);
+
+      const onboardingOperations = [
+        ['/v1/onboarding/cases', 'get', 'listOwnOnboardingCases'],
+        ['/v1/onboarding/cases/{caseId}', 'get', 'getOwnOnboardingCase'],
+        ['/v1/onboarding/cases', 'post', 'createOwnOnboardingCase'],
+        ['/v1/onboarding/cases/{caseId}/submit', 'post', 'submitOwnOnboardingCase'],
+        ['/v1/admin/onboarding/cases', 'get', 'listOnboardingReviewQueue'],
+        ['/v1/admin/onboarding/cases/{caseId}', 'get', 'getOnboardingReviewCase'],
+        ['/v1/admin/onboarding/cases/{caseId}/start-review', 'post', 'startOnboardingReview'],
+        [
+          '/v1/admin/onboarding/cases/{caseId}/request-information',
+          'post',
+          'requestOnboardingInformation',
+        ],
+      ] as const;
+
+      for (const [path, method, operationId] of onboardingOperations) {
+        const operation = document.paths[path]?.[method];
+        expect(operation?.operationId).toBe(operationId);
+        expect(operation?.security).toEqual([{ sessionCookie: [] }]);
+        expect(operation?.['x-sproutup']).toEqual(
+          expect.objectContaining({
+            actor: expect.any(String),
+            permissions: expect.any(Array),
+            permissionMode: expect.stringMatching(/^(any|all)$/),
+            retryModel: expect.stringMatching(/^(safe_read|unique_open_case|optimistic_version)$/),
+            sideEffects: expect.any(Array),
+          }),
+        );
+        expect(operation?.['x-sproutup']).toHaveProperty('auditEvent');
+      }
     } finally {
       await app.close();
     }
