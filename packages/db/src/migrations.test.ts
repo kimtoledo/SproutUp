@@ -18,6 +18,8 @@ beforeAll(async () => {
     '0004_perpetual_mikhail_rasputin.sql',
     '0005_lowly_shadow_king.sql',
     '0006_onboarding-events-immutability.sql',
+    '0007_narrow_wolfsbane.sql',
+    '0008_applicant-role-bootstrap.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
@@ -173,5 +175,39 @@ describe('initial authentication migration', () => {
     expect(roleCount.rows[0]?.count).toBe(roleKeys.length);
     expect(permissionCount.rows[0]?.count).toBe(permissionKeys.length);
     expect(superAdminGrantCount.rows[0]?.count).toBe(permissionKeys.length);
+  });
+
+  it('atomically bootstraps only the self-selected customer role and registration audit', async () => {
+    const borrowerId = '00000000-0000-4000-8000-000000000008';
+    const investorId = '00000000-0000-4000-8000-000000000009';
+    await database.query(
+      `insert into users (id, name, email, registration_intent)
+       values
+         ($1, 'Borrower Applicant', 'bootstrap-borrower@sproutup.ph', 'borrower'),
+         ($2, 'Investor Applicant', 'bootstrap-investor@sproutup.ph', 'investor')`,
+      [borrowerId, investorId],
+    );
+
+    const grants = await database.query<{ user_id: string; role_key: string }>(
+      `select user_id::text, role_key from user_roles
+       where user_id in ($1, $2)
+       order by user_id`,
+      [borrowerId, investorId],
+    );
+    const audits = await database.query<{ actor_user_id: string; action: string }>(
+      `select actor_user_id::text, action from audit_events
+       where actor_user_id in ($1, $2)
+       order by actor_user_id`,
+      [borrowerId, investorId],
+    );
+
+    expect(grants.rows).toEqual([
+      { user_id: borrowerId, role_key: 'sme_borrower' },
+      { user_id: investorId, role_key: 'investor' },
+    ]);
+    expect(audits.rows).toEqual([
+      { actor_user_id: borrowerId, action: 'account.registered' },
+      { actor_user_id: investorId, action: 'account.registered' },
+    ]);
   });
 });

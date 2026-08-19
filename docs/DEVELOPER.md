@@ -67,6 +67,19 @@ Role approval history defaults to 25 records per page (maximum 100) and may be f
 
 The user catalogue defaults to page 1 with 25 records and accepts `page`, `pageSize` (maximum 100), `query` (literal name/email search), and `status`. Its response is intentionally limited to identity, verification/status, role keys, and creation time; it never returns password hashes, account-provider records, session identifiers, or tokens.
 
+Email signup requires one additional field:
+
+```json
+{
+  "name": "Pilot Applicant",
+  "email": "applicant@example.com",
+  "password": "use-a-password-manager-generated-value",
+  "registrationIntent": "borrower"
+}
+```
+
+`registrationIntent` accepts only `borrower` or `investor`. It atomically bootstraps the matching customer role and registration audit evidence; callers cannot request staff or `super_admin`. Staff/bootstrap administration remains an out-of-band controlled operation until its policy is approved.
+
 ## Validate a change
 
 ```bash

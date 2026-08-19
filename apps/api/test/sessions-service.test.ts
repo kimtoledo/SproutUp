@@ -1,22 +1,14 @@
-import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import { schema, type Database } from '@sproutup/db';
 import { createSessionService } from '../src/auth/sessions-service.js';
+import { applyMigrations } from './database-fixture.js';
 
 const client = new PGlite();
 const database = drizzle(client, { schema });
 
-beforeAll(async () => {
-  for (const migration of ['0000_yielding_zombie.sql', '0001_audit-immutability.sql']) {
-    const sql = await readFile(
-      new URL(`../../../packages/db/migrations/${migration}`, import.meta.url),
-      'utf8',
-    );
-    await client.exec(sql.replaceAll('--> statement-breakpoint', ''));
-  }
-});
+beforeAll(async () => applyMigrations(client));
 
 afterAll(async () => {
   await client.close();

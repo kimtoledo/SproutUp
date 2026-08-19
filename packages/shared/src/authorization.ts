@@ -21,6 +21,14 @@ export const permissionKeys = [
   'sessions.revoke_any',
   'audit.read',
   'audit.export',
+  'borrower_onboarding.read_own',
+  'borrower_onboarding.manage_own',
+  'borrower_onboarding.submit_own',
+  'investor_onboarding.read_own',
+  'investor_onboarding.manage_own',
+  'investor_onboarding.submit_own',
+  'onboarding_cases.read',
+  'onboarding_cases.review',
 ] as const;
 
 export const roleKeySchema = z.enum(roleKeys);
@@ -57,11 +65,30 @@ export const permissionDefinitions: ReadonlyArray<{
   { key: 'sessions.revoke_any', description: 'Revoke another user sessions' },
   { key: 'audit.read', description: 'Read immutable business audit events' },
   { key: 'audit.export', description: 'Export immutable business audit events' },
+  { key: 'borrower_onboarding.read_own', description: 'Read the current user borrower onboarding case' },
+  { key: 'borrower_onboarding.manage_own', description: 'Create and edit the current user borrower onboarding draft' },
+  { key: 'borrower_onboarding.submit_own', description: 'Submit the current user borrower onboarding case' },
+  { key: 'investor_onboarding.read_own', description: 'Read the current user investor onboarding case' },
+  { key: 'investor_onboarding.manage_own', description: 'Create and edit the current user investor onboarding draft' },
+  { key: 'investor_onboarding.submit_own', description: 'Submit the current user investor onboarding case' },
+  { key: 'onboarding_cases.read', description: 'Read onboarding cases in a staff work queue' },
+  { key: 'onboarding_cases.review', description: 'Review and decide assigned onboarding cases' },
 ];
 
 const ownSessionPermissions: PermissionKey[] = [
   'sessions.read_own',
   'sessions.revoke_own',
+];
+
+const borrowerOnboardingPermissions: PermissionKey[] = [
+  'borrower_onboarding.read_own',
+  'borrower_onboarding.manage_own',
+  'borrower_onboarding.submit_own',
+];
+const investorOnboardingPermissions: PermissionKey[] = [
+  'investor_onboarding.read_own',
+  'investor_onboarding.manage_own',
+  'investor_onboarding.submit_own',
 ];
 
 /**
@@ -72,10 +99,17 @@ export const initialRolePermissions: Readonly<Record<RoleKey, readonly Permissio
   super_admin: permissionKeys,
   sales_officer: ['users.read', 'roles.read', ...ownSessionPermissions],
   credit_analyst: ['users.read', 'roles.read', ...ownSessionPermissions],
-  compliance_officer: ['users.read', 'roles.read', 'audit.read', ...ownSessionPermissions],
+  compliance_officer: [
+    'users.read',
+    'roles.read',
+    'audit.read',
+    'onboarding_cases.read',
+    'onboarding_cases.review',
+    ...ownSessionPermissions,
+  ],
   finance_officer: ['users.read', 'roles.read', 'audit.read', ...ownSessionPermissions],
-  sme_borrower: ownSessionPermissions,
-  investor: ownSessionPermissions,
+  sme_borrower: [...ownSessionPermissions, ...borrowerOnboardingPermissions],
+  investor: [...ownSessionPermissions, ...investorOnboardingPermissions],
 };
 
 export interface AuthorizationContext {

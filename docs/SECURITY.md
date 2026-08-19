@@ -31,6 +31,8 @@ The initial role catalogue is:
 - SME Borrower
 - Investor
 
+Email signup requires a validated `registrationIntent` of `borrower` or `investor`. In the same PostgreSQL user-insert transaction, a database trigger grants exactly `sme_borrower` or `investor` and appends `account.registered` audit evidence. The enum cannot express staff or `super_admin`, and the API accepts no general role field at signup. This narrow customer bootstrap is the only exception to dual-controlled role administration; later or additional role changes use the approval workflow.
+
 Authorization is capability-based and deny-by-default. The initial permissions cover only users, roles, sessions, and audit access. Each later domain task must add explicit capability keys and reviewed grants; no role receives a domain permission merely because it is a staff role.
 
 Role grants and revocations are not exposed as direct mutations. A caller with `roles.assign` proposes an exact target/role payload and reason; a different caller with the same capability must approve it before the change executes. Proposals expire after 24 hours, are protected from duplicate pending payloads, are locked while being checked, and bind approval to a SHA-256 payload hash. The maker cannot target their own account, the checker cannot be the maker or target, and `super_admin` cannot be changed through this workflow until an emergency/bootstrap policy is approved. Revocation also locks and revalidates all current target grants and cannot remove the final role from an active account.
@@ -45,7 +47,7 @@ Administrative read APIs enforce `roles.read` and `users.read` independently. Us
 
 `audit_events`, `approval_actions`, and `onboarding_case_events` are append-only. PostgreSQL triggers reject row updates, row deletes, and table truncation. Corrections must be represented by new events.
 
-The onboarding foundation stores workflow identity/state only; regulated profile fields, documents, suitability answers, and screening/provider results are not yet collected. The database prevents an applicant from reviewing their own case, permits only one open case per applicant/journey, versions every transition, and retains corrections as new events rather than overwriting history.
+The onboarding foundation stores workflow identity/state only; regulated profile fields, documents, suitability answers, and screening/provider results are not yet collected. The database prevents an applicant from reviewing their own case, permits only one open case per applicant/journey, versions every transition, and retains corrections as new events rather than overwriting history. Customer roles receive only their own matching onboarding capabilities; compliance queue read/review is granted only to Compliance Officer and Super Admin in the current baseline.
 
 Audit metadata is rejected before persistence when a key indicates a password, token, secret, authorization header, cookie, API key, or credential. Audit events preserve actor and role snapshots without a foreign key that could erase attribution when a user record changes.
 

@@ -50,6 +50,20 @@
       "when": 1787142810815,
       "tag": "0006_onboarding-events-immutability",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787143000810,
+      "tag": "0007_narrow_wolfsbane",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787143001196,
+      "tag": "0008_applicant-role-bootstrap",
+      "breakpoints": true
     }
   ]
 }

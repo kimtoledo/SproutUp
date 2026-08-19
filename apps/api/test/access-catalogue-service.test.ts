@@ -1,9 +1,9 @@
-import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import { schema, type Database } from '@sproutup/db';
 import { createAccessCatalogueService } from '../src/auth/access-catalogue-service.js';
+import { applyMigrations } from './database-fixture.js';
 
 const pglite = new PGlite();
 const orm = drizzle(pglite, { schema }) as unknown as Database;
@@ -11,19 +11,7 @@ const staffId = '00000000-0000-4000-8000-000000000311';
 const investorId = '00000000-0000-4000-8000-000000000312';
 
 beforeAll(async () => {
-  for (const migration of [
-    '0000_yielding_zombie.sql',
-    '0001_audit-immutability.sql',
-    '0002_little_union_jack.sql',
-    '0003_approval-actions-immutability.sql',
-    '0004_perpetual_mikhail_rasputin.sql',
-  ]) {
-    const sql = await readFile(
-      new URL(`../../../packages/db/migrations/${migration}`, import.meta.url),
-      'utf8',
-    );
-    await pglite.exec(sql.replaceAll('--> statement-breakpoint', ''));
-  }
+  await applyMigrations(pglite);
   await orm.insert(schema.roles).values([
     { key: 'sales_officer', name: 'Sales Officer', category: 'staff' },
     { key: 'investor', name: 'Investor', category: 'customer' },

@@ -16,6 +16,7 @@
 - Added dual-controlled role revocation with the same hash/expiry/lock/evidence boundary. It revalidates current grants under lock, rejects self-change and `super_admin` mutation, and prevents removal of an active user's final role.
 - Added role-change rejection and cancellation: a distinct authorized non-target reviewer may reject, only the maker may cancel, both require reasons, and terminal transitions append immutable action/audit evidence.
 - Added bounded role-approval history/detail APIs with command/status filters, immutable action timelines, and independently recomputed payload-integrity results; privileged reasons require `roles.assign`.
+- Added required borrower/investor registration intent to Better Auth email signup. A database trigger atomically grants only the matching customer role and appends registration audit evidence; staff/`super_admin` values are impossible through this field.
 - Password-reset/email-verification delivery, MFA/OTP, permission administration, audit integration into each privileged workflow, final grants, emergency access, and device UI remain; this task stays **WIP**.
 
 ## Scope

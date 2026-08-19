@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
@@ -6,6 +5,7 @@ import { schema, type Database } from '@sproutup/db';
 import { createApprovalHistoryService } from '../src/auth/approval-history-service.js';
 import { createApprovalLifecycleService } from '../src/auth/approval-lifecycle-service.js';
 import { createRoleAssignmentService } from '../src/auth/role-assignments-service.js';
+import { applyMigrations } from './database-fixture.js';
 
 const pglite = new PGlite();
 const orm = drizzle(pglite, { schema }) as unknown as Database;
@@ -15,19 +15,7 @@ const targetId = '00000000-0000-4000-8000-000000000603';
 let approvalId = '';
 
 beforeAll(async () => {
-  for (const migration of [
-    '0000_yielding_zombie.sql',
-    '0001_audit-immutability.sql',
-    '0002_little_union_jack.sql',
-    '0003_approval-actions-immutability.sql',
-    '0004_perpetual_mikhail_rasputin.sql',
-  ]) {
-    const sql = await readFile(
-      new URL(`../../../packages/db/migrations/${migration}`, import.meta.url),
-      'utf8',
-    );
-    await pglite.exec(sql.replaceAll('--> statement-breakpoint', ''));
-  }
+  await applyMigrations(pglite);
   await orm.insert(schema.roles).values({ key: 'investor', name: 'Investor', category: 'customer' });
   await orm.insert(schema.users).values([
     { id: makerId, name: 'Maker', email: 'history-maker@sproutup.ph' },

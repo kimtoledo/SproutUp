@@ -6,6 +6,7 @@
 ## Implementation progress
 
 - **2026-08-19 — Shared workflow foundation:** Added versioned `onboarding_cases` and append-only `onboarding_case_events` for borrower/investor journeys, including one-open-case enforcement, applicant/reviewer separation, correction, expiry, and immutable transition history.
+- Email signup now requires borrower/investor intent and atomically maps investor intent only to the narrow `investor` role. The role receives own-case read/manage/submit capabilities; funding and withdrawal eligibility still depend on future approved onboarding state controls.
 - Investor subject classification, profile/evidence fields, suitability questionnaire versions, eligibility restrictions, bank verification, and decision APIs remain unimplemented because the individual/institutional pilot scope and approved rules are still open; this task stays **WIP**.
 
 ## Scope

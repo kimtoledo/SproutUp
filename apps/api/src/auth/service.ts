@@ -18,6 +18,16 @@ export function createAuthServices(config: ApiConfig, database: Database): AuthS
       schema,
       usePlural: true,
     }),
+    user: {
+      additionalFields: {
+        registrationIntent: {
+          type: ['borrower', 'investor'],
+          required: true,
+          input: true,
+          returned: true,
+        },
+      },
+    },
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 12,

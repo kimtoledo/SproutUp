@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Audited applicant role bootstrap
+
+**Status:** Done
+
+### Updated
+
+- Extended Better Auth email signup with a required `registrationIntent` limited to `borrower` or `investor`.
+- Added the matching nullable database enum for controlled non-public staff/bootstrap records.
+- Added a PostgreSQL user-insert trigger that atomically maps borrower → `sme_borrower` or investor → `investor` and appends immutable `account.registered` audit evidence.
+- Added separate borrower/investor own-case read/manage/submit capabilities plus compliance work-queue read/review capabilities; kept all other grants deny-by-default.
+- Added embedded-PostgreSQL trigger tests and a real Better Auth signup integration test proving missing intent creates no identity and valid investor intent grants only the investor role.
+- Updated security, developer, authentication, borrower, investor, portal, schema, MVP, and handoff documentation.
+
+### Decisions
+
+- Public signup may bootstrap exactly one customer persona role; it cannot accept any staff or `super_admin` role value.
+- Customer persona identifies the selected journey, not KYC approval or financial eligibility. Later APIs must continue checking authoritative onboarding/eligibility state.
+- Additional/dual borrower-investor capacity is not self-service in this slice and must use the approved role-change path until product policy is finalized.
+
+### Open items
+
+- Define controlled staff-account bootstrap and emergency access.
+- Approve whether dual borrower/investor capacity may later be self-requested and which compliance review applies.
+- Complete provider-backed email verification/recovery and MFA before pilot release.
+
+### Next
+
+- Implement authenticated own-case creation/read and controlled submission using the new customer capabilities, optimistic version checks, and atomic immutable event/audit writes.
+
 ## 2026-08-19 — Onboarding workflow and evidence foundation
 
 **Status:** Done

@@ -11,6 +11,7 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 ## Identity and authorization
 
 - `users` — login identity and global status
+- `users.registration_intent` — implemented, nullable for controlled staff/bootstrap records and required by public email signup; only borrower/investor values
 - `staff_profiles`, `investor_profiles`, `borrower_profiles`
 - `roles`, `permissions`, `user_roles`, `role_permissions`
 - `sessions`, `mfa_methods`, `auth_attempts`

@@ -2,6 +2,7 @@ import { boolean, index, pgEnum, pgTable, text, unique, varchar } from 'drizzle-
 import { id, timestamps } from './helpers.js';
 
 export const userStatusEnum = pgEnum('user_status', ['active', 'suspended', 'disabled']);
+export const registrationIntentEnum = pgEnum('registration_intent', ['borrower', 'investor']);
 
 /** Better Auth identity plus application-level account status. */
 export const users = pgTable(
@@ -13,6 +14,7 @@ export const users = pgTable(
     emailVerified: boolean('email_verified').notNull().default(false),
     image: text('image'),
     status: userStatusEnum('status').notNull().default('active'),
+    registrationIntent: registrationIntentEnum('registration_intent'),
     ...timestamps,
   },
   (table) => [
