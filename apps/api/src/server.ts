@@ -3,17 +3,19 @@ import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { createAuthServices } from './auth/service.js';
 import { createSessionService } from './auth/sessions-service.js';
+import { createRoleAssignmentService } from './auth/role-assignments-service.js';
 
 const config = loadConfig();
 const database = createDatabase(config.databaseUrl);
 await database.check();
 const auth = createAuthServices(config, database.db);
 const sessions = createSessionService(database.db);
+const roleAssignments = createRoleAssignmentService(database.db);
 
 const app = await buildApp({
   config,
   checkDatabase: database.check,
-  auth: { service: auth, baseUrl: config.authBaseUrl, sessions },
+  auth: { service: auth, baseUrl: config.authBaseUrl, sessions, roleAssignments },
 });
 
 app.addHook('onClose', async () => {

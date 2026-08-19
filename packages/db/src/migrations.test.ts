@@ -10,7 +10,13 @@ import * as schema from './schema/index.js';
 const database = new PGlite();
 
 beforeAll(async () => {
-  for (const migration of ['0000_yielding_zombie.sql', '0001_audit-immutability.sql']) {
+  for (const migration of [
+    '0000_yielding_zombie.sql',
+    '0001_audit-immutability.sql',
+    '0002_little_union_jack.sql',
+    '0003_approval-actions-immutability.sql',
+    '0004_perpetual_mikhail_rasputin.sql',
+  ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
   }
@@ -32,6 +38,8 @@ describe('initial authentication migration', () => {
     expect(result.rows.map(({ table_name }) => table_name)).toEqual(
       expect.arrayContaining([
         'accounts',
+        'approval_actions',
+        'approval_requests',
         'audit_events',
         'permissions',
         'rate_limits',
@@ -42,6 +50,38 @@ describe('initial authentication migration', () => {
         'users',
         'verifications',
       ]),
+    );
+  });
+
+  it('enforces append-only approval actions in PostgreSQL', async () => {
+    const userId = '00000000-0000-4000-8000-000000000002';
+    const requestId = '00000000-0000-4000-8000-000000000003';
+    const actionId = '00000000-0000-4000-8000-000000000004';
+    await database.query(
+      `insert into users (id, name, email) values ($1, 'Maker', 'maker-migration@sproutup.ph')`,
+      [userId],
+    );
+    await database.query(
+      `insert into approval_requests
+        (id, command_type, payload, payload_hash, maker_user_id, reason, expires_at)
+       values ($1, 'role.assign', '{}', repeat('a', 64), $2, 'Migration invariant test', now() + interval '1 hour')`,
+      [requestId, userId],
+    );
+    await database.query(
+      `insert into approval_actions
+        (id, request_id, action, actor_user_id, payload_hash)
+       values ($1, $2, 'proposed', $3, repeat('a', 64))`,
+      [actionId, requestId, userId],
+    );
+
+    await expect(
+      database.query('update approval_actions set reason = $1 where id = $2', ['changed', actionId]),
+    ).rejects.toThrow('approval_actions is append-only');
+    await expect(database.query('delete from approval_actions where id = $1', [actionId])).rejects.toThrow(
+      'approval_actions is append-only',
+    );
+    await expect(database.exec('truncate table approval_actions')).rejects.toThrow(
+      'approval_actions is append-only',
     );
   });
 

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "approval_requests_one_pending_payload_idx" ON "approval_requests" USING btree ("command_type","payload_hash") WHERE "approval_requests"."status" = 'pending';

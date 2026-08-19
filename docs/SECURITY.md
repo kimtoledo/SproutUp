@@ -33,9 +33,11 @@ The initial role catalogue is:
 
 Authorization is capability-based and deny-by-default. The initial permissions cover only users, roles, sessions, and audit access. Each later domain task must add explicit capability keys and reviewed grants; no role receives a domain permission merely because it is a staff role.
 
+Role grants are not exposed as direct mutations. A caller with `roles.assign` proposes an exact target/role payload and reason; a different caller with the same capability must approve it before the grant is created. Proposals expire after 24 hours, are protected from duplicate pending payloads, are locked while being checked, and bind approval to a SHA-256 payload hash. The maker cannot target their own account, the checker cannot be the maker or target, and `super_admin` cannot be granted through this workflow until an emergency/bootstrap policy is approved.
+
 ## Audit evidence
 
-`audit_events` is append-only. PostgreSQL triggers reject row updates, row deletes, and table truncation. Corrections must be represented by new events.
+`audit_events` and `approval_actions` are append-only. PostgreSQL triggers reject row updates, row deletes, and table truncation. Corrections must be represented by new events.
 
 Audit metadata is rejected before persistence when a key indicates a password, token, secret, authorization header, cookie, API key, or credential. Audit events preserve actor and role snapshots without a foreign key that could erase attribution when a user record changes.
 
@@ -55,7 +57,7 @@ Never put real secrets in `.env.example`, Markdown, source code, fixtures, logs,
 
 - Email verification and password-reset delivery provider
 - OTP/TOTP policy, required step-up events, recovery, and trusted-device behavior
-- Final role-permission and maker/checker matrices
+- Final domain role-permission and maker/checker matrices; role assignment itself is dual-controlled
 - Emergency access and support impersonation policy
 - Central security event monitoring and alert provider
 - Session/device management user interface; the protected API is implemented

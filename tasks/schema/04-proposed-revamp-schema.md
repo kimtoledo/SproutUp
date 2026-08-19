@@ -4,7 +4,7 @@
 
 ## Implementation status
 
-The first reviewed identity slice was implemented on 2026-08-19: `users`, `sessions`, `accounts`, `verifications`, `rate_limits`, `roles`, `permissions`, `user_roles`, `role_permissions`, and append-only `audit_events`. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
+The first reviewed identity and approval slices were implemented on 2026-08-19: `users`, `sessions`, `accounts`, `verifications`, `rate_limits`, `roles`, `permissions`, `user_roles`, `role_permissions`, append-only `audit_events`, `approval_requests`, and append-only `approval_actions`. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
 
 This is a normalized domain outline for the Philippine revamp. It intentionally avoids copying legacy table names and duplicated summary tables.
 
@@ -58,7 +58,7 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 
 ## Operations and communications
 
-- `workflow_tasks`, `approval_requests`, `approval_actions`
+- `workflow_tasks`; `approval_requests` and `approval_actions` are implemented
 - `outbox_events`, `jobs`, `job_attempts`, `dead_letter_events`
 - `notification_templates`, `notifications`, `delivery_attempts`
 - `report_exports`, `data_import_runs`, `data_import_errors`

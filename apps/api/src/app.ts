@@ -9,6 +9,8 @@ import type { AuthServices } from './auth/types.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerSessionRoutes } from './routes/sessions.js';
 import type { SessionService } from './auth/sessions-service.js';
+import type { RoleAssignmentService } from './auth/role-assignments-service.js';
+import { registerRoleAssignmentRoutes } from './routes/role-assignments.js';
 
 export interface AppDependencies {
   config: Pick<ApiConfig, 'appOrigin' | 'environment'>;
@@ -17,6 +19,7 @@ export interface AppDependencies {
     service: AuthServices;
     baseUrl: string;
     sessions?: SessionService;
+    roleAssignments?: RoleAssignmentService;
   };
   logger?: boolean;
 }
@@ -79,6 +82,12 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
       await registerSessionRoutes(app, {
         auth: dependencies.auth.service,
         sessions: dependencies.auth.sessions,
+      });
+    }
+    if (dependencies.auth.roleAssignments) {
+      await registerRoleAssignmentRoutes(app, {
+        auth: dependencies.auth.service,
+        roleAssignments: dependencies.auth.roleAssignments,
       });
     }
   }

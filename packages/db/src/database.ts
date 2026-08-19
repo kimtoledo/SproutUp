@@ -21,6 +21,8 @@ export const REQUIRED_DATABASE_RELATIONS = [
   'user_roles',
   'role_permissions',
   'audit_events',
+  'approval_requests',
+  'approval_actions',
 ] as const;
 
 export function createDatabase(databaseUrl: string): DatabaseServices {

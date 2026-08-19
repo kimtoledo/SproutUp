@@ -3,6 +3,13 @@
 **Status:** WIP  
 **Outcome:** High-risk compliance and financial operations require explicit separation of duties, evidence, and auditable approval before execution.
 
+## Implementation progress
+
+- **2026-08-19 — Reusable approval foundation and role assignment:** Added `approval_requests` for current workflow state and append-only `approval_actions` for proposed/approved/executed/expired evidence.
+- Role assignment is the first controlled command. Its exact canonical target/role payload is SHA-256 bound, expires after 24 hours, permits only one equivalent pending proposal, locks the request during approval, and creates the grant in the checker's transaction.
+- API and service tests prove capability denial, maker/checker separation, atomic execution, and restricted self-target/`super_admin` paths. Database tests prove approval actions cannot be updated, deleted, or truncated.
+- The cross-domain command/threshold matrix, rejection/cancellation/amendment flows, alerting, emergency override, and financial command integrations remain; this task stays **WIP**.
+
 ## Scope
 
 - Catalogue commands that are view-only, propose, approve, execute, reverse/correct, override, export, or administer.

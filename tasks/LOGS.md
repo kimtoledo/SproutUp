@@ -34,6 +34,34 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Dual-controlled role assignment
+
+**Status:** Done
+
+### Updated
+
+- Added `approval_requests` and append-only `approval_actions`, generated migrations, a partial unique index preventing equivalent pending proposals, and database readiness coverage.
+- Added protected endpoints to list pending role grants, propose an exact target/role assignment, and approve/execute it as a separate authorized checker.
+- Bound approval to a canonical SHA-256 payload hash, a 24-hour expiry, request-row locking, active target/role revalidation, and atomic role grant plus evidence writes.
+- Added stable denial responses for missing permission, self-targeting, maker/checker conflict, checker self-approval, duplicates, stale/expired requests, integrity mismatch, and restricted `super_admin` elevation.
+- Added route, service, migration, immutability, and authorization tests; updated security, developer, schema, and MVP task documentation.
+
+### Decisions
+
+- Role assignment is the reference maker/checker command and cannot execute as a direct single-actor mutation.
+- `super_admin` cannot be assigned through the ordinary role-grant workflow until bootstrap, emergency access, and independent-review policy is approved.
+- Approval action history is immutable at the database layer; the mutable request record is only the current workflow state.
+
+### Open items
+
+- Add rejection/cancellation/amendment handling and the approved domain command/threshold matrix.
+- Define a controlled bootstrap path, emergency access, and role revocation/permission-change workflows.
+- Select delivery providers and complete recovery, verification, and MFA controls in task 02.
+
+### Next
+
+- Implement the read-only role/user administration catalogue and then the borrower-onboarding state model without weakening the deny-by-default or dual-control boundaries.
+
 ## 2026-08-19 — Audited own-session management
 
 **Status:** Done

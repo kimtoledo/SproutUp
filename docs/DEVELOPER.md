@@ -48,6 +48,11 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `GET /v1/session-context` | Server-resolved current user, roles, and permissions; returns `401` without an active authorized account |
 | `GET /v1/sessions` | List the authenticated user's sessions without exposing tokens |
 | `DELETE /v1/sessions/:sessionId` | Revoke an owned session and append immutable audit evidence |
+| `GET /v1/admin/role-assignments` | List unexpired pending role-assignment proposals; requires `roles.assign` |
+| `POST /v1/admin/role-assignments` | Propose a target/role grant with a 10–500 character reason; requires `roles.assign` |
+| `POST /v1/admin/role-assignments/:approvalId/approve` | Approve and execute a proposal as a different authorized actor |
+
+Role-assignment proposals expire after 24 hours. The API rejects duplicate pending payloads, self-targeting, maker self-approval, checker self-approval, stale/non-pending requests, and hash mismatches. `super_admin` assignment is intentionally unavailable until the bootstrap/emergency-access policy is approved.
 
 ## Validate a change
 
@@ -68,7 +73,7 @@ npm run db:migrate
 npm run db:check
 ```
 
-`db:migrate` applies committed migrations and idempotently seeds the approved role/permission baseline. `db:check` verifies connectivity and every relation currently required by API startup.
+`db:migrate` applies committed migrations and idempotently seeds the approved role/permission baseline. `db:check` verifies connectivity and every relation currently required by API startup, including approval workflow relations.
 
 Commit schema and generated migration files together. Custom SQL, such as append-only audit triggers, belongs in an explicitly generated custom migration. Never edit a migration already applied to a shared environment, use schema push against shared environments, or run manual DDL as a substitute for a migration.
 

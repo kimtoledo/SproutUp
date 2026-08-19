@@ -7,7 +7,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 ## Task checklist
 
 - [ ] [01 — Platform Foundation](./01-platform-foundation.md) — initial monorepo, web/API health slice, shared contracts, database boundary, and CI implemented; infrastructure and financial foundations remain
-- [ ] [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md) — password/session boundary, own-session revocation, canonical RBAC schema, throttling, and immutable audit foundation implemented; delivery-backed recovery/MFA and admin commands remain
+- [ ] [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md) — password/session boundary, own-session revocation, canonical RBAC, immutable audit, and dual-controlled role grants implemented; delivery-backed recovery/MFA and remaining admin commands remain
 - [ ] [03 — Borrower Onboarding & KYC](./03-borrower-onboarding-kyc.md)
 - [ ] [04 — Investor Onboarding & KYC](./04-investor-onboarding-kyc.md)
 - [ ] [05 — Document & Consent Management](./05-document-consent-management.md)
@@ -27,7 +27,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 - [ ] [19 — Scheduler, Queues & Job Control](./19-scheduler-queues-job-control.md)
 - [ ] [20 — Admin Information Architecture & Work Queues](./20-admin-information-architecture-work-queues.md)
 - [ ] [21 — Borrower & Investor Portal Journeys](./21-borrower-investor-portal-journeys.md)
-- [ ] [22 — Maker/Checker Approval Matrix](./22-maker-checker-approval-matrix.md)
+- [ ] [22 — Maker/Checker Approval Matrix](./22-maker-checker-approval-matrix.md) — hash-bound approval schema and role-assignment reference workflow implemented; domain matrix and remaining lifecycle states remain
 - [ ] [23 — Cross-App Contract, Compatibility & Cutover](./23-cross-app-contract-cutover.md)
 
 ## Release rule
