@@ -1,4 +1,5 @@
-import { ArrowRight, Building2, ShieldCheck, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight, Building2, ShieldCheck, Sprout, TrendingUp } from 'lucide-react';
 import { product } from '@/lib/product';
 
 const pillars = [
@@ -24,10 +25,13 @@ export default function HomePage() {
     <main>
       <header className="site-header">
         <a className="brand" href="#top" aria-label="SproutUp home">
-          <span className="brand-mark" aria-hidden="true">S</span>
+          <span className="brand-mark" aria-hidden="true"><Sprout size={18} /></span>
           {product.name}
         </a>
-        <span className="status-badge">Foundation preview</span>
+        <nav className="header-actions" aria-label="Account">
+          <Link className="quiet-link" href="/login">Sign in</Link>
+          <Link className="compact-action" href="/register">Create account</Link>
+        </nav>
       </header>
 
       <section className="hero" id="top">
@@ -35,9 +39,12 @@ export default function HomePage() {
           <p className="eyebrow">Philippine debt crowdfunding</p>
           <h1>Business growth, funded with clarity.</h1>
           <p className="lede">{product.description}</p>
-          <a className="primary-action" href="#platform">
-            Explore the foundation <ArrowRight aria-hidden="true" size={18} />
-          </a>
+          <div className="hero-actions">
+            <Link className="primary-action" href="/register">
+              Start your journey <ArrowRight aria-hidden="true" size={18} />
+            </Link>
+            <a className="quiet-link" href="#platform">How SproutUp works</a>
+          </div>
         </div>
         <div className="hero-card" aria-label="Platform workflow preview">
           <p className="card-label">One accountable flow</p>

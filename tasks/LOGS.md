@@ -34,6 +34,36 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Borrower and investor authentication entry UI
+
+**Status:** Done
+
+### Updated
+
+- Added responsive `/register` and `/login` App Router pages with a shared accessible authentication card and explicit SME borrower/investor primary-journey choice.
+- Connected both forms to the existing Better Auth API boundary through `NEXT_PUBLIC_API_URL`, JSON requests, and `credentials: "include"` without exposing session tokens to browser code.
+- Added client-side name/email/password validation aligned with current server constraints, pending-state duplicate-submit prevention, non-enumerating credential errors, rate-limit feedback, and non-leaking network failure messages.
+- Updated the landing page with clear registration/sign-in navigation, stronger keyboard focus states, mobile form layout, and SproutUp icon treatment.
+- Added four authentication-client tests covering normalized payloads, cookie request options, pre-network validation, safe denial/rate-limit messages, and network-failure redaction; the web suite now has five tests.
+- Updated developer, security, authentication, portal, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Registration exposes only the already-approved primary `borrower` or `investor` intent. Staff roles and dual-capacity selection are not presented to public users.
+- Browser validation is for feedback only. Better Auth and the API remain authoritative for credentials, rate limiting, role bootstrap, and session-cookie behavior.
+- Sign-in errors deliberately do not distinguish an unknown email from an incorrect password.
+- Successful authentication returns to the landing page temporarily; the authenticated portal shell is the next UI boundary and must resolve server session context before rendering capabilities.
+
+### Open items
+
+- Implement the authenticated portal shell and server-authoritative session/onboarding state rendering.
+- Add password recovery and email verification only with approved delivery provider, templates, token lifecycle, and anti-enumeration behavior.
+- Complete accessibility/browser QA and end-to-end cookie/CORS tests in the deployed pilot topology.
+
+### Next
+
+- Implement an authenticated portal page that resolves `/v1/session-context`, shows only server-granted journey actions, and safely handles expired sessions.
+
 ## 2026-08-19 — Exact consent publication and acceptance services
 
 **Status:** Done

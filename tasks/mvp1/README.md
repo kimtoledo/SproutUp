@@ -7,7 +7,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 ## Task checklist
 
 - [ ] [01 — Platform Foundation](./01-platform-foundation.md) — monorepo, web/API health, shared contracts, database/CI, auth/audit, jobs, exact PHP money, balanced append-only ledger schema, posting, reversal, and exact internal account projection implemented; production infrastructure and remaining services remain
-- [ ] [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md) — password/session boundary, audited customer-intent bootstrap, access catalogue, own-session revocation, canonical RBAC, immutable audit, and dual-controlled role changes implemented; recovery/MFA and remaining controls remain
+- [ ] [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md) — password/session boundary, registration/login UI, audited customer-intent bootstrap, access catalogue, own-session revocation, canonical RBAC, immutable audit, and dual-controlled role changes implemented; recovery/MFA and remaining controls remain
 - [ ] [03 — Borrower Onboarding & KYC](./03-borrower-onboarding-kyc.md) — protected case lifecycle through assigned-reviewer rejection implemented; Philippine profile, evidence, completeness, and approval remain
 - [ ] [04 — Investor Onboarding & KYC](./04-investor-onboarding-kyc.md) — protected case lifecycle through assigned-reviewer rejection implemented; classification, suitability, bank, completeness, approval, and eligibility controls remain
 - [ ] [05 — Document & Consent Management](./05-document-consent-management.md) — immutable versioned consent evidence plus internal publication/effective-read/exact-acceptance services implemented; legal content, routes/policy, private files, retention, and e-signatures remain
@@ -26,7 +26,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 - [ ] [18 — API Contracts & Security Boundary](./18-api-contracts-security-boundary.md) — every current application-owned operation has an enforced CI-validated OpenAPI 3.1 contract and `/v1` compatibility/retirement policy; future domain, file, and webhook contracts remain
 - [ ] [19 — Scheduler, Queues & Job Control](./19-scheduler-queues-job-control.md) — persistence/control/runtime and policy-gated MVP job catalogue implemented; all production topics remain blocked or intentionally synchronous pending their owning domains/providers
 - [ ] [20 — Admin Information Architecture & Work Queues](./20-admin-information-architecture-work-queues.md) — bounded compliance queue, safe claim, information request, detail, and rejection implemented; approval policy, UI, and remaining domain queues remain
-- [ ] [21 — Borrower & Investor Portal Journeys](./21-borrower-investor-portal-journeys.md) — server-authoritative onboarding state plus own create/read/submit/withdraw API implemented; profile forms, screens, and end-to-end journeys remain
+- [ ] [21 — Borrower & Investor Portal Journeys](./21-borrower-investor-portal-journeys.md) — public landing plus registration/login UI and server-authoritative onboarding case API implemented; authenticated portal, profile forms, and end-to-end journeys remain
 - [ ] [22 — Maker/Checker Approval Matrix](./22-maker-checker-approval-matrix.md) — hash-bound role grant/revocation, reject/cancel, and history/detail implemented; domain matrix, amendment, and emergency paths remain
 - [ ] [23 — Cross-App Contract, Compatibility & Cutover](./23-cross-app-contract-cutover.md)
 

@@ -32,6 +32,8 @@ npm run dev:web
 
 The web application is available at `http://localhost:3000`.
 
+Public web routes currently include the landing page, `/register`, and `/login`. Registration asks for one primary borrower/investor journey and calls the API's Better Auth boundary using `NEXT_PUBLIC_API_URL`; sign-in uses the same cookie-bearing request boundary. Successful requests currently return to the landing page until the authenticated portal shell is implemented.
+
 In another terminal, start the API:
 
 ```bash
@@ -92,6 +94,8 @@ Email signup requires one additional field:
 ```
 
 `registrationIntent` accepts only `borrower` or `investor`. It atomically bootstraps the matching customer role and registration audit evidence; callers cannot request staff or `super_admin`. Staff/bootstrap administration remains an out-of-band controlled operation until its policy is approved.
+
+The web registration client mirrors name, email, 12–128 character password, and registration-intent checks for immediate feedback, but API validation remains authoritative. The sign-in UI always returns the same incorrect-credential message for unknown email and wrong password. Both requests use `credentials: "include"`; browser code must never read, persist, or log the HTTP-only session cookie.
 
 ## Validate a change
 

@@ -31,6 +31,8 @@ Own-session responses are schema-allowlisted to opaque session identity and disp
 
 Password-reset delivery and email verification are not operational until a transactional-email adapter and templates are approved. MFA/OTP is not enabled until the required events, recovery process, and delivery provider are approved. These are release blockers under MVP 1 task 02, not silently deferred security controls.
 
+The web registration and sign-in pages send JSON only to the configured API origin with `credentials: "include"`; they do not read or store session tokens. Client validation is usability-only and the API remains authoritative. Sign-in failures use one non-enumerating message for unknown account and incorrect password, rate limits receive a distinct retry-later message, and network exception details are never rendered. Password recovery and email verification UI remain unavailable until their delivery and policy controls are implemented.
+
 ## Authorization
 
 The API resolves roles and permissions from the authenticated user ID. Client-supplied role, permission, or ownership claims are never authoritative.

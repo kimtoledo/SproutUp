@@ -12,6 +12,7 @@
 - Information-request reasons appear in the owned immutable event timeline, and applicants can resubmit the same case using the latest version; profile/evidence correction forms remain unimplemented.
 - The portal contract now supports reasoned withdrawal from eligible owned states with optimistic version checks. Stale, unauthorized, in-review, and terminal withdrawal attempts cannot overwrite server state; UI remains unimplemented.
 - A reasoned staff rejection now appears as immutable terminal case state and timeline evidence for the owned case projection. Rejection UI/content and any correction/reopen path remain unimplemented.
+- Added responsive, keyboard-focus-visible registration and sign-in pages linked from the public landing page. Registration chooses one primary SME borrower/investor journey, password guidance matches the API, and safe loading/error states are present; authenticated portal state and recovery remain unimplemented.
 
 ## Scope
 
