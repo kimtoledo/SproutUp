@@ -34,6 +34,37 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Permission-driven onboarding portal shell
+
+**Status:** Done
+
+### Updated
+
+- Added the authenticated `/portal` route with loading, unauthenticated, unavailable, retry, empty, and responsive account states.
+- Added a cookie-bearing portal client that resolves `/v1/session-context` before loading owned onboarding cases and never reads or stores session tokens.
+- Rendered borrower/investor start controls only from server-returned `manage_own` permissions and submit/resubmit controls only from matching `submit_own` permissions plus current state.
+- Added exact-version create/submit/withdraw commands, a bounded reason form, pending-state duplicate-action controls, safe stable error-code mapping, authoritative refresh after commands, session-expiry handling, and sign-out.
+- Redirected successful registration/sign-in to the portal and linked the portal from the landing page.
+- Added four portal-client tests covering unauthenticated short-circuit, ordered session/case loading with cookies, exact optimistic command payloads, and non-leaking stale/session errors; the web suite now has nine tests.
+- Updated developer, security, borrower, investor, portal, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Portal visibility is derived only from server-resolved permission keys. Client-side hiding improves clarity but never substitutes for owner/type/capability checks in the API.
+- Session context must succeed before any owned-case request or authenticated rendering. Partial or malformed loads render no account data.
+- Commands always use the currently displayed case version and reload server state after success or conflict; the browser never fabricates the next version.
+- The portal currently supports case lifecycle actions only. It does not imply profile completeness, KYC evidence, approval eligibility, funding, wallet, or staff functionality.
+
+### Open items
+
+- Add owned case detail/timeline and explicit next-action content, then profile/evidence forms after field policies are approved.
+- Add password recovery/email verification and deployed-browser cookie/CORS tests after provider/topology decisions.
+- Add route-level session protection/redirect strategy if the deployment requires server-side authenticated rendering rather than the current no-data-until-resolved client shell.
+
+### Next
+
+- Implement owned onboarding case detail and immutable timeline UI using the existing protected detail API, including information-request and terminal decision reasons.
+
 ## 2026-08-19 — Borrower and investor authentication entry UI
 
 **Status:** Done

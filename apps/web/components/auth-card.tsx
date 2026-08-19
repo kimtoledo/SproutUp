@@ -33,7 +33,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'register' }) {
         })
       : await signInWithEmail({ email, password });
     if (result.ok) {
-      router.push('/');
+      router.push('/portal');
       router.refresh();
       return;
     }

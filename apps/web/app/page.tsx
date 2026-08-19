@@ -30,6 +30,7 @@ export default function HomePage() {
         </a>
         <nav className="header-actions" aria-label="Account">
           <Link className="quiet-link" href="/login">Sign in</Link>
+          <Link className="quiet-link portal-link" href="/portal">Portal</Link>
           <Link className="compact-action" href="/register">Create account</Link>
         </nav>
       </header>

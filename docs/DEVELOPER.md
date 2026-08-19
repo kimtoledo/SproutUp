@@ -32,7 +32,9 @@ npm run dev:web
 
 The web application is available at `http://localhost:3000`.
 
-Public web routes currently include the landing page, `/register`, and `/login`. Registration asks for one primary borrower/investor journey and calls the API's Better Auth boundary using `NEXT_PUBLIC_API_URL`; sign-in uses the same cookie-bearing request boundary. Successful requests currently return to the landing page until the authenticated portal shell is implemented.
+Web routes currently include the public landing page, `/register`, `/login`, and the client-rendered `/portal`. Registration asks for one primary borrower/investor journey and calls the API's Better Auth boundary using `NEXT_PUBLIC_API_URL`; sign-in uses the same cookie-bearing request boundary and continues to `/portal`.
+
+The portal first resolves `/v1/session-context`, then loads `/v1/onboarding/cases`. A `401` removes authenticated content and offers sign-in; a dependency/contract failure renders a retry state without partial account data. Create, submit/resubmit, and reasoned withdrawal controls appear only when the returned permission keys and case states allow them, but the API re-authorizes every command. Commands send the exact displayed case version and reload authoritative state after completion or conflict.
 
 In another terminal, start the API:
 

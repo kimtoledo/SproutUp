@@ -172,6 +172,12 @@ input:focus-visible {
   outline-offset: 3px;
 }
 
+textarea:focus-visible,
+button:focus-visible {
+  outline: 3px solid rgba(233, 185, 73, 0.72);
+  outline-offset: 3px;
+}
+
 .hero-card {
   padding: 30px;
   border: 1px solid rgba(20, 35, 26, 0.08);
@@ -408,6 +414,300 @@ input:focus-visible {
   font-weight: 780;
 }
 
+.button-reset {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.portal-page {
+  width: min(1120px, calc(100% - 40px));
+  margin: 0 auto;
+  padding-bottom: 90px;
+}
+
+.portal-header {
+  padding: 28px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.quiet-button,
+.text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  color: #276540;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+}
+
+.quiet-button:hover,
+.text-button:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.portal-intro {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: end;
+  padding: 70px 0 54px;
+}
+
+.portal-intro h1 {
+  font-size: clamp(2.8rem, 7vw, 5.6rem);
+}
+
+.portal-intro > div > p:last-child {
+  color: #596b5f;
+  font-size: 1.05rem;
+}
+
+.identity-card {
+  min-width: 280px;
+  display: grid;
+  gap: 6px;
+  padding: 20px;
+  border: 1px solid #d9e3da;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.identity-card small,
+.identity-card span {
+  color: #67776b;
+}
+
+.identity-card span {
+  font-size: 0.82rem;
+  text-transform: capitalize;
+}
+
+.portal-section {
+  padding: clamp(26px, 5vw, 44px);
+  border: 1px solid rgba(20, 35, 26, 0.09);
+  border-radius: 25px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 24px 70px rgba(31, 74, 46, 0.1);
+}
+
+.portal-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.portal-section-heading h2 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  letter-spacing: -0.05em;
+}
+
+.journey-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin: 30px 0;
+}
+
+.journey-start {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 13px;
+  padding: 20px;
+  border: 1px solid #dce5de;
+  border-radius: 15px;
+  background: #f8fbf8;
+}
+
+.journey-start > svg {
+  color: #287a4b;
+}
+
+.journey-start h3,
+.journey-start p {
+  margin: 0;
+}
+
+.journey-start p {
+  margin-top: 5px;
+  color: #697a6e;
+  line-height: 1.45;
+}
+
+.journey-start .text-button {
+  grid-column: 2;
+  justify-self: start;
+  margin-top: 4px;
+}
+
+.text-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+  text-decoration: none;
+}
+
+.case-list {
+  display: grid;
+  gap: 14px;
+}
+
+.case-card {
+  padding: 20px;
+  border: 1px solid #dce5de;
+  border-radius: 16px;
+}
+
+.case-card-heading {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 13px;
+  align-items: center;
+}
+
+.journey-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: #276540;
+  background: #e8f2eb;
+}
+
+.case-card-heading p {
+  margin: 0 0 6px;
+  font-weight: 800;
+}
+
+.case-card-heading > small,
+.case-meta {
+  color: #718076;
+}
+
+.case-status {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #45574b;
+  background: #edf2ee;
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.status-needs_information {
+  color: #765812;
+  background: #fff3cd;
+}
+
+.status-approved {
+  color: #1d6a3c;
+  background: #e1f2e7;
+}
+
+.status-rejected,
+.status-withdrawn {
+  color: #7c3431;
+  background: #f8e7e5;
+}
+
+.case-meta {
+  margin: 14px 0;
+  font-size: 0.82rem;
+}
+
+.case-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.case-actions .compact-action {
+  border: 0;
+  cursor: pointer;
+}
+
+.withdraw-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e0e7e1;
+}
+
+.withdraw-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+.withdraw-form textarea {
+  min-height: 96px;
+  resize: vertical;
+  padding: 11px 13px;
+  border: 1px solid #cbd8cd;
+  border-radius: 11px;
+  font: inherit;
+}
+
+.danger-action {
+  width: fit-content;
+  padding: 10px 13px;
+  border: 0;
+  border-radius: 9px;
+  color: white;
+  background: #8b3834;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+}
+
+.empty-state {
+  padding: 38px 20px;
+  border: 1px dashed #c9d5cb;
+  border-radius: 14px;
+  text-align: center;
+}
+
+.empty-state h3,
+.empty-state p {
+  margin: 0;
+}
+
+.empty-state p {
+  margin-top: 8px;
+  color: #697a6e;
+}
+
+.portal-state {
+  width: min(560px, calc(100% - 40px));
+  min-height: 100vh;
+  margin: 0 auto;
+  display: grid;
+  place-content: center;
+  justify-items: start;
+  text-align: left;
+}
+
+.portal-state h1 {
+  margin: 24px 0 10px;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+}
+
+.portal-state p {
+  margin: 0 0 24px;
+  color: #596b5f;
+}
+
 @media (max-width: 760px) {
   .hero {
     min-height: auto;
@@ -439,6 +739,32 @@ input:focus-visible {
 
   .auth-card {
     border-radius: 20px;
+  }
+
+  .portal-link {
+    display: none;
+  }
+
+  .portal-intro {
+    grid-template-columns: 1fr;
+    align-items: start;
+    padding-top: 50px;
+  }
+
+  .identity-card {
+    min-width: 0;
+  }
+
+  .journey-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .case-card-heading {
+    grid-template-columns: auto 1fr;
+  }
+
+  .case-card-heading > small {
+    grid-column: 2;
   }
 }
 

@@ -33,6 +33,8 @@ Password-reset delivery and email verification are not operational until a trans
 
 The web registration and sign-in pages send JSON only to the configured API origin with `credentials: "include"`; they do not read or store session tokens. Client validation is usability-only and the API remains authoritative. Sign-in failures use one non-enumerating message for unknown account and incorrect password, rate limits receive a distinct retry-later message, and network exception details are never rendered. Password recovery and email verification UI remain unavailable until their delivery and policy controls are implemented.
 
+The portal does not infer access from URL, registration intent, or browser state. It loads the server-resolved session context, renders only returned borrower/investor capabilities, and then calls owner-bound APIs that re-authorize every action. A `401` clears authenticated rendering; failed or malformed loads do not retain partial account data. Optimistic commands use the displayed version, map stable error codes to bounded client messages, ignore server/internal exception text, and reload authoritative state after success or conflict.
+
 ## Authorization
 
 The API resolves roles and permissions from the authenticated user ID. Client-supplied role, permission, or ownership claims are never authoritative.
