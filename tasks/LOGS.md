@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Assigned-reviewer onboarding rejection
+
+**Status:** Done
+
+### Updated
+
+- Added `POST /v1/admin/onboarding/cases/:caseId/reject` with enforced UUID, positive version, and trimmed 10–1000 character reason contracts.
+- Added a row-locked assigned-reviewer service command that rejects only `in_review`, stamps `decidedAt`, increments version, and atomically appends reasoned case-event and audit evidence.
+- Added service coverage for resubmission/reclaim followed by unassigned-reviewer denial, stale-version denial, exact rejection state/timestamp/timeline, and audit reason preservation.
+- Added route identity/permission propagation, stable denial behavior, and global OpenAPI operation coverage.
+- Updated developer, security, borrower, investor, admin-queue, portal, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Rejection requires the currently assigned reviewer and the `onboarding_cases.review` capability; general queue access is insufficient.
+- Rejection is allowed only from `in_review`, is optimistic-versioned, and retains reviewer assignment as historical attribution.
+- Rejection reasons and decision timestamps are durable workflow and audit evidence, not mutable case fields.
+- Approval remains deliberately unavailable until profile/evidence completeness, screening, escalation, eligibility effects, and decision authority are implemented and tested.
+
+### Open items
+
+- Approve the borrower entity/document matrix and investor subject/suitability scope.
+- Implement versioned profile/evidence/consent completeness before any positive decision path.
+- Define rejected-case correction/reopen authority and conditions; the shared transition exists but no command assumes that policy.
+
+### Next
+
+- Add a policy-neutral, versioned draft profile envelope only if its Philippine borrower/investor field scope can be approved; otherwise continue with consent-version infrastructure that does not invent regulated content.
+
 ## 2026-08-19 — Reasoned applicant onboarding withdrawal
 
 **Status:** Done

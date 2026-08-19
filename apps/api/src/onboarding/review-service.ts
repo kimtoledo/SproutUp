@@ -42,6 +42,14 @@ export interface OnboardingReviewService {
     reason: string;
     requestId: string;
   }): Promise<{ ok: true; case: OnboardingCaseSummary } | { ok: false; reason: ReviewFailure | 'not_assigned_reviewer' }>;
+  reject(input: {
+    reviewerUserId: string;
+    reviewerRoles: RoleKey[];
+    caseId: string;
+    expectedVersion: number;
+    reason: string;
+    requestId: string;
+  }): Promise<{ ok: true; case: OnboardingCaseSummary } | { ok: false; reason: ReviewFailure | 'not_assigned_reviewer' }>;
 }
 
 const summarySelection = {
@@ -56,7 +64,10 @@ const summarySelection = {
   updatedAt: schema.onboardingCases.updatedAt,
 };
 
-export function createOnboardingReviewService(database: Database): OnboardingReviewService {
+export function createOnboardingReviewService(
+  database: Database,
+  clock: () => Date = () => new Date(),
+): OnboardingReviewService {
   return {
     async list(input) {
       const filters: SQL[] = [];
@@ -241,6 +252,74 @@ export function createOnboardingReviewService(database: Database): OnboardingRev
           metadata: { caseType: current.caseType, fromVersion: current.version, toVersion: nextVersion },
         });
         return { ok: true as const, case: needsInformation };
+      });
+    },
+
+    async reject(input) {
+      return database.transaction(async (transaction) => {
+        const [current] = await transaction
+          .select()
+          .from(schema.onboardingCases)
+          .where(eq(schema.onboardingCases.id, input.caseId))
+          .limit(1)
+          .for('update');
+        if (!current) return { ok: false as const, reason: 'not_found' as const };
+        if (current.applicantUserId === input.reviewerUserId) {
+          return { ok: false as const, reason: 'self_review_not_allowed' as const };
+        }
+        if (current.assignedReviewerUserId !== input.reviewerUserId) {
+          return { ok: false as const, reason: 'not_assigned_reviewer' as const };
+        }
+        if (current.version !== input.expectedVersion) {
+          return { ok: false as const, reason: 'stale_version' as const };
+        }
+        if (!canTransitionOnboardingCase(current.status, 'rejected')) {
+          return { ok: false as const, reason: 'invalid_transition' as const };
+        }
+
+        const nextVersion = current.version + 1;
+        const decidedAt = clock();
+        const [rejected] = await transaction
+          .update(schema.onboardingCases)
+          .set({ status: 'rejected', version: nextVersion, decidedAt })
+          .where(
+            and(
+              eq(schema.onboardingCases.id, current.id),
+              eq(schema.onboardingCases.version, input.expectedVersion),
+              eq(schema.onboardingCases.assignedReviewerUserId, input.reviewerUserId),
+            ),
+          )
+          .returning(summarySelection);
+        if (!rejected) return { ok: false as const, reason: 'stale_version' as const };
+
+        await transaction.insert(schema.onboardingCaseEvents).values({
+          caseId: current.id,
+          eventType: 'rejected',
+          fromStatus: current.status,
+          toStatus: 'rejected',
+          caseVersion: nextVersion,
+          actorType: 'user',
+          actorUserId: input.reviewerUserId,
+          reason: input.reason,
+          occurredAt: decidedAt,
+        });
+        await writeAudit(transaction, {
+          actorType: 'user',
+          actorUserId: input.reviewerUserId,
+          actorRoles: input.reviewerRoles,
+          action: 'onboarding_case.rejected',
+          outcome: 'succeeded',
+          resourceType: 'onboarding_case',
+          resourceId: current.id,
+          requestId: input.requestId,
+          reason: input.reason,
+          metadata: {
+            caseType: current.caseType,
+            fromVersion: current.version,
+            toVersion: nextVersion,
+          },
+        });
+        return { ok: true as const, case: rejected };
       });
     },
   };

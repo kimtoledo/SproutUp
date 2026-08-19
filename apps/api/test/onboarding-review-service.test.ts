@@ -45,7 +45,7 @@ afterAll(async () => {
   await pglite.close();
 });
 
-describe('onboarding review service', () => {
+describe.sequential('onboarding review service', () => {
   it('lists a bounded compliance queue with applicant context', async () => {
     const result = await createOnboardingReviewService(orm).list({
       page: 1,
@@ -159,6 +159,70 @@ describe('onboarding review service', () => {
         { eventType: 'information_requested', reason: 'Please provide clearer registration evidence' },
         { eventType: 'submitted' },
       ],
+    });
+  });
+
+  it('allows only the assigned reviewer to reject in-review state with a reason', async () => {
+    const decidedAt = new Date('2030-08-19T02:00:00.000Z');
+    const service = createOnboardingReviewService(orm, () => decidedAt);
+    const started = await service.startReview({
+      reviewerUserId: reviewerId,
+      reviewerRoles: ['compliance_officer'],
+      caseId,
+      expectedVersion: 5,
+      requestId: '00000000-0000-4000-8000-000000000815',
+    });
+    expect(started).toMatchObject({ ok: true, case: { status: 'in_review', version: 6 } });
+
+    await expect(service.reject({
+      reviewerUserId: otherReviewerId,
+      reviewerRoles: ['compliance_officer'],
+      caseId,
+      expectedVersion: 6,
+      reason: 'Other reviewer cannot make this negative decision',
+      requestId: '00000000-0000-4000-8000-000000000816',
+    })).resolves.toEqual({ ok: false, reason: 'not_assigned_reviewer' });
+    await expect(service.reject({
+      reviewerUserId: reviewerId,
+      reviewerRoles: ['compliance_officer'],
+      caseId,
+      expectedVersion: 5,
+      reason: 'The case does not meet the documented pilot requirements',
+      requestId: '00000000-0000-4000-8000-000000000817',
+    })).resolves.toEqual({ ok: false, reason: 'stale_version' });
+
+    const result = await service.reject({
+      reviewerUserId: reviewerId,
+      reviewerRoles: ['compliance_officer'],
+      caseId,
+      expectedVersion: 6,
+      reason: 'The case does not meet the documented pilot requirements',
+      requestId: '00000000-0000-4000-8000-000000000818',
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      case: { status: 'rejected', version: 7, decidedAt },
+    });
+
+    const detail = await service.detail(caseId);
+    expect(detail).toMatchObject({ status: 'rejected', version: 7 });
+    expect(detail?.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        eventType: 'rejected',
+        fromStatus: 'in_review',
+        toStatus: 'rejected',
+        caseVersion: 7,
+        reason: 'The case does not meet the documented pilot requirements',
+        occurredAt: decidedAt,
+      }),
+    ]));
+    const audits = await orm
+      .select({ action: schema.auditEvents.action, reason: schema.auditEvents.reason })
+      .from(schema.auditEvents)
+      .where(eq(schema.auditEvents.resourceId, caseId));
+    expect(audits).toContainEqual({
+      action: 'onboarding_case.rejected',
+      reason: 'The case does not meet the documented pilot requirements',
     });
   });
 });

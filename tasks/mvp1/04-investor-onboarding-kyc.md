@@ -12,7 +12,8 @@
 - Assigned reviewers can request information with a versioned reason, and the investor can resubmit the same owned case without losing assignment or immutable correction history.
 - Staff can inspect investor case identity/current state and the complete ordered immutable transition/reason timeline through the queue-read capability.
 - Investors can withdraw their own eligible open case with optimistic versioning and a required reason; the terminal state, event, and audit evidence remain immutable while allowing a later fresh journey.
-- Investor subject classification, profile/evidence fields, suitability questionnaire versions, eligibility restrictions, bank verification, and decision APIs remain unimplemented because the individual/institutional pilot scope and approved rules are still open; this task stays **WIP**.
+- The assigned compliance reviewer can reject an `in_review` investor case with a reason and exact version, preserving decision time and immutable event/audit evidence. Approval and eligibility effects remain unavailable.
+- Investor subject classification, profile/evidence fields, suitability questionnaire versions, eligibility restrictions, bank verification, and approval remain unimplemented because the individual/institutional pilot scope and approved rules are still open; this task stays **WIP**.
 
 ## Scope
 

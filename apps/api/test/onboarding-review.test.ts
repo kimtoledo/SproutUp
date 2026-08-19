@@ -28,6 +28,7 @@ function reviewService(overrides: Partial<OnboardingReviewService> = {}): Onboar
     detail: async () => null,
     startReview: async () => ({ ok: false, reason: 'not_found' }),
     requestInformation: async () => ({ ok: false, reason: 'not_found' }),
+    reject: async () => ({ ok: false, reason: 'not_found' }),
     ...overrides,
   };
 }
@@ -140,6 +141,36 @@ describe('onboarding review routes', () => {
       const response = await app.inject({ method: 'GET', url: `/v1/admin/onboarding/cases/${caseId}` });
       expect(response.statusCode).toBe(404);
       expect(response.json()).toMatchObject({ error: { code: 'CASE_NOT_FOUND' } });
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('passes assigned reviewer identity, version, and reason into rejection', async () => {
+    const reject = vi.fn<OnboardingReviewService['reject']>().mockResolvedValue({
+      ok: false,
+      reason: 'not_assigned_reviewer',
+    });
+    const app = await buildApp({
+      config: { appOrigin: 'http://localhost:3000', environment: 'test' },
+      checkDatabase: async () => undefined,
+      auth: { service: authWithPermissions(['onboarding_cases.review']), baseUrl: 'http://localhost:3001' },
+      onboarding: { cases: ownCases, review: reviewService({ reject }) },
+    });
+    try {
+      const response = await app.inject({
+        method: 'POST',
+        url: `/v1/admin/onboarding/cases/${caseId}/reject`,
+        payload: { version: 6, reason: 'The case does not meet the documented pilot requirements' },
+      });
+      expect(response.statusCode).toBe(403);
+      expect(response.json()).toMatchObject({ error: { code: 'NOT_ASSIGNED_REVIEWER' } });
+      expect(reject).toHaveBeenCalledWith(expect.objectContaining({
+        reviewerUserId: reviewerId,
+        caseId,
+        expectedVersion: 6,
+        reason: 'The case does not meet the documented pilot requirements',
+      }));
     } finally {
       await app.close();
     }

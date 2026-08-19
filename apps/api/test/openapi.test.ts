@@ -48,6 +48,7 @@ const dependencies: AppDependencies = {
       detail: async () => null,
       startReview: async () => ({ ok: false as const, reason: 'not_found' as const }),
       requestInformation: async () => ({ ok: false as const, reason: 'not_found' as const }),
+      reject: async () => ({ ok: false as const, reason: 'not_found' as const }),
     },
   },
 };
@@ -98,6 +99,7 @@ describe('OpenAPI contract generation', () => {
           '/v1/admin/onboarding/cases',
           '/v1/admin/onboarding/cases/{caseId}/start-review',
           '/v1/admin/onboarding/cases/{caseId}/request-information',
+          '/v1/admin/onboarding/cases/{caseId}/reject',
         ]),
       );
       expect(document.components.securitySchemes).toHaveProperty('sessionCookie');
@@ -140,6 +142,7 @@ describe('OpenAPI contract generation', () => {
           'post',
           'requestOnboardingInformation',
         ],
+        ['/v1/admin/onboarding/cases/{caseId}/reject', 'post', 'rejectOnboardingCase'],
       ] as const;
 
       for (const [path, method, operationId] of contractedOperations) {

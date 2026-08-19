@@ -9,6 +9,7 @@
 - Queue read and review-start use separate capabilities. Review start claims submitted work with applicant/reviewer separation, assignment-takeover denial, optimistic versioning, and immutable event/audit evidence.
 - The assigned reviewer can issue a reasoned information request; unassigned reviewers are denied, and applicant resubmission returns the same case/version timeline to the queue.
 - Added protected case detail linking queue rows to applicant identity, current state/version/assignment, and the ordered immutable workflow timeline.
+- The assigned reviewer can now reject an in-review case with an exact version and reason. The queue state, decision timestamp, event, and audit record update atomically; approval remains policy-gated.
 - SLA/aging/priority definitions, assignment policy beyond first claim, saved views, escalation, bulk actions, UI/navigation, and other domain queues remain; this task stays **WIP**.
 
 ## Scope

@@ -70,6 +70,7 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `GET /v1/admin/onboarding/cases/:caseId` | Read applicant context and the complete immutable case timeline |
 | `POST /v1/admin/onboarding/cases/:caseId/start-review` | Claim a submitted case and begin review; requires `onboarding_cases.review` |
 | `POST /v1/admin/onboarding/cases/:caseId/request-information` | Return an assigned in-review case for applicant correction with a reason |
+| `POST /v1/admin/onboarding/cases/:caseId/reject` | Reject an assigned in-review case with an exact version and reason |
 
 All `/v1` responses carry `SproutUp-API-Version: 1`, including error and Better Auth adapter responses. The current version is not deprecated. Read [API_COMPATIBILITY.md](./API_COMPATIBILITY.md) before changing a request, response, validation rule, enum, retry model, or route path.
 
@@ -146,6 +147,8 @@ Onboarding create/read/submit/withdraw routes use distinct borrower/investor own
 The compliance queue defaults to page 1 with 25 cases and accepts `page`, `pageSize` (maximum 100), `caseType`, `status`, and `assignedToMe=true|false`. Starting review requires the submitted case version. It atomically assigns the authenticated reviewer and moves the case to `in_review`; applicant self-review and takeover from another assigned reviewer return stable conflicts.
 
 Information requests require `{ "version": <positive integer>, "reason": "10–1000 characters" }` from the assigned reviewer. The case moves to `needs_information`; the applicant corrects future profile/evidence records and calls the existing submit endpoint with the new version. Resubmission returns the same case to `submitted` and retains the reviewer assignment/history.
+
+Rejection uses the same assigned-reviewer, exact-version, and bounded-reason controls from `in_review`. It stamps `decidedAt` and commits rejected state, immutable case event, and audit evidence atomically. Approval is intentionally absent until profile/evidence completeness, screening, escalation, eligibility effects, and decision authority are approved; do not reuse rejection code as an approval shortcut.
 
 Commit schema and generated migration files together. Custom SQL, such as append-only audit triggers, belongs in an explicitly generated custom migration. Never edit a migration already applied to a shared environment, use schema push against shared environments, or run manual DDL as a substitute for a migration.
 

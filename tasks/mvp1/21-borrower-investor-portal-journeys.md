@@ -11,6 +11,7 @@
 - The portal can now create, list, inspect, and submit its own permitted onboarding case through server-authoritative APIs. Duplicate create and stale submit attempts return explicit conflicts without corrupting state; forms/profile data and UI screens remain.
 - Information-request reasons appear in the owned immutable event timeline, and applicants can resubmit the same case using the latest version; profile/evidence correction forms remain unimplemented.
 - The portal contract now supports reasoned withdrawal from eligible owned states with optimistic version checks. Stale, unauthorized, in-review, and terminal withdrawal attempts cannot overwrite server state; UI remains unimplemented.
+- A reasoned staff rejection now appears as immutable terminal case state and timeline evidence for the owned case projection. Rejection UI/content and any correction/reopen path remain unimplemented.
 
 ## Scope
 

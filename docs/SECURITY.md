@@ -73,6 +73,8 @@ Staff case detail requires the queue-read capability and returns only the curren
 
 Only the assigned reviewer can request information from an in-review case. A reason and exact version are required, and state/event/audit writes commit atomically. Applicant resubmission uses the owner-bound submission query and version token, retaining the reviewer and complete correction trail.
 
+Only the assigned reviewer can reject an in-review case. Rejection requires an exact version and bounded reason, stamps the decision time, and atomically preserves state/event/audit evidence. Approval remains unavailable so an empty or policy-incomplete case cannot be marked eligible through this foundation.
+
 Audit metadata is rejected before persistence when a key indicates a password, token, secret, authorization header, cookie, API key, or credential. Audit events preserve actor and role snapshots without a foreign key that could erase attribution when a user record changes.
 
 Durable job payloads must contain only minimum identifiers and non-sensitive execution context. Credentials, session material, raw private documents, and provider secrets are rejected by the enqueue boundary. The database enforces idempotency, retry, lease, terminal-state, and attempt-number invariants; completed attempt evidence cannot be edited, deleted, or truncated. Settlement requires the current worker/attempt and an unexpired lease. Worker process identity, audited operator replay/cancellation, redacted error handling, and alerting remain required before production job execution.
