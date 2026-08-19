@@ -94,6 +94,39 @@ describe('onboarding review service', () => {
       }),
     ).resolves.toEqual({ ok: false, reason: 'assigned_to_other' });
 
+    await expect(
+      service.requestInformation({
+        reviewerUserId: otherReviewerId,
+        reviewerRoles: ['compliance_officer'],
+        caseId,
+        expectedVersion: 3,
+        reason: 'Attempted update by unassigned reviewer',
+        requestId: '00000000-0000-4000-8000-000000000809',
+      }),
+    ).resolves.toEqual({ ok: false, reason: 'not_assigned_reviewer' });
+    const informationRequest = await service.requestInformation({
+      reviewerUserId: reviewerId,
+      reviewerRoles: ['compliance_officer'],
+      caseId,
+      expectedVersion: 3,
+      reason: 'Please provide clearer registration evidence',
+      requestId: '00000000-0000-4000-8000-000000000810',
+    });
+    expect(informationRequest).toMatchObject({
+      ok: true,
+      case: { status: 'needs_information', version: 4, assignedReviewerUserId: reviewerId },
+    });
+
+    const resubmitted = await createOnboardingCaseService(orm).submit({
+      applicantUserId: applicantId,
+      actorRoles: ['sme_borrower'],
+      allowedCaseTypes: ['borrower'],
+      caseId,
+      expectedVersion: 4,
+      requestId: '00000000-0000-4000-8000-000000000814',
+    });
+    expect(resubmitted).toMatchObject({ ok: true, case: { status: 'submitted', version: 5 } });
+
     const events = await orm
       .select({ eventType: schema.onboardingCaseEvents.eventType })
       .from(schema.onboardingCaseEvents)
@@ -102,7 +135,14 @@ describe('onboarding review service', () => {
       .select({ action: schema.auditEvents.action })
       .from(schema.auditEvents)
       .where(eq(schema.auditEvents.resourceId, caseId));
-    expect(events.map(({ eventType }) => eventType)).toEqual(['created', 'submitted', 'review_started']);
+    expect(events.map(({ eventType }) => eventType)).toEqual([
+      'created',
+      'submitted',
+      'review_started',
+      'information_requested',
+      'submitted',
+    ]);
     expect(audits.map(({ action }) => action)).toContain('onboarding_case.review_started');
+    expect(audits.map(({ action }) => action)).toContain('onboarding_case.information_requested');
   });
 });

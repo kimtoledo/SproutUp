@@ -10,7 +10,8 @@
 - Email signup now accepts only an explicit borrower/investor intent and atomically maps borrower intent to the narrow `sme_borrower` customer role. That role receives own-case read/manage/submit capabilities but no staff review permission.
 - Added protected own-case create/list/detail/submit APIs. They bind ownership in database queries, enforce the borrower journey capability, prevent duplicate open cases, require optimistic version matches, and atomically append transition/audit evidence.
 - Added the first staff compliance queue and review-start command with separate read/review capabilities, bounded filters, applicant/reviewer separation, optimistic versioning, assignment ownership, and immutable transition/audit evidence.
-- No borrower profile, KYB evidence, information-request API, or decision command is implemented yet; this task stays **WIP** pending the Philippine entity/document matrix and screening/escalation policy.
+- Added reasoned information requests restricted to the assigned reviewer plus applicant resubmission on the same case/version timeline, meeting the correction-without-duplicate-account foundation.
+- No borrower profile, KYB evidence, completeness rules, or decision command is implemented yet; this task stays **WIP** pending the Philippine entity/document matrix and screening/escalation policy.
 
 ## Scope
 

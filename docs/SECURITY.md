@@ -53,6 +53,8 @@ Customer onboarding reads bind both case ID and authenticated applicant ID in th
 
 The staff compliance queue and review command use independent read/review capabilities. Review start locks and version-checks submitted state, rejects applicant self-review, refuses to replace another assigned reviewer, and commits reviewer assignment, state, transition evidence, and audit evidence atomically.
 
+Only the assigned reviewer can request information from an in-review case. A reason and exact version are required, and state/event/audit writes commit atomically. Applicant resubmission uses the owner-bound submission query and version token, retaining the reviewer and complete correction trail.
+
 Audit metadata is rejected before persistence when a key indicates a password, token, secret, authorization header, cookie, API key, or credential. Audit events preserve actor and role snapshots without a foreign key that could erase attribution when a user record changes.
 
 The initial writer and schema are implemented, but every privileged/domain command must integrate audit writes in its own transaction or reliable outbox workflow before that command is considered complete.

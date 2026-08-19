@@ -14,6 +14,7 @@ const querySchema = z.object({
 });
 const parametersSchema = z.object({ caseId: z.uuid() });
 const versionSchema = z.object({ version: z.number().int().positive() });
+const informationRequestSchema = versionSchema.extend({ reason: z.string().trim().min(10).max(1000) });
 
 interface Options {
   auth: AuthServices;
@@ -35,6 +36,7 @@ function failure(reply: FastifyReply, reason: string) {
     assigned_to_other: { status: 409, code: 'CASE_ASSIGNED_TO_OTHER', message: 'The case is assigned to another reviewer' },
     stale_version: { status: 409, code: 'STALE_CASE_VERSION', message: 'The onboarding case changed; reload before retrying' },
     invalid_transition: { status: 409, code: 'INVALID_CASE_TRANSITION', message: 'Review cannot start from the current case state' },
+    not_assigned_reviewer: { status: 403, code: 'NOT_ASSIGNED_REVIEWER', message: 'Only the assigned reviewer can update this review' },
   };
   const mapped = failures[reason] ?? { status: 500, code: 'INTERNAL_ERROR', message: 'Onboarding review could not be processed' };
   return reply.status(mapped.status).send({ success: false, error: { code: mapped.code, message: mapped.message } });
@@ -73,6 +75,30 @@ export async function registerOnboardingReviewRoutes(app: FastifyInstance, optio
       reviewerRoles: identity.authorization.roles,
       caseId: parameters.data.caseId,
       expectedVersion: body.data.version,
+      requestId: request.id,
+    });
+    if (!result.ok) return failure(reply, result.reason);
+    return reply.send({ success: true, data: result.case });
+  });
+
+  app.post('/v1/admin/onboarding/cases/:caseId/request-information', async (request, reply) => {
+    const identity = await resolveAuthenticatedRequest(request, options.auth);
+    if (!identity) return unauthenticated(reply);
+    if (!hasPermission(identity.authorization, 'onboarding_cases.review')) return forbidden(reply);
+    const parameters = parametersSchema.safeParse(request.params);
+    const body = informationRequestSchema.safeParse(request.body);
+    if (!parameters.success || !body.success) {
+      return reply.status(400).send({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'A valid case ID, version, and 10–1000 character reason are required' },
+      });
+    }
+    const result = await options.review.requestInformation({
+      reviewerUserId: identity.authorization.user.id,
+      reviewerRoles: identity.authorization.roles,
+      caseId: parameters.data.caseId,
+      expectedVersion: body.data.version,
+      reason: body.data.reason,
       requestId: request.id,
     });
     if (!result.ok) return failure(reply, result.reason);

@@ -7,6 +7,7 @@
 
 - **2026-08-19 — Initial compliance queue API:** Added a bounded borrower/investor onboarding queue with case-type, status, and assigned-to-me filters plus applicant identity context.
 - Queue read and review-start use separate capabilities. Review start claims submitted work with applicant/reviewer separation, assignment-takeover denial, optimistic versioning, and immutable event/audit evidence.
+- The assigned reviewer can issue a reasoned information request; unassigned reviewers are denied, and applicant resubmission returns the same case/version timeline to the queue.
 - SLA/aging/priority definitions, assignment policy beyond first claim, saved views, escalation, bulk actions, UI/navigation, and other domain queues remain; this task stays **WIP**.
 
 ## Scope

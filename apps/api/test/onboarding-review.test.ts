@@ -26,6 +26,7 @@ function reviewService(overrides: Partial<OnboardingReviewService> = {}): Onboar
   return {
     list: async ({ page, pageSize }) => ({ cases: [], page, pageSize, total: 0 }),
     startReview: async () => ({ ok: false, reason: 'not_found' }),
+    requestInformation: async () => ({ ok: false, reason: 'not_found' }),
     ...overrides,
   };
 }
@@ -96,6 +97,31 @@ describe('onboarding review routes', () => {
       });
       expect(response.statusCode).toBe(409);
       expect(response.json()).toMatchObject({ error: { code: 'CASE_ASSIGNED_TO_OTHER' } });
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('maps information requests from an unassigned reviewer to a stable denial', async () => {
+    const app = await buildApp({
+      config: { appOrigin: 'http://localhost:3000', environment: 'test' },
+      checkDatabase: async () => undefined,
+      auth: { service: authWithPermissions(['onboarding_cases.review']), baseUrl: 'http://localhost:3001' },
+      onboarding: {
+        cases: ownCases,
+        review: reviewService({
+          requestInformation: async () => ({ ok: false, reason: 'not_assigned_reviewer' }),
+        }),
+      },
+    });
+    try {
+      const response = await app.inject({
+        method: 'POST',
+        url: `/v1/admin/onboarding/cases/${caseId}/request-information`,
+        payload: { version: 3, reason: 'Please provide clearer supporting evidence' },
+      });
+      expect(response.statusCode).toBe(403);
+      expect(response.json()).toMatchObject({ error: { code: 'NOT_ASSIGNED_REVIEWER' } });
     } finally {
       await app.close();
     }

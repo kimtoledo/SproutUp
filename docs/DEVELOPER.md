@@ -66,6 +66,7 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `POST /v1/onboarding/cases/:caseId/submit` | Submit an owned draft/information response using its exact current version |
 | `GET /v1/admin/onboarding/cases` | List the bounded compliance queue; requires `onboarding_cases.read` |
 | `POST /v1/admin/onboarding/cases/:caseId/start-review` | Claim a submitted case and begin review; requires `onboarding_cases.review` |
+| `POST /v1/admin/onboarding/cases/:caseId/request-information` | Return an assigned in-review case for applicant correction with a reason |
 
 Role-change proposals expire after 24 hours. The API rejects duplicate pending payloads, self-targeting, maker self-approval, checker self-approval/rejection, stale/non-pending requests, and hash mismatches. A different authorized reviewer may reject with a reason; only the original maker may cancel. `super_admin` changes are intentionally unavailable until the bootstrap/emergency-access policy is approved. Revocation cannot leave an active user without a role.
 
@@ -112,6 +113,8 @@ The onboarding schema currently provides only `onboarding_cases` and append-only
 Onboarding create/read/submit routes use distinct borrower/investor own-case capabilities. Submission bodies contain `{ "version": <positive integer> }`; a stale version returns `409 STALE_CASE_VERSION`. Case creation returns `409 OPEN_CASE_EXISTS` when the database already contains an open case for that user/journey. API retries therefore cannot create duplicate open workflows or silently overwrite newer state.
 
 The compliance queue defaults to page 1 with 25 cases and accepts `page`, `pageSize` (maximum 100), `caseType`, `status`, and `assignedToMe=true|false`. Starting review requires the submitted case version. It atomically assigns the authenticated reviewer and moves the case to `in_review`; applicant self-review and takeover from another assigned reviewer return stable conflicts.
+
+Information requests require `{ "version": <positive integer>, "reason": "10–1000 characters" }` from the assigned reviewer. The case moves to `needs_information`; the applicant corrects future profile/evidence records and calls the existing submit endpoint with the new version. Resubmission returns the same case to `submitted` and retains the reviewer assignment/history.
 
 Commit schema and generated migration files together. Custom SQL, such as append-only audit triggers, belongs in an explicitly generated custom migration. Never edit a migration already applied to a shared environment, use schema push against shared environments, or run manual DDL as a substitute for a migration.
 

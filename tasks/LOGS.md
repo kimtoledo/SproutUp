@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Onboarding information-request correction loop
+
+**Status:** Done
+
+### Updated
+
+- Added a protected information-request command requiring the assigned reviewer, exact in-review case version, and a 10–1000 character reason.
+- Denied applicant self-review, unassigned reviewer updates, stale versions, and invalid transitions without mutating case state.
+- Committed `needs_information` state/version, immutable reasoned event, and correlated business audit evidence in one transaction.
+- Reused the owner-bound submit command for applicant resubmission, retaining case identity/reviewer assignment and returning the workflow to `submitted` with a new version.
+- Added integration coverage for the full created → submitted → review-started → information-requested → resubmitted timeline plus route-level unassigned-reviewer denial.
+- Updated developer, security, borrower, investor, admin-queue, portal, and handoff documentation.
+
+### Decisions
+
+- Information requests are not decisions and do not require a second checker; they are restricted to the assigned compliance reviewer and fully reasoned/audited.
+- Resubmission retains the assigned reviewer for continuity, but review must explicitly restart before a later decision.
+- Completeness remains a future policy/service check; this slice does not pretend an empty workflow shell is release-eligible.
+
+### Open items
+
+- Approve profile/evidence completeness rules and required documents by borrower entity/investor type.
+- Define decision dual-control, screening prerequisites, expiry, and role/eligibility effects.
+- Add notifications after delivery providers/templates are approved.
+
+### Next
+
+- Implement staff case detail and then the decision proposal boundary, keeping approval execution blocked until KYC completeness and screening policy are approved.
+
 ## 2026-08-19 — Compliance queue and safe review claim
 
 **Status:** Done

@@ -9,6 +9,7 @@
 - The persistence layer versions current state and retains an immutable event timeline, providing the future portal with resumable/server-authoritative workflow state. Portal routes, forms, accessibility behavior, and end-to-end journeys remain; this task stays **WIP**.
 - Registration now captures a single primary borrower/investor intent and bootstraps only the matching customer role. Additional/dual capacity remains an approved role-change operation until product policy is finalized.
 - The portal can now create, list, inspect, and submit its own permitted onboarding case through server-authoritative APIs. Duplicate create and stale submit attempts return explicit conflicts without corrupting state; forms/profile data and UI screens remain.
+- Information-request reasons appear in the owned immutable event timeline, and applicants can resubmit the same case using the latest version; profile/evidence correction forms remain unimplemented.
 
 ## Scope
 
