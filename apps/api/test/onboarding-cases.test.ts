@@ -28,6 +28,7 @@ function caseService(overrides: Partial<OnboardingCaseService> = {}): Onboarding
     detailOwn: async () => null,
     create: async () => ({ ok: false, reason: 'duplicate_open_case' }),
     submit: async () => ({ ok: false, reason: 'not_found' }),
+    withdraw: async () => ({ ok: false, reason: 'not_found' }),
     ...overrides,
   };
 }
@@ -121,6 +122,49 @@ describe('own onboarding case routes', () => {
       });
       expect(response.statusCode).toBe(409);
       expect(response.json()).toMatchObject({ error: { code: 'STALE_CASE_VERSION' } });
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('passes owner scope, version, and reason into withdrawal', async () => {
+    const withdraw = vi.fn<OnboardingCaseService['withdraw']>().mockResolvedValue({
+      ok: true,
+      case: {
+        id: caseId,
+        caseType: 'borrower',
+        status: 'withdrawn',
+        version: 3,
+        assignedReviewerUserId: null,
+        submittedAt: new Date(),
+        decidedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+    const app = await buildApp({
+      config: { appOrigin: 'http://localhost:3000', environment: 'test' },
+      checkDatabase: async () => undefined,
+      auth: {
+        service: authWithPermissions(['borrower_onboarding.manage_own']),
+        baseUrl: 'http://localhost:3001',
+      },
+      onboarding: { cases: caseService({ withdraw }) },
+    });
+    try {
+      const response = await app.inject({
+        method: 'POST',
+        url: `/v1/onboarding/cases/${caseId}/withdraw`,
+        payload: { version: 2, reason: 'Applicant changed the requested onboarding journey' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(withdraw).toHaveBeenCalledWith(expect.objectContaining({
+        applicantUserId: applicantId,
+        allowedCaseTypes: ['borrower'],
+        caseId,
+        expectedVersion: 2,
+        reason: 'Applicant changed the requested onboarding journey',
+      }));
     } finally {
       await app.close();
     }

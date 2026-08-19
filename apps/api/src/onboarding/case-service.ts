@@ -38,6 +38,15 @@ export interface OnboardingCaseService {
     expectedVersion: number;
     requestId: string;
   }): Promise<{ ok: true; case: OnboardingCaseSummary } | { ok: false; reason: CaseFailure }>;
+  withdraw(input: {
+    applicantUserId: string;
+    actorRoles: RoleKey[];
+    allowedCaseTypes: OnboardingCaseType[];
+    caseId: string;
+    expectedVersion: number;
+    reason: string;
+    requestId: string;
+  }): Promise<{ ok: true; case: OnboardingCaseSummary } | { ok: false; reason: CaseFailure }>;
 }
 
 const summarySelection = {
@@ -194,6 +203,72 @@ export function createOnboardingCaseService(
           metadata: { caseType: current.caseType, fromVersion: current.version, toVersion: nextVersion },
         });
         return { ok: true as const, case: submitted };
+      });
+    },
+
+    async withdraw(input) {
+      if (input.allowedCaseTypes.length === 0) return { ok: false, reason: 'not_found' };
+      return database.transaction(async (transaction) => {
+        const [current] = await transaction
+          .select()
+          .from(schema.onboardingCases)
+          .where(
+            and(
+              eq(schema.onboardingCases.id, input.caseId),
+              eq(schema.onboardingCases.applicantUserId, input.applicantUserId),
+              inArray(schema.onboardingCases.caseType, input.allowedCaseTypes),
+            ),
+          )
+          .limit(1)
+          .for('update');
+        if (!current) return { ok: false as const, reason: 'not_found' as const };
+        if (current.version !== input.expectedVersion) {
+          return { ok: false as const, reason: 'stale_version' as const };
+        }
+        if (!canTransitionOnboardingCase(current.status, 'withdrawn')) {
+          return { ok: false as const, reason: 'invalid_transition' as const };
+        }
+
+        const nextVersion = current.version + 1;
+        const [withdrawn] = await transaction
+          .update(schema.onboardingCases)
+          .set({ status: 'withdrawn', version: nextVersion })
+          .where(
+            and(
+              eq(schema.onboardingCases.id, current.id),
+              eq(schema.onboardingCases.version, input.expectedVersion),
+            ),
+          )
+          .returning(summarySelection);
+        if (!withdrawn) return { ok: false as const, reason: 'stale_version' as const };
+
+        await transaction.insert(schema.onboardingCaseEvents).values({
+          caseId: current.id,
+          eventType: 'withdrawn',
+          fromStatus: current.status,
+          toStatus: 'withdrawn',
+          caseVersion: nextVersion,
+          actorType: 'user',
+          actorUserId: input.applicantUserId,
+          reason: input.reason,
+        });
+        await writeAudit(transaction, {
+          actorType: 'user',
+          actorUserId: input.applicantUserId,
+          actorRoles: input.actorRoles,
+          action: 'onboarding_case.withdrawn',
+          outcome: 'succeeded',
+          resourceType: 'onboarding_case',
+          resourceId: current.id,
+          requestId: input.requestId,
+          reason: input.reason,
+          metadata: {
+            caseType: current.caseType,
+            fromVersion: current.version,
+            toVersion: nextVersion,
+          },
+        });
+        return { ok: true as const, case: withdrawn };
       });
     },
   };

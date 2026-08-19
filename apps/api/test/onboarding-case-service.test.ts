@@ -24,7 +24,7 @@ afterAll(async () => {
   await pglite.close();
 });
 
-describe('onboarding case service', () => {
+describe.sequential('onboarding case service', () => {
   it('atomically creates one open journey with event and audit evidence', async () => {
     const service = createOnboardingCaseService(orm, now);
     const created = await service.create({
@@ -100,5 +100,62 @@ describe('onboarding case service', () => {
       version: 2,
       events: [{ eventType: 'created' }, { eventType: 'submitted', caseVersion: 2 }],
     });
+  });
+
+  it('lets the owner withdraw an eligible case with immutable reason evidence', async () => {
+    const service = createOnboardingCaseService(orm, now);
+    const [current] = await service.listOwn(applicantId, ['borrower']);
+    if (!current) throw new Error('Expected submitted case');
+    await expect(service.withdraw({
+      applicantUserId: applicantId,
+      actorRoles: ['sme_borrower'],
+      allowedCaseTypes: ['borrower'],
+      caseId: current.id,
+      expectedVersion: 99,
+      reason: 'Applicant changed the requested onboarding journey',
+      requestId: '00000000-0000-4000-8000-000000000708',
+    })).resolves.toEqual({ ok: false, reason: 'stale_version' });
+
+    const withdrawn = await service.withdraw({
+      applicantUserId: applicantId,
+      actorRoles: ['sme_borrower'],
+      allowedCaseTypes: ['borrower'],
+      caseId: current.id,
+      expectedVersion: current.version,
+      reason: 'Applicant changed the requested onboarding journey',
+      requestId: '00000000-0000-4000-8000-000000000709',
+    });
+    expect(withdrawn).toMatchObject({ ok: true, case: { status: 'withdrawn', version: 3 } });
+    if (!withdrawn.ok) throw new Error('Expected withdrawal');
+
+    const detail = await service.detailOwn(applicantId, current.id, ['borrower']);
+    expect(detail).toMatchObject({
+      events: [
+        { eventType: 'created' },
+        { eventType: 'submitted' },
+        {
+          eventType: 'withdrawn',
+          fromStatus: 'submitted',
+          toStatus: 'withdrawn',
+          caseVersion: 3,
+          reason: 'Applicant changed the requested onboarding journey',
+        },
+      ],
+    });
+    const audits = await orm
+      .select({ action: schema.auditEvents.action, reason: schema.auditEvents.reason })
+      .from(schema.auditEvents)
+      .where(eq(schema.auditEvents.resourceId, current.id));
+    expect(audits).toContainEqual({
+      action: 'onboarding_case.withdrawn',
+      reason: 'Applicant changed the requested onboarding journey',
+    });
+
+    await expect(service.create({
+      applicantUserId: applicantId,
+      actorRoles: ['sme_borrower'],
+      caseType: 'borrower',
+      requestId: '00000000-0000-4000-8000-00000000070a',
+    })).resolves.toMatchObject({ ok: true, case: { status: 'draft' } });
   });
 });

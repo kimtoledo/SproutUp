@@ -65,6 +65,7 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `GET /v1/onboarding/cases/:caseId` | Read an owned case and its immutable state timeline |
 | `POST /v1/onboarding/cases` | Open one permitted borrower/investor draft journey |
 | `POST /v1/onboarding/cases/:caseId/submit` | Submit an owned draft/information response using its exact current version |
+| `POST /v1/onboarding/cases/:caseId/withdraw` | Withdraw an owned eligible case using its exact version and a 10–1000 character reason |
 | `GET /v1/admin/onboarding/cases` | List the bounded compliance queue; requires `onboarding_cases.read` |
 | `GET /v1/admin/onboarding/cases/:caseId` | Read applicant context and the complete immutable case timeline |
 | `POST /v1/admin/onboarding/cases/:caseId/start-review` | Claim a submitted case and begin review; requires `onboarding_cases.review` |
@@ -140,7 +141,7 @@ Full correction uses `reverseLedgerTransactionInTransaction` or the convenience 
 
 The onboarding schema currently provides only `onboarding_cases` and append-only `onboarding_case_events`. Its shared state machine lives in `packages/shared/src/onboarding.ts`. Do not add entity types, KYC requirements, provider result payloads, suitability scoring, document categories, or retention behavior until the corresponding open decision in tasks 03–05 is approved.
 
-Onboarding create/read/submit routes use distinct borrower/investor own-case capabilities. Submission bodies contain `{ "version": <positive integer> }`; a stale version returns `409 STALE_CASE_VERSION`. Case creation returns `409 OPEN_CASE_EXISTS` when the database already contains an open case for that user/journey. API retries therefore cannot create duplicate open workflows or silently overwrite newer state.
+Onboarding create/read/submit/withdraw routes use distinct borrower/investor own-case capabilities. Submission bodies contain `{ "version": <positive integer> }`; withdrawal bodies add a required 10–1000 character `reason`. A stale version returns `409 STALE_CASE_VERSION`. Case creation returns `409 OPEN_CASE_EXISTS` when the database already contains an open case for that user/journey. API retries therefore cannot create duplicate open workflows or silently overwrite newer state. Withdrawal is permitted only from `draft`, `submitted`, or `needs_information`, retains prior history/reviewer attribution, and closes the one-open-case slot for a future fresh journey.
 
 The compliance queue defaults to page 1 with 25 cases and accepts `page`, `pageSize` (maximum 100), `caseType`, `status`, and `assignedToMe=true|false`. Starting review requires the submitted case version. It atomically assigns the authenticated reviewer and moves the case to `in_review`; applicant self-review and takeover from another assigned reviewer return stable conflicts.
 

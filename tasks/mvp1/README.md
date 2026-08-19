@@ -8,8 +8,8 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 
 - [ ] [01 — Platform Foundation](./01-platform-foundation.md) — monorepo, web/API health, shared contracts, database/CI, auth/audit, jobs, exact PHP money, balanced append-only ledger schema, posting, reversal, and exact internal account projection implemented; production infrastructure and remaining services remain
 - [ ] [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md) — password/session boundary, audited customer-intent bootstrap, access catalogue, own-session revocation, canonical RBAC, immutable audit, and dual-controlled role changes implemented; recovery/MFA and remaining controls remain
-- [ ] [03 — Borrower Onboarding & KYC](./03-borrower-onboarding-kyc.md) — versioned case/state/events and protected own create/read/submit implemented; Philippine profile, evidence, queue, and decisions remain
-- [ ] [04 — Investor Onboarding & KYC](./04-investor-onboarding-kyc.md) — versioned case/state/events and protected own create/read/submit implemented; classification, suitability, bank, and eligibility controls remain
+- [ ] [03 — Borrower Onboarding & KYC](./03-borrower-onboarding-kyc.md) — versioned case/state/events and protected own create/read/submit/withdraw implemented; Philippine profile, evidence, and decisions remain
+- [ ] [04 — Investor Onboarding & KYC](./04-investor-onboarding-kyc.md) — versioned case/state/events and protected own create/read/submit/withdraw implemented; classification, suitability, bank, and eligibility controls remain
 - [ ] [05 — Document & Consent Management](./05-document-consent-management.md)
 - [ ] [06 — Credit Scoring & Underwriting](./06-credit-scoring-underwriting.md)
 - [ ] [07 — Campaign & Loan Management](./07-campaign-loan-management.md)
@@ -26,7 +26,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 - [ ] [18 — API Contracts & Security Boundary](./18-api-contracts-security-boundary.md) — every current application-owned operation has an enforced CI-validated OpenAPI 3.1 contract and `/v1` compatibility/retirement policy; future domain, file, and webhook contracts remain
 - [ ] [19 — Scheduler, Queues & Job Control](./19-scheduler-queues-job-control.md) — persistence/control/runtime and policy-gated MVP job catalogue implemented; all production topics remain blocked or intentionally synchronous pending their owning domains/providers
 - [ ] [20 — Admin Information Architecture & Work Queues](./20-admin-information-architecture-work-queues.md) — initial bounded compliance queue and safe reviewer claim implemented; policy, UI, and remaining domain queues remain
-- [ ] [21 — Borrower & Investor Portal Journeys](./21-borrower-investor-portal-journeys.md) — server-authoritative onboarding state and own-case API implemented; profile forms, screens, and end-to-end journeys remain
+- [ ] [21 — Borrower & Investor Portal Journeys](./21-borrower-investor-portal-journeys.md) — server-authoritative onboarding state plus own create/read/submit/withdraw API implemented; profile forms, screens, and end-to-end journeys remain
 - [ ] [22 — Maker/Checker Approval Matrix](./22-maker-checker-approval-matrix.md) — hash-bound role grant/revocation, reject/cancel, and history/detail implemented; domain matrix, amendment, and emergency paths remain
 - [ ] [23 — Cross-App Contract, Compatibility & Cutover](./23-cross-app-contract-cutover.md)
 

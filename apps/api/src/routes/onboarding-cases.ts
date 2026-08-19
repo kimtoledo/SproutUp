@@ -18,11 +18,16 @@ import {
   ownCaseDetailSchema,
   successResponse,
   versionBody,
+  withdrawalBody,
 } from '../openapi/onboarding-schemas.js';
 
 const createSchema = z.object({ caseType: onboardingCaseTypeSchema });
 const parametersSchema = z.object({ caseId: z.uuid() });
 const submitSchema = z.object({ version: z.number().int().positive() });
+const withdrawSchema = z.object({
+  version: z.number().int().positive(),
+  reason: z.string().trim().min(10).max(1000),
+});
 
 interface Options {
   auth: AuthServices;
@@ -64,7 +69,7 @@ function failure(reply: FastifyReply, reason: string) {
     duplicate_open_case: { status: 409, code: 'OPEN_CASE_EXISTS', message: 'An open case already exists for this journey' },
     not_found: { status: 404, code: 'CASE_NOT_FOUND', message: 'Onboarding case not found' },
     stale_version: { status: 409, code: 'STALE_CASE_VERSION', message: 'The onboarding case changed; reload before retrying' },
-    invalid_transition: { status: 409, code: 'INVALID_CASE_TRANSITION', message: 'The onboarding case cannot be submitted from its current state' },
+    invalid_transition: { status: 409, code: 'INVALID_CASE_TRANSITION', message: 'The onboarding case cannot make that transition from its current state' },
   };
   const mapped = failures[reason] ?? { status: 500, code: 'INTERNAL_ERROR', message: 'Onboarding case could not be processed' };
   return reply.status(mapped.status).send({ success: false, error: { code: mapped.code, message: mapped.message } });
@@ -231,6 +236,61 @@ export async function registerOnboardingCaseRoutes(app: FastifyInstance, options
       allowedCaseTypes: permitted,
       caseId: parameters.data.caseId,
       expectedVersion: body.data.version,
+      requestId: request.id,
+    });
+    if (!result.ok) return failure(reply, result.reason);
+    return reply.send({ success: true, data: result.case });
+  });
+
+  app.post('/v1/onboarding/cases/:caseId/withdraw', {
+    schema: operation({
+      operationId: 'withdrawOwnOnboardingCase',
+      summary: 'Withdraw an owned open onboarding case with a reason',
+      tags: ['onboarding'],
+      metadata: {
+        actor: 'authenticated_customer',
+        permissions: ['borrower_onboarding.manage_own', 'investor_onboarding.manage_own'],
+        permissionMode: 'any',
+        retryModel: 'optimistic_version',
+        sideEffects: ['transition onboarding case', 'append case event', 'append audit event'],
+        auditEvent: 'onboarding_case.withdrawn',
+      },
+      http: {
+        params: caseIdParameters,
+        body: withdrawalBody,
+        response: {
+          200: successResponse(caseSummarySchema),
+          400: commonErrors[400],
+          401: commonErrors[401],
+          403: commonErrors[403],
+          404: commonErrors[404],
+          409: commonErrors[409],
+        },
+      },
+    }),
+  }, async (request, reply) => {
+    const identity = await resolveAuthenticatedRequest(request, options.auth);
+    if (!identity) return unauthenticated(reply);
+    const parameters = parametersSchema.safeParse(request.params);
+    const body = withdrawSchema.safeParse(request.body);
+    if (!parameters.success || !body.success) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'A valid case ID, positive version, and withdrawal reason are required',
+        },
+      });
+    }
+    const permitted = allowedTypes(identity.authorization, 'manage');
+    if (permitted.length === 0) return forbidden(reply);
+    const result = await options.cases.withdraw({
+      applicantUserId: identity.authorization.user.id,
+      actorRoles: identity.authorization.roles,
+      allowedCaseTypes: permitted,
+      caseId: parameters.data.caseId,
+      expectedVersion: body.data.version,
+      reason: body.data.reason,
       requestId: request.id,
     });
     if (!result.ok) return failure(reply, result.reason);

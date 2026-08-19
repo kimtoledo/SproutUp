@@ -12,6 +12,7 @@
 - Added the first staff compliance queue and review-start command with separate read/review capabilities, bounded filters, applicant/reviewer separation, optimistic versioning, assignment ownership, and immutable transition/audit evidence.
 - Added reasoned information requests restricted to the assigned reviewer plus applicant resubmission on the same case/version timeline, meeting the correction-without-duplicate-account foundation.
 - Added a capability-protected staff case detail with applicant identity context and the complete ordered immutable transition/reason timeline.
+- Borrowers can withdraw their own `draft`, `submitted`, or `needs_information` case with an exact version and reason. The terminal event/audit trail is retained and a later fresh journey can use the released one-open-case slot.
 - No borrower profile, KYB evidence, completeness rules, or decision command is implemented yet; this task stays **WIP** pending the Philippine entity/document matrix and screening/escalation policy.
 
 ## Scope

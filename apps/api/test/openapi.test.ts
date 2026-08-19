@@ -41,6 +41,7 @@ const dependencies: AppDependencies = {
       detailOwn: async () => null,
       create: async () => ({ ok: false as const, reason: 'duplicate_open_case' as const }),
       submit: async () => ({ ok: false as const, reason: 'not_found' as const }),
+      withdraw: async () => ({ ok: false as const, reason: 'not_found' as const }),
     },
     review: {
       list: async ({ page, pageSize }) => ({ cases: [], page, pageSize, total: 0 }),
@@ -93,6 +94,7 @@ describe('OpenAPI contract generation', () => {
           '/v1/admin/role-approvals',
           '/v1/onboarding/cases',
           '/v1/onboarding/cases/{caseId}/submit',
+          '/v1/onboarding/cases/{caseId}/withdraw',
           '/v1/admin/onboarding/cases',
           '/v1/admin/onboarding/cases/{caseId}/start-review',
           '/v1/admin/onboarding/cases/{caseId}/request-information',
@@ -129,6 +131,7 @@ describe('OpenAPI contract generation', () => {
         ['/v1/onboarding/cases/{caseId}', 'get', 'getOwnOnboardingCase'],
         ['/v1/onboarding/cases', 'post', 'createOwnOnboardingCase'],
         ['/v1/onboarding/cases/{caseId}/submit', 'post', 'submitOwnOnboardingCase'],
+        ['/v1/onboarding/cases/{caseId}/withdraw', 'post', 'withdrawOwnOnboardingCase'],
         ['/v1/admin/onboarding/cases', 'get', 'listOnboardingReviewQueue'],
         ['/v1/admin/onboarding/cases/{caseId}', 'get', 'getOnboardingReviewCase'],
         ['/v1/admin/onboarding/cases/{caseId}/start-review', 'post', 'startOnboardingReview'],

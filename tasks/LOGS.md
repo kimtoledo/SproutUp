@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Reasoned applicant onboarding withdrawal
+
+**Status:** Done
+
+### Updated
+
+- Added the owner-bound `POST /v1/onboarding/cases/:caseId/withdraw` operation for both permitted borrower and investor journeys.
+- Required the current positive case version and a trimmed 10–1000 character reason under enforced Fastify/OpenAPI and Zod contracts.
+- Added a row-locked service transition that atomically writes terminal `withdrawn` state, increments version, appends the reasoned immutable case event, and appends business audit evidence.
+- Added service tests for stale-version denial, reason/timeline/audit preservation, and opening a fresh journey after withdrawal; added route identity/capability propagation and OpenAPI operation coverage.
+- Updated developer, security, borrower, investor, portal, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Applicants may withdraw only from `draft`, `submitted`, or `needs_information`, matching the existing shared state machine. A case already `in_review` requires staff coordination and cannot be unilaterally overwritten.
+- Withdrawal uses the journey's `manage_own` capability and binds applicant identity plus permitted case type in the database query.
+- Withdrawal is a terminal historical case, not deletion. Its reason, prior reviewer attribution, events, and audit evidence remain available.
+- A terminal withdrawal releases the database one-open-case constraint, allowing a later new case without rewriting the old one.
+
+### Open items
+
+- Borrower/investor profile, evidence, consent, completeness, and provider policies remain blocked on tasks 03–05 decisions.
+- Staff reject/approve commands and eligibility effects remain incomplete; approval must not be added before completeness/policy gates exist.
+- Portal UI and accessible confirmation/retry behavior remain unimplemented.
+
+### Next
+
+- Implement the reasoned assigned-reviewer rejection command, which can safely preserve a negative decision without assuming an approval or KYC completeness policy.
+
 ## 2026-08-19 — Exact ledger account projection
 
 **Status:** Done

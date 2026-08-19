@@ -37,6 +37,7 @@ const ownCases = {
   detailOwn: async () => null,
   create: async () => ({ ok: false as const, reason: 'duplicate_open_case' as const }),
   submit: async () => ({ ok: false as const, reason: 'not_found' as const }),
+  withdraw: async () => ({ ok: false as const, reason: 'not_found' as const }),
 };
 
 describe('onboarding review routes', () => {
