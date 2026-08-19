@@ -1,0 +1,32 @@
+{
+  "name": "sproutup",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SproutUp — Philippine debt-crowdfunding platform",
+  "packageManager": "npm@10.9.3",
+  "engines": {
+    "node": ">=20.19.0 <25",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @sproutup/web",
+    "dev:api": "npm run dev --workspace @sproutup/api",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "db:generate": "npm run generate --workspace @sproutup/db",
+    "db:migrate": "npm run migrate --workspace @sproutup/db",
+    "db:studio": "npm run studio --workspace @sproutup/db"
+  },
+  "devDependencies": {
+    "eslint": "9.39.5",
+    "typescript-eslint": "8.67.0",
+    "vitest": "4.1.10"
+  }
+}

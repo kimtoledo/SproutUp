@@ -1,8 +1,8 @@
-# SeedIn Revamp Tasks
+# SproutUp Tasks
 
 This directory consolidates the revamp discovery and implementation tasks into three dependency-ordered MVP work packages. All MVPs are currently **WIP**; the grouping is a planning baseline and should be refined as requirements, compliance rules, and production data are validated.
 
-> **AI working context:** Before changing any task, read this file and [LOGS.md](./LOGS.md). After making a meaningful update, append an entry to `LOGS.md` so the next AI session can continue from the latest known state.
+> **AI working context:** Before changing any task, read this file, [`../AGENTS.md`](../AGENTS.md), [`../docs/TECH_STACK.md`](../docs/TECH_STACK.md), and [LOGS.md](./LOGS.md). After making a meaningful update, append an entry to `LOGS.md` so the next AI session can continue from the latest known state.
 
 ## Workspace background
 
@@ -13,7 +13,7 @@ The workspace contains three legacy applications and one planning workspace for 
 | `seedin-live-admin` | Legacy admin and back-office application |
 | `seedin-live-user` | Legacy borrower/investor-facing application |
 | `seedin-live-api-v1-1` | Legacy API and shared business-logic implementation |
-| `seedin-revamp` | Planning and future implementation workspace for the rebuilt platform |
+| [`SproutUp`](https://github.com/kimtoledo/SproutUp) (`seedin-revamp` locally) | Planning and future implementation workspace for the rebuilt platform |
 
 The legacy repositories are evidence of existing workflows, calculations, data structures, and operational edge cases. They are **not automatically the specification for the revamp**. When legacy behavior conflicts with the target product direction below, record the conflict and follow the approved revamp requirement.
 
@@ -25,7 +25,7 @@ Use the scan as a starting map for locating existing behavior, not as proof that
 
 ## Target platform overview
 
-SeedIn Revamp is a debt-based crowdfunding lending platform that connects Philippine SMEs with investors through an admin-managed marketplace. SMEs apply for financing, approved campaigns are funded by investors, borrowers repay the platform, and the platform automatically allocates principal and returns to investors.
+SproutUp is a debt-based crowdfunding lending platform that connects Philippine SMEs with investors through an admin-managed marketplace. SMEs apply for financing, approved campaigns are funded by investors, borrowers repay the platform, and the platform automatically allocates principal and returns to investors.
 
 ### User roles
 
@@ -144,6 +144,8 @@ Do not copy a legacy rule merely because it exists in code. Surface conflicts—
 - Do not begin an MVP solely because the previous folder is complete: confirm its explicit dependencies and business decisions first.
 - Update the relevant MVP README when a task changes status or moves between releases.
 - Append material task changes, decisions, blockers, and handoff notes to `LOGS.md`; do not silently rewrite prior log entries.
+- Treat documentation as part of completion: every material code, schema, configuration, architecture, workflow, or task-status change must update the relevant Markdown files in the same work session.
+- Use the approved stack and architecture in [`docs/TECH_STACK.md`](../docs/TECH_STACK.md); record any proposed deviation and its reason before implementation.
 
 ## Definition of done
 
@@ -151,6 +153,8 @@ A task is done only when its requirements are confirmed, implementation is revie
 
 ## Reference files
 
+- [Technology stack](../docs/TECH_STACK.md) — approved MedicalHub-derived engineering baseline and SproutUp-specific extensions.
+- [Repository instructions](../AGENTS.md) — implementation, security, financial, migration, testing, and documentation rules.
 - [LOGS.md](./LOGS.md) — chronological AI and project handoff record.
 - [MVP 1 README](./mvp1/README.md) — controlled-pilot checklist.
 - [MVP 2 README](./mvp2/README.md) — automation-and-growth checklist.

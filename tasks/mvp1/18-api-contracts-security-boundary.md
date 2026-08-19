@@ -26,4 +26,5 @@
 
 ## Open decisions
 
-- API technology/style, client applications, token/session model, version support policy, and provider-specific webhook requirements.
+- Fastify with resource-oriented, Zod-validated routes under `/v1` is the approved API technology/style; liveness remains unversioned at `/health`.
+- Token/session model details, version support policy, OpenAPI generation, and provider-specific webhook requirements remain open.

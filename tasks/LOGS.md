@@ -1,4 +1,4 @@
-# SeedIn Revamp Task Log
+# SproutUp Task Log
 
 This is the chronological handoff record for people and AI working on the revamp tasks. It records what changed, why it changed, unresolved decisions, and the recommended next action. Detailed requirements remain in the linked task documents.
 
@@ -33,6 +33,90 @@ This is the chronological handoff record for people and AI working on the revamp
 
 - The recommended next action.
 ```
+
+## 2026-08-19 — Initial SproutUp platform scaffold implemented
+
+**Status:** WIP
+
+### Updated
+
+- Created the npm-workspaces application structure: `apps/web`, `apps/api`, `packages/db`, and `packages/shared`.
+- Added the initial responsive SproutUp Next.js App Router page and shared product metadata test.
+- Added a Fastify API with Helmet, explicit CORS policy, process liveness at `GET /health`, PostgreSQL readiness at `GET /v1/health`, startup database verification, and graceful shutdown.
+- Added shared Zod health contracts, a PostgreSQL/Drizzle database service boundary, and Drizzle configuration ready for task-owned schemas and generated migrations.
+- Added unit/API tests for shared contracts, liveness, successful readiness, and degraded database readiness.
+- Added pinned runtime dependencies, Node/npm constraints, a committed lockfile, environment template, GitHub Actions CI, and root lint/typecheck/test/build commands.
+- Added `docs/DEVELOPER.md`; updated the root README, technology-stack decision, platform/API tasks, and MVP 1 checklist.
+
+### Decisions
+
+- Kept MedicalHub's Next.js App Router architecture but upgraded the copied Next.js 14/React 18 versions to Next.js 16.3.1/React 19.2.8. The Next.js 14 baseline failed the production audit with multiple high-severity advisories; the selected release supports the pinned Node 20 line.
+- Standardized all workspace validation on Zod 4.4.3 instead of reproducing MedicalHub's Zod 3/Zod 4 mismatch.
+- API startup is fail-closed when PostgreSQL is unavailable. `/health` is process liveness; `/v1/health` is dependency readiness and returns `503` when PostgreSQL is unavailable.
+- Domain tables will be introduced only through their approved MVP tasks and generated migrations; the foundation does not invent a premature database model.
+
+### Open items
+
+- Implement Better Auth, session resolution, RBAC, and immutable audit foundations under MVP 1 task 02.
+- Define the first approved domain schema/migration and database integration-test environment.
+- Select durable queue/outbox, hosting, PostgreSQL, object-storage, observability, and recovery providers.
+- The current production audit is clean; four moderate findings remain in development-only Drizzle Kit/tsup esbuild tooling and require upstream/toolchain review.
+
+### Next
+
+- Implement the authentication/RBAC/audit vertical slice with server-resolved actor context and its first reviewed Drizzle migration, without beginning financial posting until money and ledger invariants are approved.
+
+## 2026-08-19 — SproutUp project name confirmed
+
+**Status:** Done
+
+### Updated
+
+- Renamed current project-facing documentation from "SeedIn Revamp" to **SproutUp**.
+- Added the canonical GitHub repository link: <https://github.com/kimtoledo/SproutUp>.
+- Retained SeedIn and `seedin-revamp` wording only where it identifies the legacy platform, migration context, or current local directory.
+
+### Decisions
+
+- **SproutUp** is the official project and product name.
+- `https://github.com/kimtoledo/SproutUp` is the canonical GitHub repository; the configured local `origin` already matches it.
+
+### Open items
+
+- Package scopes, application metadata, environment names, and UI branding must use SproutUp when implementation scaffolding begins.
+
+### Next
+
+- Apply the SproutUp name consistently to package manifests, application metadata, deployment configuration, and user-facing branding during platform scaffolding.
+
+## 2026-08-19 — MedicalHub technology baseline adopted
+
+**Status:** WIP
+
+### Updated
+
+- Reviewed MedicalHub's actual monorepo manifests, TypeScript configuration, web/API/database/shared-package layout, developer guidance, agent rules, API composition root, database readiness, and migration workflow.
+- Added `docs/TECH_STACK.md` as the authoritative SeedIn engineering baseline and documented which MedicalHub conventions are adopted, adapted, or intentionally provider-neutral.
+- Added root `AGENTS.md` with architecture, financial/security invariants, migration workflow, testing expectations, and the requirement to update relevant Markdown documentation with every material change.
+- Expanded the root README, this task index, and `mvp1/01-platform-foundation.md` to link the approved stack and add the required financial-platform foundations.
+
+### Decisions
+
+- SeedIn Revamp will use MedicalHub's implemented npm-workspaces TypeScript architecture: Next.js 14/React 18 web, Fastify 5 API, PostgreSQL/Drizzle, Better Auth behind a service boundary, shared Zod contracts, and Vitest-based checks.
+- npm—not pnpm—is authoritative because that is what MedicalHub's checked-in root manifest, lockfile, and current developer workflow actually use.
+- Replit Object Storage and other MedicalHub provider choices are not inherited. Storage, queues, hosting, observability, and external financial/compliance services stay behind adapters pending provider approval.
+- SeedIn must add exact decimal money, append-only ledgers, idempotency/concurrency protection, transactional outbox and durable jobs, maker/checker controls, and reconciliation; MedicalHub's application stack alone is insufficient for regulated financial flows.
+- Documentation updates are part of the definition of done for every material project change.
+
+### Open items
+
+- Choose and approve hosting, managed PostgreSQL, queue/cache, private object storage, observability, backup/recovery, and vendor providers.
+- Pin exact dependency versions during scaffolding and resolve MedicalHub's Zod 3/Zod 4 workspace mismatch rather than copying it.
+- Confirm whether one Next.js deployment remains sufficient or whether admin and customer surfaces require separate deployments later.
+
+### Next
+
+- Scaffold the four-workspace repository only after the remaining infrastructure and security requirements needed for the target environment are approved; then add CI and a minimal authenticated, database-backed vertical slice.
 
 ## 2026-08-19 — Cross-agent quality review and gap fixes
 
