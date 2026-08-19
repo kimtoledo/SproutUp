@@ -34,6 +34,29 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-20 — Staff case detail/timeline UI
+
+**Status:** Done
+
+### Updated
+
+- Added `loadAdminOnboardingCaseDetail` to the admin onboarding client, calling the existing `GET /v1/admin/onboarding/cases/:caseId` staff detail contract with 401/403/404/dependency-failure mapping that never leaks server text, plus two client tests (web suite now has seventeen tests).
+- Wired a per-row "View history" toggle into `/admin/onboarding` that lazily loads and renders the ordered immutable event timeline (label, occurrence time, case version, reason), mirroring the customer portal's timeline pattern and reusing its existing `case-timeline` styling.
+- Updated `docs/DEVELOPER.md` and `tasks/mvp1/20-admin-information-architecture-work-queues.md` to describe the wired detail/timeline UI.
+
+### Decisions
+
+- The admin detail view renders exactly the allowlisted staff projection already returned by `staffCaseDetailSchema` (applicant identity plus ordered events); no new fields were requested from the API.
+- Detail loading follows the portal's toggle-and-collapse pattern rather than preloading every row, keeping the queue view lightweight.
+
+### Open items
+
+- Same as the prior entry: queue SLA/aging/priority, assignment transfer/escalation, saved views, bulk-action policy, and end-to-end responsive/accessibility/browser tests remain.
+
+### Next
+
+- Add approved profile/evidence completion UI and staff-side document/decision detail once those records exist.
+
 ## 2026-08-19 — Staff compliance queue workspace
 
 **Status:** Done

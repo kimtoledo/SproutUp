@@ -11,6 +11,7 @@
 - Added protected case detail linking queue rows to applicant identity, current state/version/assignment, and the ordered immutable workflow timeline.
 - The assigned reviewer can now reject an in-review case with an exact version and reason. The queue state, decision timestamp, event, and audit record update atomically; approval remains policy-gated.
 - Added `/admin/onboarding`, a responsive server-permission-driven workspace with bounded pagination, journey/status/assigned-to-me filters, matching total count, claim/resume review, assigned-reviewer-only information request/rejection, pending/error/empty states, and authoritative refresh after commands.
+- **2026-08-20 — Staff case detail/timeline UI:** Wired the existing allowlisted staff case detail endpoint into `/admin/onboarding` as a per-row lazy "View history" toggle, rendering the ordered immutable event timeline (type, occurrence time, case version, reason) without broadening the returned applicant projection.
 - SLA/aging/priority definitions, assignment policy beyond first claim, saved views, escalation, bulk actions, UI/navigation, and other domain queues remain; this task stays **WIP**.
 
 ## Scope

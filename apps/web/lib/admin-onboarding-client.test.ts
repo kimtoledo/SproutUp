@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   loadAdminOnboardingWorkspace,
+  loadAdminOnboardingCaseDetail,
   rejectOnboardingCase,
   requestOnboardingInformation,
   startOnboardingReview,
@@ -72,6 +73,42 @@ describe('admin onboarding client', () => {
     await expect(startOnboardingReview('case-1', 2, stale)).resolves.toEqual({
       ok: false,
       message: 'This case changed. The queue has been reloaded.',
+    });
+  });
+
+  it('loads allowlisted staff case detail with immutable events', async () => {
+    const detail = {
+      id: 'case-1',
+      applicantUserId: 'applicant-1',
+      applicantName: 'Applicant',
+      applicantEmail: 'applicant@example.com',
+      caseType: 'investor',
+      status: 'in_review',
+      version: 3,
+      assignedReviewerUserId: 'reviewer-1',
+      submittedAt: '2026-08-19T00:00:00.000Z',
+      decidedAt: null,
+      createdAt: '2026-08-18T00:00:00.000Z',
+      updatedAt: '2026-08-19T00:00:00.000Z',
+      events: [{ id: 'event-1', eventType: 'review_started' }],
+    };
+    const fetcher = vi.fn().mockResolvedValue(response(200, { success: true, data: detail }));
+    await expect(loadAdminOnboardingCaseDetail('case-1', fetcher))
+      .resolves.toEqual({ ok: true, detail });
+    expect(fetcher).toHaveBeenCalledWith(
+      'http://localhost:3001/v1/admin/onboarding/cases/case-1',
+      expect.objectContaining({ method: 'GET', credentials: 'include' }),
+    );
+  });
+
+  it('maps forbidden staff detail without exposing server text', async () => {
+    const fetcher = vi.fn().mockResolvedValue(response(403, {
+      success: false,
+      error: { code: 'FORBIDDEN', message: 'internal detail ignored' },
+    }));
+    await expect(loadAdminOnboardingCaseDetail('case-1', fetcher)).resolves.toEqual({
+      ok: false,
+      message: 'Your account cannot view compliance case details.',
     });
   });
 });

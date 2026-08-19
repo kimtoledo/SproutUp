@@ -4,11 +4,13 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, ClipboardCheck, RefreshCw, Sprout } from 'lucide-react';
 import {
+  loadAdminOnboardingCaseDetail,
   loadAdminOnboardingWorkspace,
   rejectOnboardingCase,
   requestOnboardingInformation,
   startOnboardingReview,
   type AdminOnboardingCase,
+  type AdminOnboardingCaseDetail,
   type AdminQueueFilters,
   type AdminWorkspaceResult,
 } from '@/lib/admin-onboarding-client';
@@ -19,6 +21,17 @@ const statuses: CaseStatus[] = [
   'draft', 'submitted', 'in_review', 'needs_information',
   'approved', 'rejected', 'withdrawn', 'expired',
 ];
+const eventLabels: Record<string, string> = {
+  created: 'Case started',
+  submitted: 'Submitted for review',
+  review_started: 'Review started',
+  information_requested: 'More information requested',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  withdrawn: 'Withdrawn',
+  reopened: 'Reopened',
+  expired: 'Expired',
+};
 
 export default function AdminOnboardingPage() {
   const [filters, setFilters] = useState<AdminQueueFilters>({ page: 1, pageSize: 25 });
@@ -29,6 +42,8 @@ export default function AdminOnboardingPage() {
     id: string;
     action: 'information' | 'reject';
   } | null>(null);
+  const [detail, setDetail] = useState<AdminOnboardingCaseDetail | null>(null);
+  const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
 
   const refresh = useCallback(async (nextFilters: AdminQueueFilters = filters) => {
     setState(await loadAdminOnboardingWorkspace(nextFilters));
@@ -60,6 +75,24 @@ export default function AdminOnboardingPage() {
     }
     await refresh();
     setPending(null);
+  }
+
+  async function toggleDetail(caseId: string) {
+    if (detail?.id === caseId) {
+      setDetail(null);
+      return;
+    }
+    if (detailLoadingId) return;
+    setDetailLoadingId(caseId);
+    setMessage(null);
+    const result = await loadAdminOnboardingCaseDetail(caseId);
+    if (result.ok) {
+      setDetail(result.detail);
+    } else {
+      setMessage(result.message);
+      if (result.unauthenticated) setState({ ok: false, reason: 'unauthenticated' });
+    }
+    setDetailLoadingId(null);
   }
 
   function updateFilters(changes: Partial<AdminQueueFilters>) {
@@ -154,6 +187,8 @@ export default function AdminOnboardingPage() {
               <AdminCaseCard
                 canReview={canReview}
                 currentUserId={state.session.user.id}
+                detail={detail?.id === item.id ? detail : null}
+                detailLoading={detailLoadingId === item.id}
                 item={item}
                 key={item.id}
                 pending={pending === item.id}
@@ -164,6 +199,7 @@ export default function AdminOnboardingPage() {
                     : { id: item.id, action },
                 )}
                 onRun={(action) => void run(item.id, action)}
+                onToggleDetail={() => void toggleDetail(item.id)}
               />
             ))}
           </div>
@@ -191,18 +227,24 @@ function AdminCaseCard({
   item,
   currentUserId,
   canReview,
+  detail,
+  detailLoading,
   pending,
   reasonAction,
   onReasonAction,
   onRun,
+  onToggleDetail,
 }: {
   item: AdminOnboardingCase;
   currentUserId: string;
   canReview: boolean;
+  detail: AdminOnboardingCaseDetail | null;
+  detailLoading: boolean;
   pending: boolean;
   reasonAction: 'information' | 'reject' | null;
   onReasonAction(action: 'information' | 'reject'): void;
   onRun(action: () => Promise<{ ok: boolean; message?: string; unauthenticated?: boolean }>): void;
+  onToggleDetail(): void;
 }) {
   const assignedToMe = item.assignedReviewerUserId === currentUserId;
   function submitReason(event: FormEvent<HTMLFormElement>) {
@@ -221,6 +263,14 @@ function AdminCaseCard({
         <small>{item.caseType} · v{item.version}</small>
       </div>
       <div className="admin-case-actions">
+        <button
+          className="text-button"
+          disabled={detailLoading}
+          onClick={onToggleDetail}
+          type="button"
+        >
+          {detailLoading ? 'Loading history…' : detail ? 'Hide history' : 'View history'}
+        </button>
         {canReview && item.status === 'submitted' && (!item.assignedReviewerUserId || assignedToMe) ? (
           <button
             className="compact-action button-reset"
@@ -251,6 +301,25 @@ function AdminCaseCard({
             type="submit"
           >{pending ? 'Saving…' : reasonAction === 'information' ? 'Send request' : 'Confirm rejection'}</button>
         </form>
+      ) : null}
+      {detail ? (
+        <section className="case-timeline" aria-label={`${item.caseType} case history`}>
+          <h3>Case history</h3>
+          <ol>
+            {detail.events.map((event) => (
+              <li key={event.id}>
+                <span className="timeline-marker" aria-hidden="true" />
+                <div>
+                  <strong>{eventLabels[event.eventType] ?? event.eventType.replaceAll('_', ' ')}</strong>
+                  <small>
+                    {new Date(event.occurredAt).toLocaleString('en-PH')} · Version {event.caseVersion}
+                  </small>
+                  {event.reason ? <p>{event.reason}</p> : null}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
       ) : null}
     </article>
   );

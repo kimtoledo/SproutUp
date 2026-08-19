@@ -1,4 +1,4 @@
-import type { CaseStatus, CaseType, PortalSession } from './portal-client';
+import type { CaseStatus, CaseType, PortalCaseEvent, PortalSession } from './portal-client';
 
 export interface AdminOnboardingCase {
   id: string;
@@ -22,6 +22,11 @@ export interface AdminQueueFilters {
   assignedToMe?: boolean;
 }
 
+export interface AdminOnboardingCaseDetail extends AdminOnboardingCase {
+  applicantUserId: string;
+  events: PortalCaseEvent[];
+}
+
 export type AdminWorkspaceResult =
   | {
     ok: true;
@@ -32,6 +37,10 @@ export type AdminWorkspaceResult =
 
 export type AdminCommandResult =
   | { ok: true }
+  | { ok: false; message: string; unauthenticated?: boolean };
+
+export type AdminCaseDetailResult =
+  | { ok: true; detail: AdminOnboardingCaseDetail }
   | { ok: false; message: string; unauthenticated?: boolean };
 
 interface FetchLike {
@@ -105,6 +114,35 @@ export async function loadAdminOnboardingWorkspace(
     return { ok: true, session: session.data, queue: queue.data };
   } catch {
     return { ok: false, reason: 'unavailable' };
+  }
+}
+
+export async function loadAdminOnboardingCaseDetail(
+  caseId: string,
+  fetcher: FetchLike = fetch,
+): Promise<AdminCaseDetailResult> {
+  try {
+    const response = await fetcher(
+      `${apiBaseUrl()}/v1/admin/onboarding/cases/${caseId}`,
+      init('GET'),
+    );
+    if (response.status === 401) {
+      return { ok: false, unauthenticated: true, message: 'Your session expired. Sign in again.' };
+    }
+    if (response.status === 403) {
+      return { ok: false, message: 'Your account cannot view compliance case details.' };
+    }
+    if (response.status === 404) return { ok: false, message: 'That case is no longer available.' };
+    if (!response.ok) {
+      return { ok: false, message: 'The case detail could not be loaded. Please try again.' };
+    }
+    const result = await envelope<AdminOnboardingCaseDetail>(response);
+    if (!result?.success || !result.data || !Array.isArray(result.data.events)) {
+      return { ok: false, message: 'The case detail could not be loaded. Please try again.' };
+    }
+    return { ok: true, detail: result.data };
+  } catch {
+    return { ok: false, message: 'SproutUp is temporarily unavailable. Please try again.' };
   }
 }
 
