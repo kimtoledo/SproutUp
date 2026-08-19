@@ -21,7 +21,8 @@
 - Contracted all role-change APIs with bounded request schemas, allowlisted approval/evidence responses, structured errors, and explicit unique-pending or row-locked retry semantics. The contract regression test now covers proposals, execution, rejection, cancellation, and history/detail.
 - Contracted session context as an active-user boundary that returns only schema-allowlisted identity, roles, and permissions. The Better Auth wildcard remains an explicitly documented, rate-limited provider adapter rather than a fabricated generic API schema.
 - Added responsive `/register` and `/login` web pages over the Better Auth boundary. Registration captures only borrower/investor intent, both flows include cookie credentials, sign-in errors do not enumerate accounts, and client validation never replaces server enforcement.
-- Password-reset/email-verification delivery, MFA/OTP, permission administration, audit integration into each privileged workflow, final grants, emergency access, and device UI remain; this task stays **WIP**.
+- **2026-08-20 — Role approvals UI:** Added `/admin/role-approvals`, a `roles.assign`-gated workspace over the existing dual-controlled role-assignment/revocation, reject/cancel, and history/detail APIs: a pending-request list with maker-aware approve/reject/cancel, a propose form with bounded user search (`users.read`) and a full role picker, and filterable/paginated history with an expandable action timeline and an explicit integrity-invalid warning. Linked from `/portal` for permitted staff.
+- Password-reset/email-verification delivery, MFA/OTP, audit integration into each privileged workflow, final grants, emergency access, and device UI remain; this task stays **WIP**.
 
 ## Scope
 

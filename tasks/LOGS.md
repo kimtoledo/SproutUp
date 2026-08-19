@@ -34,6 +34,34 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-20 — Role approvals UI and a Turbopack/shared-package build fix
+
+**Status:** Done
+
+### Updated
+
+- Added `apps/web/lib/admin-role-approvals-client.ts` and its test file, wrapping the existing dual-controlled role-assignment/revocation, reject/cancel, and history/detail APIs (task 22) plus the bounded user catalogue (`/v1/admin/users`), with the same bounded-error-mapping pattern as the onboarding client.
+- Added `/admin/role-approvals` (`apps/web/app/admin/role-approvals/page.tsx`), gated on `roles.assign`: a pending-request list with maker-aware approve/reject/cancel, a propose form with user search and a full role picker, and filterable/paginated history with an expandable action timeline and an explicit `integrity: "invalid"` warning.
+- Linked the new workspace from `/portal` for `roles.assign` holders, alongside the existing onboarding-queue link; introduced a `.staff-workspace-links` wrapper so both links stack correctly instead of colliding.
+- **Build fix, not new scope:** this is the first time `apps/web` imports `@sproutup/shared` from an actual page rather than only `next.config.js`. Doing so broke `next build` under Turbopack — it could not resolve the shared package's `NodeNext`-style `./foo.js` barrel re-exports back to their `.ts` source, even though `tsc`, `vitest`, and `tsup` all resolve that mapping fine elsewhere in the repo. Fixed by dropping the `.js` extensions in `packages/shared/src/index.ts`'s re-exports, which is valid and arguably more correct under its own `moduleResolution: "bundler"` tsconfig. Confirmed with a full `npm run check` afterward (164 tests, lint, typecheck, and all four workspace builds green).
+- Updated `docs/DEVELOPER.md`, `docs/SECURITY.md`, `tasks/mvp1/02-auth-rbac-audit.md`, `tasks/mvp1/22-maker-checker-approval-matrix.md`, and `tasks/mvp1/README.md`.
+
+### Decisions
+
+- The client never accepts a free-typed target user ID; the propose form only ever submits the `id` from a selected `/v1/admin/users` search result.
+- Approve does not collect a client-side reason (the API's reason there is optional); reject and cancel both require one, matching their required-reason contract.
+- Self-review gating (hiding approve/reject for the current user's own proposal, showing cancel instead) is UI convenience only — every command re-hits the server, which is what actually enforces maker/checker separation.
+- This is the first UI built on the task 22 approval foundation. Other domains that will eventually need dual control (disbursement, wallet adjustments, etc.) still have no UI and no approved matrix; nothing about this change extends the approval mechanism beyond role changes.
+
+### Open items
+
+- Same as prior task 20/02/22 entries: SLA/escalation policy, saved views, bulk actions, MFA/recovery, the cross-domain approval matrix, and emergency override are still unbuilt because they need an approved policy first.
+- Could not visually verify the new page against live queue/user data — no local Postgres/API was running; verified via typecheck, lint, unit tests, a full production build across all four workspaces, and a dev-server smoke request only.
+
+### Next
+
+- No further engineering-only surface is currently identified on tasks 02/20/22. Remaining work across the MVP1 plan needs a business/compliance/policy input (KYC fields, tax rules, wallet chart of accounts, credit scoring criteria, SLA thresholds, or the approval matrix itself) before more can be implemented responsibly.
+
 ## 2026-08-20 — Onboarding queue aging display
 
 **Status:** Done

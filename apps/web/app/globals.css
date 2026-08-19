@@ -614,9 +614,17 @@ button:focus-visible {
 }
 
 .status-rejected,
-.status-withdrawn {
+.status-withdrawn,
+.status-cancelled,
+.status-expired,
+.status-failed {
   color: #7c3431;
   background: #f8e7e5;
+}
+
+.status-executed {
+  color: #1d6a3c;
+  background: #e1f2e7;
 }
 
 .case-meta {
@@ -775,12 +783,18 @@ button:focus-visible {
   color: #596b5f;
 }
 
+.staff-workspace-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: -22px 0 30px;
+}
+
 .staff-workspace-link {
   width: fit-content;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin: -22px 0 30px;
   color: #276540;
   font-weight: 780;
   text-decoration: none;
@@ -802,6 +816,12 @@ button:focus-visible {
 .admin-header .brand small {
   color: #718076;
   font-weight: 650;
+}
+
+.admin-nav-links {
+  display: flex;
+  gap: 20px;
+  align-items: center;
 }
 
 .admin-intro {
@@ -844,6 +864,14 @@ button:focus-visible {
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 24px 70px rgba(31, 74, 46, 0.09);
+}
+
+.queue-panel + .queue-panel {
+  margin-top: 24px;
+}
+
+.queue-panel h2:first-child {
+  margin-top: 0;
 }
 
 .queue-filters {
@@ -973,6 +1001,93 @@ button:focus-visible {
 .pagination button:disabled {
   cursor: default;
   opacity: 0.45;
+}
+
+.propose-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.propose-form label {
+  display: grid;
+  gap: 7px;
+  color: #253b2d;
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+
+.propose-form input[type='text'],
+.propose-form select,
+.propose-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd8cd;
+  border-radius: 10px;
+  color: #14231a;
+  background: white;
+  font: inherit;
+}
+
+.propose-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.propose-form > button,
+.propose-form label > button {
+  width: fit-content;
+}
+
+.propose-type-toggle {
+  display: flex;
+  gap: 18px;
+}
+
+.propose-type-toggle label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+}
+
+.user-search-results {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid #dce5de;
+  border-radius: 10px;
+  background: #f7faf8;
+}
+
+.user-search-result {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.user-search-result:hover {
+  background: #eef4ef;
+}
+
+.selected-target {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #cbd8cd;
+  border-radius: 10px;
+  background: #f2f6f3;
 }
 
 @media (max-width: 760px) {

@@ -11,6 +11,7 @@
 - Pending role changes now support reasoned rejection by a distinct authorized reviewer and maker-only cancellation. Both lock and hash-check pending state and cannot transition an already terminal request.
 - Authorized operators can inspect bounded role-approval history and a complete append-only action timeline. Every response recomputes and surfaces payload integrity rather than trusting the stored hash blindly.
 - API and service tests prove capability denial, maker/checker separation, atomic execution, and restricted self-target/`super_admin` paths. Database tests prove approval actions cannot be updated, deleted, or truncated.
+- **2026-08-20 — First maker/checker UI:** Added `/admin/role-approvals` so staff can actually operate the role-assignment/revocation control from the browser instead of only via direct API calls: propose, approve (blocked client-side, then server-side, for the proposer), reject, cancel, and inspect the immutable action timeline and integrity result. This is the first UI built on the reusable approval foundation described above; other domains still route through direct API calls only.
 - The cross-domain command/threshold matrix, amendment/supersession, alerting, emergency override, and financial command integrations remain; this task stays **WIP**.
 
 ## Scope

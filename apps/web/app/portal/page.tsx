@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   LogOut,
   RefreshCw,
+  ShieldCheck,
   Sprout,
   TrendingUp,
 } from 'lucide-react';
@@ -157,10 +158,20 @@ export default function PortalPage() {
         </div>
       </section>
 
-      {state.session.permissions.includes('onboarding_cases.read') ? (
-        <Link className="staff-workspace-link" href="/admin/onboarding">
-          <ClipboardCheck aria-hidden="true" size={18} /> Open compliance workspace
-        </Link>
+      {state.session.permissions.includes('onboarding_cases.read')
+        || state.session.permissions.includes('roles.assign') ? (
+        <div className="staff-workspace-links">
+          {state.session.permissions.includes('onboarding_cases.read') ? (
+            <Link className="staff-workspace-link" href="/admin/onboarding">
+              <ClipboardCheck aria-hidden="true" size={18} /> Open compliance workspace
+            </Link>
+          ) : null}
+          {state.session.permissions.includes('roles.assign') ? (
+            <Link className="staff-workspace-link" href="/admin/role-approvals">
+              <ShieldCheck aria-hidden="true" size={18} /> Open role approvals
+            </Link>
+          ) : null}
+        </div>
       ) : null}
 
       <section className="portal-section" aria-labelledby="journeys-title">

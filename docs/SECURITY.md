@@ -39,6 +39,8 @@ Case history is fetched lazily from the own-case detail boundary, which binds ca
 
 The staff compliance workspace resolves session context and requires `onboarding_cases.read` before issuing the queue request. Review controls additionally require `onboarding_cases.review` and are rendered only for unassigned submitted work or work assigned to the current reviewer; the API independently enforces claim ownership, self-review denial, exact version, state, and reason. Stable error codes are mapped to bounded UI messages and server-provided exception/message text is not rendered.
 
+The role-approvals workspace resolves session context and requires `roles.assign` before issuing any request. It hides approve/reject controls for the current user's own proposals and shows cancel instead, matching the API's maker/checker separation, but that gating is a UX convenience only — the approve/reject/cancel endpoints independently re-check maker/checker identity and reject a client that bypasses the hidden control. The propose form's user search calls `/v1/admin/users` under the caller's own `users.read` grant rather than a privileged lookup, and the target user is only ever taken from a selected search result's server-issued ID, never typed free text. History and detail reads require `roles.assign`, and a detail view renders the server-recomputed integrity result verbatim rather than assuming stored evidence is intact.
+
 ## Authorization
 
 The API resolves roles and permissions from the authenticated user ID. Client-supplied role, permission, or ownership claims are never authoritative.

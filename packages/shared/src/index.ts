@@ -3,7 +3,7 @@ export {
   healthResponseSchema,
   serviceStatusSchema,
   type HealthResponse,
-} from './health.js';
+} from './health';
 export {
   addPhpMoney,
   comparePhpMoney,
@@ -20,7 +20,7 @@ export {
   type PhpAmount,
   type PhpMoney,
   type PhpMoneyContract,
-} from './money.js';
+} from './money';
 export {
   hasPermission,
   initialRolePermissions,
@@ -33,7 +33,7 @@ export {
   type AuthorizationContext,
   type PermissionKey,
   type RoleKey,
-} from './authorization.js';
+} from './authorization';
 export {
   canTransitionOnboardingCase,
   onboardingCaseStatusSchema,
@@ -43,4 +43,4 @@ export {
   type OnboardingCaseStatus,
   type OnboardingCaseType,
   type OnboardingEventType,
-} from './onboarding.js';
+} from './onboarding';
