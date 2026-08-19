@@ -19,6 +19,7 @@
 - Added transaction-aware full reversal with original-row serialization, exact opposite lines, one-reversal enforcement, exact retries, closed-account correction support, and atomic reversal audit evidence.
 - Added an internal read-only account projection deriving exact posted debit/credit totals and signed normal balance from immutable entries, with no mutable balance column or premature HTTP exposure.
 - Added generated consent migration `0013_robust_corsair.sql` and custom invariant migration `0014_consent-evidence-invariants.sql` for immutable document versions, exact acceptance hashes, and startup readiness checks, without seeding unapproved legal content.
+- Added internal transaction-aware consent services for exact UTF-8 publication hashing, conflict-safe version identity, latest-effective lookup, exact idempotent user acceptance, and atomic audit evidence; routes/content remain policy-gated.
 
 ## Scope
 

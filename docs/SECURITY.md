@@ -83,7 +83,9 @@ Worker dispatch is deny-by-default: the runtime refuses to start with an empty r
 
 The initial writer and schema are implemented, but every privileged/domain command must integrate audit writes in its own transaction or reliable outbox workflow before that command is considered complete.
 
-Consent documents and acceptances are immutable database evidence. Versioned content is retained with its SHA-256 identity, and a database trigger rejects acceptance evidence whose duplicated hash differs from the referenced document. No legal content or consent API is active. A future publication service must compute the hash from exact content and enforce publishing authority; a future acceptance route must bind authenticated user, exact displayed document/hash, policy-effective version, request evidence, and audit in one transaction. Raw IP addresses and user-agent strings must not be stored in consent evidence.
+Consent documents and acceptances are immutable database evidence. Versioned content is retained with its SHA-256 identity, and a database trigger rejects acceptance evidence whose duplicated hash differs from the referenced document. The internal publication service computes SHA-256 from exact UTF-8 content and atomically audits new versions; exact retries cannot change title, content, or effective time. The internal acceptance service requires an existing user, exact displayed document/hash, and effective time, then atomically persists acceptance and audit evidence. Transaction-aware forms allow an owning domain gate to commit with the evidence.
+
+No legal content or consent HTTP API is active. Publication authorization and the required/latest/re-consent policy must exist before exposure. Raw IP addresses and user-agent strings must not be stored; only policy-approved one-way hashes are accepted by the internal boundary.
 
 ## Financial input integrity
 

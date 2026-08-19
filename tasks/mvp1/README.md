@@ -10,7 +10,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 - [ ] [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md) — password/session boundary, audited customer-intent bootstrap, access catalogue, own-session revocation, canonical RBAC, immutable audit, and dual-controlled role changes implemented; recovery/MFA and remaining controls remain
 - [ ] [03 — Borrower Onboarding & KYC](./03-borrower-onboarding-kyc.md) — protected case lifecycle through assigned-reviewer rejection implemented; Philippine profile, evidence, completeness, and approval remain
 - [ ] [04 — Investor Onboarding & KYC](./04-investor-onboarding-kyc.md) — protected case lifecycle through assigned-reviewer rejection implemented; classification, suitability, bank, completeness, approval, and eligibility controls remain
-- [ ] [05 — Document & Consent Management](./05-document-consent-management.md) — immutable versioned consent content/acceptance evidence schema implemented; legal content, services/routes, policy, private files, retention, and e-signatures remain
+- [ ] [05 — Document & Consent Management](./05-document-consent-management.md) — immutable versioned consent evidence plus internal publication/effective-read/exact-acceptance services implemented; legal content, routes/policy, private files, retention, and e-signatures remain
 - [ ] [06 — Credit Scoring & Underwriting](./06-credit-scoring-underwriting.md)
 - [ ] [07 — Campaign & Loan Management](./07-campaign-loan-management.md)
 - [ ] [08 — Investor Commitments](./08-investor-commitments.md)

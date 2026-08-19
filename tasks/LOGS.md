@@ -34,6 +34,36 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Exact consent publication and acceptance services
+
+**Status:** Done
+
+### Updated
+
+- Added an internal consent service with transaction-aware publication and acceptance primitives plus latest-effective document lookup.
+- Publication computes lowercase SHA-256 from exact UTF-8 content, uses key/locale/version identity, returns only exact title/content/effective-time retries, rejects changed reuse, and atomically appends audit evidence.
+- Acceptance requires an existing user, exact document/hash, and already-effective version, persists optional one-way client-context hashes, resolves repeated acceptance without duplicate evidence, and atomically appends audit evidence.
+- Added six embedded-PostgreSQL integration tests covering exact hash/audit publication, retry/conflict behavior, effective-time selection, idempotent acceptance, all stable denial results, and caller-transaction rollback.
+- Updated consent, developer, security, technology-stack, platform, document/consent, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Published content is hashed exactly as supplied in UTF-8; the service does not normalize Unicode, line endings, or whitespace after publication input validation.
+- Key/locale/version is the publication identity. An exact retry may return the existing row, but a changed title, content, hash, or effective time under that identity is a conflict.
+- The internal latest-effective read is a technical selection helper, not a required-consent policy. Callers must enforce approved mandatory/re-consent rules.
+- Acceptance is self-service for the identified existing user and exact displayed hash. Proxy/assisted acceptance is not implemented.
+- No route or content seed is added, so the internal publication primitive does not bypass the missing legal authority and content-approval decisions.
+
+### Open items
+
+- Approve legal content owners, mandatory keys/versions, localization, route permissions, re-consent/withdrawal behavior, and retention.
+- Integrate explicit accepted document versions into onboarding completeness only after that matrix is approved.
+- Implement separate private-file validation/storage/scanning and e-signature evidence after provider and policy decisions.
+
+### Next
+
+- Continue with a provider-neutral private-file metadata/quarantine foundation only if storage, classification, scan-state, and retention semantics can be established without selecting an unapproved provider.
+
 ## 2026-08-19 — Immutable consent evidence schema
 
 **Status:** Done

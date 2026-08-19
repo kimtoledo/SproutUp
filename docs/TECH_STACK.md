@@ -67,7 +67,7 @@ The in-process worker runtime is also provider-neutral and deny-by-default: vers
 5. **Dual control:** maker/checker authorization and auditable approval state for disbursement, transfer approval, adjustments, write-offs, and configuration changes as defined by the approval matrix.
 6. **Operational evidence:** structured logs with correlation IDs, metrics, tracing/error reporting, immutable audit trails, reconciliation dashboards, backup/restore tests, and runbooks.
 7. **Security and privacy:** field/file classification, encryption and key management, retention/deletion policy, malware scanning for uploads, least privilege, dependency/secret scanning, and tested incident procedures.
-8. **Consent evidence:** immutable PostgreSQL `consent_documents` and `consent_acceptances` retain exact versioned text/hash identity and user acceptance linkage. Legal content, publication/acceptance services, required-document policy, re-consent, withdrawal, retention, private files, and e-signatures remain separate task-owned controls.
+8. **Consent evidence:** immutable PostgreSQL `consent_documents` and `consent_acceptances` retain exact versioned text/hash identity and user acceptance linkage. Internal transaction-aware services compute exact UTF-8 publication hashes, resolve version conflicts, select latest-effective content, and atomically record exact acceptance/audit evidence. Legal content, route authorization, required-document policy, re-consent, withdrawal, retention, private files, and e-signatures remain separate task-owned controls.
 
 ## Dependency and version policy
 
