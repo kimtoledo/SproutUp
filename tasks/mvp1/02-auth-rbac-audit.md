@@ -22,7 +22,8 @@
 - Contracted session context as an active-user boundary that returns only schema-allowlisted identity, roles, and permissions. The Better Auth wildcard remains an explicitly documented, rate-limited provider adapter rather than a fabricated generic API schema.
 - Added responsive `/register` and `/login` web pages over the Better Auth boundary. Registration captures only borrower/investor intent, both flows include cookie credentials, sign-in errors do not enumerate accounts, and client validation never replaces server enforcement.
 - **2026-08-20 — Role approvals UI:** Added `/admin/role-approvals`, a `roles.assign`-gated workspace over the existing dual-controlled role-assignment/revocation, reject/cancel, and history/detail APIs: a pending-request list with maker-aware approve/reject/cancel, a propose form with bounded user search (`users.read`) and a full role picker, and filterable/paginated history with an expandable action timeline and an explicit integrity-invalid warning. Linked from `/portal` for permitted staff.
-- Password-reset/email-verification delivery, MFA/OTP, audit integration into each privileged workflow, final grants, emergency access, and device UI remain; this task stays **WIP**.
+- **2026-08-20 — Active-sessions device UI:** Added an "Active sessions" section to `/portal`, available to every authenticated account, listing each session's IP, user agent, created/expiry time, and current-device flag from `GET /v1/sessions`, with a per-session revoke control wired to `DELETE /v1/sessions/:sessionId`. The current session has no revoke control there; it relies on the existing "Sign out" action instead.
+- Password-reset/email-verification delivery, MFA/OTP, audit integration into each privileged workflow, final grants, and emergency access remain; this task stays **WIP**.
 
 ## Scope
 

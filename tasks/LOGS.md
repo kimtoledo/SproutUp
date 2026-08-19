@@ -34,6 +34,29 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-20 — Active-sessions device UI
+
+**Status:** Done
+
+### Updated
+
+- Added `apps/web/lib/session-client.ts` and its test file, wrapping the existing `GET /v1/sessions` and `DELETE /v1/sessions/:sessionId` own-session APIs (task 02) with the same bounded-error-mapping pattern as the other clients.
+- Added an "Active sessions" section to `/portal`, available to every authenticated account (all roles carry `sessions.read_own`/`sessions.revoke_own`): lists each session's IP address, user agent, created/expiry time, and current-device flag, with a per-session "Sign out this device" control. The current session has no revoke control there — it relies on the existing "Sign out" button instead, so a user can't accidentally end the session they're viewing the page from.
+- Updated `docs/DEVELOPER.md`, `docs/SECURITY.md`, `tasks/mvp1/02-auth-rbac-audit.md`, `tasks/mvp1/21-borrower-investor-portal-journeys.md`, and `tasks/mvp1/README.md`.
+
+### Decisions
+
+- No user-agent parsing/device-name inference was added; the raw `userAgent` string is shown as-is rather than inventing a browser/OS detection feature nobody asked for.
+
+### Open items
+
+- Same as prior entries — nothing new. This closes the last "API exists, no UI" gap found in `apps/api/src/routes` during this pass (onboarding, role approvals, and now sessions all have a UI; `access-catalogue.ts`'s `/v1/admin/roles` and `/v1/admin/users` are used internally by the role-approvals propose form but have no standalone directory page — that would be new scope, not a gap, so it was left alone).
+- Could not visually verify against live session data — no local Postgres/API was running; verified via typecheck, lint, unit tests, a full production build, and a dev-server smoke request only.
+
+### Next
+
+- No further engineering-only surface is currently identified anywhere in the MVP1 plan. Everything remaining needs a business/compliance/policy input first (see the 2026-08-20 role-approvals entry below for the same conclusion in more detail).
+
 ## 2026-08-20 — Role approvals UI and a Turbopack/shared-package build fix
 
 **Status:** Done

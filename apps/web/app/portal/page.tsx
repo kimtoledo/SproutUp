@@ -7,6 +7,7 @@ import {
   Building2,
   ClipboardCheck,
   LogOut,
+  Monitor,
   RefreshCw,
   ShieldCheck,
   Sprout,
@@ -25,6 +26,7 @@ import {
   type PortalLoadResult,
 } from '@/lib/portal-client';
 import { product } from '@/lib/product';
+import { loadOwnSessions, revokeOwnSession, type OwnSession } from '@/lib/session-client';
 
 const openStatuses = new Set(['draft', 'submitted', 'in_review', 'needs_information']);
 const statusLabels: Record<PortalCase['status'], string> = {
@@ -57,15 +59,33 @@ export default function PortalPage() {
   const [withdrawReason, setWithdrawReason] = useState('');
   const [detail, setDetail] = useState<PortalCaseDetail | null>(null);
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<OwnSession[] | null>(null);
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
+  const [sessionsMessage, setSessionsMessage] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setState(await loadPortal());
+  }, []);
+
+  const refreshSessions = useCallback(async () => {
+    const result = await loadOwnSessions();
+    if (result.ok) setSessions(result.sessions);
   }, []);
 
   useEffect(() => {
     let active = true;
     void loadPortal().then((result) => {
       if (active) setState(result);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void loadOwnSessions().then((result) => {
+      if (active && result.ok) setSessions(result.sessions);
     });
     return () => {
       active = false;
@@ -104,6 +124,19 @@ export default function PortalPage() {
       if (result.unauthenticated) setState({ ok: false, reason: 'unauthenticated' });
     }
     setDetailLoadingId(null);
+  }
+
+  async function revokeSession(sessionId: string) {
+    if (pendingSessionId) return;
+    setPendingSessionId(sessionId);
+    setSessionsMessage(null);
+    const result = await revokeOwnSession(sessionId);
+    if (!result.ok) {
+      setSessionsMessage(result.message);
+      if (result.unauthenticated) setState({ ok: false, reason: 'unauthenticated' });
+    }
+    await refreshSessions();
+    setPendingSessionId(null);
   }
 
   if (!state) {
@@ -311,6 +344,60 @@ export default function PortalPage() {
                 </article>
               );
             })}
+          </div>
+        )}
+      </section>
+
+      <section className="portal-section" aria-labelledby="sessions-title">
+        <div className="portal-section-heading">
+          <div>
+            <p className="eyebrow">Security</p>
+            <h2 id="sessions-title">Active sessions</h2>
+          </div>
+          <button className="quiet-button" onClick={() => void refreshSessions()} type="button">
+            <RefreshCw aria-hidden="true" size={16} /> Refresh
+          </button>
+        </div>
+
+        {sessionsMessage ? <p className="form-message" role="alert">{sessionsMessage}</p> : null}
+
+        {!sessions ? (
+          <p>Loading your active sessions…</p>
+        ) : sessions.length === 0 ? (
+          <div className="empty-state">
+            <h3>No active sessions</h3>
+            <p>Sign in again to start a new session.</p>
+          </div>
+        ) : (
+          <div className="case-list">
+            {sessions.map((session) => (
+              <article className="case-card" key={session.id}>
+                <div className="case-card-heading">
+                  <div className="journey-icon" aria-hidden="true"><Monitor size={21} /></div>
+                  <div>
+                    <p>{session.ipAddress ?? 'Unknown location'}</p>
+                    <span className="case-status">{session.current ? 'This device' : 'Active'}</span>
+                  </div>
+                  <small>Expires {new Date(session.expiresAt).toLocaleDateString('en-PH')}</small>
+                </div>
+                <p className="case-meta">{session.userAgent ?? 'Unknown device'}</p>
+                <p className="case-meta">Signed in {new Date(session.createdAt).toLocaleString('en-PH')}</p>
+                <div className="case-actions">
+                  {session.current ? (
+                    <span className="assigned-note">Use “Sign out” above to end this device</span>
+                  ) : (
+                    <button
+                      className="text-button danger-text"
+                      disabled={pendingSessionId === session.id}
+                      onClick={() => void revokeSession(session.id)}
+                      type="button"
+                    >
+                      {pendingSessionId === session.id ? 'Signing out…' : 'Sign out this device'}
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
           </div>
         )}
       </section>
