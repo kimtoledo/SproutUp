@@ -13,7 +13,8 @@
 - Added capability-protected own-session listing and revocation. The API exposes opaque IDs rather than tokens, enforces ownership in the delete query, and commits revocation plus immutable audit evidence atomically.
 - Added dual-controlled role assignment: an authorized maker proposes a hash-bound role grant, a different authorized checker approves and executes it, and append-only approval/audit evidence is committed with the grant. Duplicate pending requests, self-targeting, self-approval, expired/stale requests, and `super_admin` elevation are denied.
 - Added separately capability-protected role and user catalogues. Role results include effective permission keys; user results use bounded pagination and exclude credentials, provider accounts, sessions, and tokens.
-- Password-reset/email-verification delivery, MFA/OTP, role revocation/permission administration, audit integration into each privileged workflow, final grants, emergency access, and device UI remain; this task stays **WIP**.
+- Added dual-controlled role revocation with the same hash/expiry/lock/evidence boundary. It revalidates current grants under lock, rejects self-change and `super_admin` mutation, and prevents removal of an active user's final role.
+- Password-reset/email-verification delivery, MFA/OTP, permission administration, audit integration into each privileged workflow, final grants, emergency access, and device UI remain; this task stays **WIP**.
 
 ## Scope
 

@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Dual-controlled role revocation
+
+**Status:** Done
+
+### Updated
+
+- Added protected role-revocation list, proposal, and approval endpoints using the existing `roles.assign` capability and generic approval schema.
+- Bound revocations to the canonical target/role payload hash, 24-hour expiry, duplicate-pending protection, request locking, and separate maker/checker identities.
+- Revalidated and locked the target's current grants before deletion, preventing stale execution and removal of the final role from an active account.
+- Committed the approved deletion, approved/executed action history, and immutable `role_revocation.executed` audit event in one transaction.
+- Added route and embedded-PostgreSQL service tests for capability denial, stable last-role conflict, maker/checker separation, exact-role deletion, append-only action history, final-role protection, and restricted `super_admin` changes.
+- Updated developer, security, authentication, maker/checker, MVP, and handoff documentation.
+
+### Decisions
+
+- Role grant and revocation both require dual control; there is no direct role-membership mutation endpoint.
+- Active accounts must retain at least one role. Suspended/disabled account cleanup remains possible, but account-status policy is a separate command.
+- All `super_admin` changes remain outside ordinary administration until the bootstrap and emergency-access process is approved.
+
+### Open items
+
+- Add proposal rejection/cancellation/amendment and operator history views.
+- Define user suspension/restoration, role-permission mutation, bootstrap, and emergency-access policy.
+- Complete provider-dependent verification, recovery, and MFA controls.
+
+### Next
+
+- Add reusable rejection/cancellation lifecycle operations to the approval boundary before applying it to onboarding and financial commands.
+
 ## 2026-08-19 — Protected access administration catalogue
 
 **Status:** Done

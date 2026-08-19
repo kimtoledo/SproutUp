@@ -13,6 +13,8 @@ import type { RoleAssignmentService } from './auth/role-assignments-service.js';
 import { registerRoleAssignmentRoutes } from './routes/role-assignments.js';
 import type { AccessCatalogueService } from './auth/access-catalogue-service.js';
 import { registerAccessCatalogueRoutes } from './routes/access-catalogue.js';
+import type { RoleRevocationService } from './auth/role-revocations-service.js';
+import { registerRoleRevocationRoutes } from './routes/role-revocations.js';
 
 export interface AppDependencies {
   config: Pick<ApiConfig, 'appOrigin' | 'environment'>;
@@ -23,6 +25,7 @@ export interface AppDependencies {
     sessions?: SessionService;
     roleAssignments?: RoleAssignmentService;
     catalogue?: AccessCatalogueService;
+    roleRevocations?: RoleRevocationService;
   };
   logger?: boolean;
 }
@@ -97,6 +100,12 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
       await registerAccessCatalogueRoutes(app, {
         auth: dependencies.auth.service,
         catalogue: dependencies.auth.catalogue,
+      });
+    }
+    if (dependencies.auth.roleRevocations) {
+      await registerRoleRevocationRoutes(app, {
+        auth: dependencies.auth.service,
+        roleRevocations: dependencies.auth.roleRevocations,
       });
     }
   }

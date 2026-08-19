@@ -5,6 +5,7 @@ import { createAuthServices } from './auth/service.js';
 import { createSessionService } from './auth/sessions-service.js';
 import { createRoleAssignmentService } from './auth/role-assignments-service.js';
 import { createAccessCatalogueService } from './auth/access-catalogue-service.js';
+import { createRoleRevocationService } from './auth/role-revocations-service.js';
 
 const config = loadConfig();
 const database = createDatabase(config.databaseUrl);
@@ -13,11 +14,19 @@ const auth = createAuthServices(config, database.db);
 const sessions = createSessionService(database.db);
 const roleAssignments = createRoleAssignmentService(database.db);
 const catalogue = createAccessCatalogueService(database.db);
+const roleRevocations = createRoleRevocationService(database.db);
 
 const app = await buildApp({
   config,
   checkDatabase: database.check,
-  auth: { service: auth, baseUrl: config.authBaseUrl, sessions, roleAssignments, catalogue },
+  auth: {
+    service: auth,
+    baseUrl: config.authBaseUrl,
+    sessions,
+    roleAssignments,
+    catalogue,
+    roleRevocations,
+  },
 });
 
 app.addHook('onClose', async () => {
