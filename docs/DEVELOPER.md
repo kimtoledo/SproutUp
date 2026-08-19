@@ -46,6 +46,8 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `GET /v1/health` | Readiness; returns `503` when PostgreSQL or required schema relations are unavailable |
 | `/v1/auth/*` | Better Auth email/password and session endpoints |
 | `GET /v1/session-context` | Server-resolved current user, roles, and permissions; returns `401` without an active authorized account |
+| `GET /v1/sessions` | List the authenticated user's sessions without exposing tokens |
+| `DELETE /v1/sessions/:sessionId` | Revoke an owned session and append immutable audit evidence |
 
 ## Validate a change
 

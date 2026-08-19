@@ -19,10 +19,12 @@
     "@sproutup/db": "*",
     "@sproutup/shared": "*",
     "better-auth": "1.6.26",
+    "drizzle-orm": "0.45.2",
     "fastify": "5.11.3",
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.5",
     "@types/node": "20.19.17",
     "tsup": "8.5.1",
     "tsx": "4.23.12",

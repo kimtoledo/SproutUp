@@ -18,6 +18,8 @@ export interface WriteAuditInput {
   metadata?: Record<string, unknown>;
 }
 
+export type AuditWriterDatabase = Pick<Database, 'insert'>;
+
 export function assertSafeAuditMetadata(value: unknown, path = 'metadata'): void {
   if (Array.isArray(value)) {
     value.forEach((item, index) => assertSafeAuditMetadata(item, `${path}[${index}]`));
@@ -36,7 +38,10 @@ export function assertSafeAuditMetadata(value: unknown, path = 'metadata'): void
   }
 }
 
-export async function writeAudit(database: Database, input: WriteAuditInput): Promise<string> {
+export async function writeAudit(
+  database: AuditWriterDatabase,
+  input: WriteAuditInput,
+): Promise<string> {
   const metadata = input.metadata ?? {};
   assertSafeAuditMetadata(metadata);
 

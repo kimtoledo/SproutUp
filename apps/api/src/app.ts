@@ -2,10 +2,13 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { randomUUID } from 'node:crypto';
 import type { HealthResponse } from '@sproutup/shared';
 import type { ApiConfig } from './config.js';
 import type { AuthServices } from './auth/types.js';
 import { registerAuthRoutes } from './routes/auth.js';
+import { registerSessionRoutes } from './routes/sessions.js';
+import type { SessionService } from './auth/sessions-service.js';
 
 export interface AppDependencies {
   config: Pick<ApiConfig, 'appOrigin' | 'environment'>;
@@ -13,6 +16,7 @@ export interface AppDependencies {
   auth?: {
     service: AuthServices;
     baseUrl: string;
+    sessions?: SessionService;
   };
   logger?: boolean;
 }
@@ -25,6 +29,7 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
   const app = Fastify({
     logger: dependencies.logger ?? dependencies.config.environment !== 'test',
     trustProxy: true,
+    genReqId: () => randomUUID(),
   });
 
   await app.register(helmet);
@@ -70,6 +75,12 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
       auth: dependencies.auth.service,
       authBaseUrl: dependencies.auth.baseUrl,
     });
+    if (dependencies.auth.sessions) {
+      await registerSessionRoutes(app, {
+        auth: dependencies.auth.service,
+        sessions: dependencies.auth.sessions,
+      });
+    }
   }
 
   return app;

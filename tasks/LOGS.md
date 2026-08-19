@@ -34,6 +34,34 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Audited own-session management
+
+**Status:** Done
+
+### Updated
+
+- Added `GET /v1/sessions` and `DELETE /v1/sessions/:sessionId` behind the explicit `sessions.read_own` and `sessions.revoke_own` capabilities.
+- Session responses expose opaque session IDs, timestamps, IP/user-agent context, and a current-session flag without returning bearer/session tokens.
+- Session deletion binds both session ID and authenticated user ID, preventing cross-user revocation even when another opaque ID is known.
+- Successful revocation and its `session.revoked` audit event execute in one database transaction with a UUID request correlation ID.
+- Added route tests for token-free responses, capability denial, and revoke behavior plus embedded-PostgreSQL tests for ownership enforcement and atomic audit evidence.
+- Updated security, developer, task, and MVP documentation.
+
+### Decisions
+
+- Session-management commands use opaque database IDs, never tokens in URLs or response bodies.
+- Users may revoke their current session; the deleted database session invalidates subsequent requests even though the current delete request completes normally.
+- Cross-user session administration remains a separate privileged capability and is not exposed until its administrative workflow and audit requirements are implemented.
+
+### Open items
+
+- Build the session/device management interface and decide which device attributes may be retained and displayed.
+- Implement privileged session revocation only with a reviewed operator workflow.
+
+### Next
+
+- Continue task 02 with an audited, deny-by-default role catalogue and role-assignment proposal boundary; do not allow direct high-privilege assignment before maker/checker policy is approved.
+
 ## 2026-08-19 — Authentication, RBAC, and immutable audit foundation
 
 **Status:** WIP

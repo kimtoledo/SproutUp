@@ -12,6 +12,8 @@ Better Auth is mounted behind the Fastify API at `/v1/auth/*`. The web applicati
 - Authentication rate limits are database-backed so they apply across API replicas. Email sign-in is limited to five attempts per minute and password-reset requests to three per five minutes.
 - API-level rate limiting is also enabled as defense in depth.
 - Suspended or disabled users cannot resolve an authorization context even if an old session cookie still exists.
+- Authenticated users can list and revoke only their own sessions through opaque session IDs. Session tokens are never returned by the session-management API.
+- Session revocation and its immutable audit event commit in one database transaction. A mismatched owner/session pair is treated as not found.
 
 Password-reset delivery and email verification are not operational until a transactional-email adapter and templates are approved. MFA/OTP is not enabled until the required events, recovery process, and delivery provider are approved. These are release blockers under MVP 1 task 02, not silently deferred security controls.
 
@@ -56,5 +58,5 @@ Never put real secrets in `.env.example`, Markdown, source code, fixtures, logs,
 - Final role-permission and maker/checker matrices
 - Emergency access and support impersonation policy
 - Central security event monitoring and alert provider
-- Session/device management user interface
+- Session/device management user interface; the protected API is implemented
 - Secret rotation and incident runbooks
