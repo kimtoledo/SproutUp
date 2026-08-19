@@ -101,7 +101,11 @@ describe('OpenAPI contract generation', () => {
       expect(document.components.securitySchemes).toHaveProperty('sessionCookie');
       expect(response.body).not.toMatch(/registration-test-secret|password-hash|session-token-value/i);
 
-      const onboardingOperations = [
+      const contractedOperations = [
+        ['/v1/sessions', 'get', 'listOwnSessions'],
+        ['/v1/sessions/{sessionId}', 'delete', 'revokeOwnSession'],
+        ['/v1/admin/roles', 'get', 'listRoleCatalogue'],
+        ['/v1/admin/users', 'get', 'listUserAccessCatalogue'],
         ['/v1/onboarding/cases', 'get', 'listOwnOnboardingCases'],
         ['/v1/onboarding/cases/{caseId}', 'get', 'getOwnOnboardingCase'],
         ['/v1/onboarding/cases', 'post', 'createOwnOnboardingCase'],
@@ -116,7 +120,7 @@ describe('OpenAPI contract generation', () => {
         ],
       ] as const;
 
-      for (const [path, method, operationId] of onboardingOperations) {
+      for (const [path, method, operationId] of contractedOperations) {
         const operation = document.paths[path]?.[method];
         expect(operation?.operationId).toBe(operationId);
         expect(operation?.security).toEqual([{ sessionCookie: [] }]);
@@ -125,19 +129,26 @@ describe('OpenAPI contract generation', () => {
             actor: expect.any(String),
             permissions: expect.any(Array),
             permissionMode: expect.stringMatching(/^(any|all)$/),
-            retryModel: expect.stringMatching(/^(safe_read|unique_open_case|optimistic_version)$/),
+            retryModel: expect.stringMatching(
+              /^(safe_read|idempotent_delete|unique_open_case|optimistic_version)$/,
+            ),
             sideEffects: expect.any(Array),
           }),
         );
         expect(operation?.['x-sproutup']).toHaveProperty('auditEvent');
         expect(operation?.responses).toBeDefined();
         expect(Object.keys(operation?.responses ?? {})).toEqual(
-          expect.arrayContaining([expect.stringMatching(/^20[01]$/), '401', '403']),
+          expect.arrayContaining([expect.stringMatching(/^20[014]$/), '401', '403']),
         );
         if (method === 'post') expect(operation?.requestBody).toBeDefined();
         if (path.includes('{caseId}')) {
           expect(operation?.parameters).toEqual(
             expect.arrayContaining([expect.objectContaining({ name: 'caseId', in: 'path' })]),
+          );
+        }
+        if (path.includes('{sessionId}')) {
+          expect(operation?.parameters).toEqual(
+            expect.arrayContaining([expect.objectContaining({ name: 'sessionId', in: 'path' })]),
           );
         }
       }

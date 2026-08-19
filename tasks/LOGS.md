@@ -34,6 +34,33 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Session and access OpenAPI contracts
+
+**Status:** Done
+
+### Updated
+
+- Added protected operation IDs, actor/capability boundaries, retry behavior, side effects, and audit-event metadata to own-session list/revocation and role/user catalogue routes.
+- Added enforced JSON schemas for token-free session summaries, UUID revocation parameters, role permission projections, bounded user filters, paginated allowlisted user summaries, and structured errors.
+- Extended generated-contract regression coverage to enumerate all four operations alongside onboarding and require security metadata, success/error responses, and path parameters.
+- Updated developer, security, authentication, API-contract, and handoff documentation.
+
+### Decisions
+
+- `authenticated_user` represents protected operations shared by customer and staff identities; each operation still declares and enforces its exact capability.
+- Session revocation is documented as an idempotent-delete retry model even though the first successful request returns `204` and later requests return `404` without repeating an audit write.
+- OpenAPI response allowlists are a second boundary against accidental token or credential serialization; service projections and runtime authorization remain authoritative.
+
+### Open items
+
+- Contract role assignment, revocation, lifecycle, and history operations with their hash/locking retry behavior.
+- Contract the session-context and relevant Better Auth boundary without falsely documenting framework-owned wildcard routes.
+- Decide API version/deprecation policy and provider-specific webhook/private-file contracts.
+
+### Next
+
+- Migrate all role-approval operations to the protected operation helper and enforce their request, response, and error schemas.
+
 ## 2026-08-19 — Enforced onboarding OpenAPI schemas
 
 **Status:** Done

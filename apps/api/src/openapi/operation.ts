@@ -2,10 +2,10 @@ import type { FastifySchema } from 'fastify';
 import type { PermissionKey } from '@sproutup/shared';
 
 export interface SproutUpOperationMetadata {
-  actor: 'authenticated_customer' | 'staff';
+  actor: 'authenticated_user' | 'authenticated_customer' | 'staff';
   permissions: PermissionKey[];
   permissionMode: 'any' | 'all';
-  retryModel: 'safe_read' | 'unique_open_case' | 'optimistic_version';
+  retryModel: 'safe_read' | 'idempotent_delete' | 'unique_open_case' | 'optimistic_version';
   sideEffects: string[];
   auditEvent: string | null;
 }

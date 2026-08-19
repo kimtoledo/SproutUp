@@ -17,6 +17,7 @@
 - Added role-change rejection and cancellation: a distinct authorized non-target reviewer may reject, only the maker may cancel, both require reasons, and terminal transitions append immutable action/audit evidence.
 - Added bounded role-approval history/detail APIs with command/status filters, immutable action timelines, and independently recomputed payload-integrity results; privileged reasons require `roles.assign`.
 - Added required borrower/investor registration intent to Better Auth email signup. A database trigger atomically grants only the matching customer role and appends registration audit evidence; staff/`super_admin` values are impossible through this field.
+- Added generated OpenAPI operation metadata and enforced allowlist schemas for own-session and access-catalogue APIs. Session tokens, credential records, and provider-account data are structurally absent from these response contracts.
 - Password-reset/email-verification delivery, MFA/OTP, permission administration, audit integration into each privileged workflow, final grants, emergency access, and device UI remain; this task stays **WIP**.
 
 ## Scope

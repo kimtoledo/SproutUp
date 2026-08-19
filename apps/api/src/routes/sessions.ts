@@ -4,6 +4,12 @@ import { hasPermission } from '@sproutup/shared';
 import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
 import type { SessionService } from '../auth/sessions-service.js';
+import { operation } from '../openapi/operation.js';
+import {
+  sessionIdParameters,
+  sessionListResponses,
+} from '../openapi/access-schemas.js';
+import { commonErrors } from '../openapi/onboarding-schemas.js';
 
 const sessionParametersSchema = z.object({ sessionId: z.uuid() });
 
@@ -30,7 +36,22 @@ export async function registerSessionRoutes(
   app: FastifyInstance,
   options: RegisterSessionRoutesOptions,
 ): Promise<void> {
-  app.get('/v1/sessions', async (request, reply) => {
+  app.get('/v1/sessions', {
+    schema: operation({
+      operationId: 'listOwnSessions',
+      summary: 'List the authenticated user sessions without tokens',
+      tags: ['authentication'],
+      metadata: {
+        actor: 'authenticated_user',
+        permissions: ['sessions.read_own'],
+        permissionMode: 'all',
+        retryModel: 'safe_read',
+        sideEffects: [],
+        auditEvent: null,
+      },
+      http: { response: sessionListResponses },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'sessions.read_own')) return forbidden(reply);
@@ -45,7 +66,31 @@ export async function registerSessionRoutes(
     });
   });
 
-  app.delete('/v1/sessions/:sessionId', async (request, reply) => {
+  app.delete('/v1/sessions/:sessionId', {
+    schema: operation({
+      operationId: 'revokeOwnSession',
+      summary: 'Revoke one session owned by the authenticated user',
+      tags: ['authentication'],
+      metadata: {
+        actor: 'authenticated_user',
+        permissions: ['sessions.revoke_own'],
+        permissionMode: 'all',
+        retryModel: 'idempotent_delete',
+        sideEffects: ['delete owned session', 'append audit event'],
+        auditEvent: 'session.revoked',
+      },
+      http: {
+        params: sessionIdParameters,
+        response: {
+          204: { type: 'null', description: 'Session revoked' },
+          400: commonErrors[400],
+          401: commonErrors[401],
+          403: commonErrors[403],
+          404: commonErrors[404],
+        },
+      },
+    }),
+  }, async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);
     if (!hasPermission(identity.authorization, 'sessions.revoke_own')) return forbidden(reply);

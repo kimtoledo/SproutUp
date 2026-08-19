@@ -6,9 +6,11 @@ Better Auth is mounted behind the Fastify API at `/v1/auth/*`. The web applicati
 
 `GET /openapi.json` publishes route/contract metadata only. It declares the HTTP-only session-cookie security scheme but contains no cookie values, credentials, environment secrets, or internal database configuration; the generated document is covered by a secret-regression test.
 
-Every implemented onboarding operation declares its authenticated actor boundary and required capability set in the generated contract. These declarations are documentation checked by CI; runtime authorization remains the server-resolved permission check in each handler/service and is independently covered by denial tests.
+Every contracted onboarding, own-session, and access-catalogue operation declares its authenticated actor boundary and required capability set in the generated contract. These declarations are documentation checked by CI; runtime authorization remains the server-resolved permission check in each handler/service and is independently covered by denial tests.
 
 Onboarding path, query, body, success, and structured error schemas are now enforced by Fastify and published in OpenAPI. Schema failures return a generic stable validation message rather than echoing submitted values or internal validator details; deeper state/ownership checks still execute in the domain services.
+
+Own-session responses are schema-allowlisted to opaque session identity and display metadata and cannot serialize session tokens. Role and user catalogue responses likewise enforce the documented access-management projection, excluding credentials, provider accounts, sessions, and tokens. Session IDs and user-catalogue filters are bounded at the transport boundary before ownership or permission checks continue.
 
 - Email/password credentials use Better Auth's memory-hard scrypt hashing.
 - Password length is 12–128 characters.
