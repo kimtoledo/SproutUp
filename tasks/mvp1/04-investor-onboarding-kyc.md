@@ -1,0 +1,33 @@
+# 04 — Investor Onboarding & KYC
+
+**Status:** WIP  
+**Outcome:** An eligible investor can be verified, risk-assessed, and approved before funding campaigns.
+
+## Scope
+
+- Investor profile, identity/address documents, bank account, declarations, and consent.
+- Risk/suitability questionnaire and compliance review workflow.
+- Investment eligibility status with restrictions, expiry, re-KYC, and suspension support.
+- Approved settlement bank-account verification before withdrawal.
+
+## Acceptance criteria
+
+- Unapproved, expired, or suspended investors cannot commit funds or withdraw.
+- Suitability answers and resulting eligibility are versioned and reviewable.
+- Bank-account changes require verification and are fully audited.
+- Investor restrictions are enforced by APIs, not only hidden in the interface.
+
+## Legacy reference
+
+- [User Accounts, KYC & Onboarding](../reference/legacy/domain-user-accounts-kyc.md) — CKA (`CKAV1Form`) and SAT/risk-profile (`AssessmentForm`) self-declared questionnaires with no automated pass/fail scoring; `EscrowRequiredValidator` income/net-asset source-of-wealth branching and accredited-investor `confirm_ai`/`confirm_wealth` gates; `Bank` model's pending → approved/rejected admin approval workflow (`Bank::approve()`/`reject()`); `UserLib::updateStatus()` as the admin-triggered eligibility approval gate.
+- [Registration, Authentication & Onboarding](../reference/legacy/user/02-registration-auth-onboarding.md) — end-to-end onboarding journey (profile → KYC → CKA/SAT → pending review → admin approval) that investor eligibility status is derived from.
+
+## Dependencies
+
+- [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md)
+- Approved investor-classification and suitability rules.
+
+## Open decisions
+
+- Individual versus institutional investor support for the pilot.
+- Investment limits and enhanced-due-diligence triggers.

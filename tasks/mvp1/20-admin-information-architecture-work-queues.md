@@ -1,0 +1,30 @@
+# 20 — Admin Information Architecture & Work Queues
+
+**Status:** WIP  
+**Outcome:** Staff can find, prioritize, and complete pilot operations through role-scoped queues instead of navigating a copy of the legacy module tree.
+
+## Scope
+
+- Define admin navigation around KYC/compliance, underwriting, campaign readiness, funding, disbursement, collections, withdrawals, reconciliation, and exceptions.
+- Specify queue columns, filters, aging/SLA indicators, ownership, assignment, priority, and bulk-action limits.
+- Provide global search for customer, application, campaign, loan, commitment, payment, and transaction references.
+- Define linked record detail pages with timeline, documents, decisions, money movements, and next valid actions.
+- Standardize empty, loading, stale-data, permission-denied, conflict, and provider-error states.
+- Preserve deep links and filter state for operational handoff without exposing sensitive criteria.
+
+## Acceptance criteria
+
+- Every MVP 1 operational state has exactly one primary owning queue and an escalation path.
+- Queue counts reconcile to the same filtered query used by the detail list.
+- Staff can move from an exception to its customer, loan, ledger entries, evidence, and audit trail.
+- Actions shown in the UI are derived from server capabilities and re-authorized on execution.
+- Accessibility and responsive behavior are verified for the supported staff devices.
+
+## Dependencies
+
+- Tasks 02, 03–15, and 18.
+- [Legacy admin navigation review](../reference/legacy/admin/02-navigation-modules-screens.md).
+
+## Open decisions
+
+- Queue ownership, SLA targets, assignment policy, escalation rules, saved-view scope, and bulk-action policy.
