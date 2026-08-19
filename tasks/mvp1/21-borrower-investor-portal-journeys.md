@@ -3,6 +3,11 @@
 **Status:** WIP  
 **Outcome:** Borrowers and investors can complete the controlled-pilot lifecycle through coherent, accessible, state-driven portal experiences.
 
+## Implementation progress
+
+- **2026-08-19 — Onboarding state contract:** Added the shared borrower/investor case statuses and allowed transitions for draft, submission, review, information request/resubmission, approval/rejection, withdrawal, expiry, and reopening.
+- The persistence layer versions current state and retains an immutable event timeline, providing the future portal with resumable/server-authoritative workflow state. Portal routes, forms, accessibility behavior, and end-to-end journeys remain; this task stays **WIP**.
+
 ## Scope
 
 - Public eligibility, product explanation, disclosures, support, registration, login, recovery, and secure session flows.

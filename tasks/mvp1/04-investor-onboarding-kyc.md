@@ -3,6 +3,11 @@
 **Status:** WIP  
 **Outcome:** An eligible investor can be verified, risk-assessed, and approved before funding campaigns.
 
+## Implementation progress
+
+- **2026-08-19 — Shared workflow foundation:** Added versioned `onboarding_cases` and append-only `onboarding_case_events` for borrower/investor journeys, including one-open-case enforcement, applicant/reviewer separation, correction, expiry, and immutable transition history.
+- Investor subject classification, profile/evidence fields, suitability questionnaire versions, eligibility restrictions, bank verification, and decision APIs remain unimplemented because the individual/institutional pilot scope and approved rules are still open; this task stays **WIP**.
+
 ## Scope
 
 - Investor profile, identity/address documents, bank account, declarations, and consent.

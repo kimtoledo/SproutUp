@@ -4,7 +4,7 @@
 
 ## Implementation status
 
-The first reviewed identity and approval slices were implemented on 2026-08-19: `users`, `sessions`, `accounts`, `verifications`, `rate_limits`, `roles`, `permissions`, `user_roles`, `role_permissions`, append-only `audit_events`, `approval_requests`, and append-only `approval_actions`. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
+The first reviewed identity, approval, and onboarding-workflow slices were implemented on 2026-08-19: `users`, `sessions`, `accounts`, `verifications`, `rate_limits`, `roles`, `permissions`, `user_roles`, `role_permissions`, append-only `audit_events`, `approval_requests`, append-only `approval_actions`, `onboarding_cases`, and append-only `onboarding_case_events`. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
 
 This is a normalized domain outline for the Philippine revamp. It intentionally avoids copying legacy table names and duplicated summary tables.
 
@@ -19,6 +19,7 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 ## Parties, KYC, and documents
 
 - `organizations`, `people`, `organization_members`
+- `onboarding_cases`, `onboarding_case_events` — implemented workflow spine shared by borrower and investor journeys
 - `kyc_cases`, `kyc_requirements`, `kyc_submissions`, `kyc_decisions`
 - `screening_checks`, `risk_assessments`, `beneficial_owners`
 - `documents`, `document_versions`, `consents`, `signature_envelopes`

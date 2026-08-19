@@ -16,6 +16,8 @@ beforeAll(async () => {
     '0002_little_union_jack.sql',
     '0003_approval-actions-immutability.sql',
     '0004_perpetual_mikhail_rasputin.sql',
+    '0005_lowly_shadow_king.sql',
+    '0006_onboarding-events-immutability.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
@@ -41,6 +43,8 @@ describe('initial authentication migration', () => {
         'approval_actions',
         'approval_requests',
         'audit_events',
+        'onboarding_case_events',
+        'onboarding_cases',
         'permissions',
         'rate_limits',
         'role_permissions',
@@ -50,6 +54,52 @@ describe('initial authentication migration', () => {
         'users',
         'verifications',
       ]),
+    );
+  });
+
+  it('enforces onboarding workflow uniqueness, reviewer separation, and immutable events', async () => {
+    const applicantId = '00000000-0000-4000-8000-000000000005';
+    const caseId = '00000000-0000-4000-8000-000000000006';
+    const eventId = '00000000-0000-4000-8000-000000000007';
+    await database.query(
+      `insert into users (id, name, email) values ($1, 'Applicant', 'onboarding-migration@sproutup.ph')`,
+      [applicantId],
+    );
+    await database.query(
+      `insert into onboarding_cases (id, case_type, applicant_user_id)
+       values ($1, 'borrower', $2)`,
+      [caseId, applicantId],
+    );
+    await database.query(
+      `insert into onboarding_case_events
+        (id, case_id, event_type, to_status, case_version, actor_type, actor_user_id)
+       values ($1, $2, 'created', 'draft', 1, 'user', $3)`,
+      [eventId, caseId, applicantId],
+    );
+
+    await expect(
+      database.query(
+        `insert into onboarding_cases (case_type, applicant_user_id)
+         values ('borrower', $1)`,
+        [applicantId],
+      ),
+    ).rejects.toThrow();
+    await expect(
+      database.query(
+        `insert into onboarding_cases
+          (case_type, applicant_user_id, assigned_reviewer_user_id)
+         values ('investor', $1, $1)`,
+        [applicantId],
+      ),
+    ).rejects.toThrow();
+    await expect(
+      database.query('update onboarding_case_events set reason = $1 where id = $2', ['changed', eventId]),
+    ).rejects.toThrow('onboarding_case_events is append-only');
+    await expect(
+      database.query('delete from onboarding_case_events where id = $1', [eventId]),
+    ).rejects.toThrow('onboarding_case_events is append-only');
+    await expect(database.exec('truncate table onboarding_case_events')).rejects.toThrow(
+      'onboarding_case_events is append-only',
     );
   });
 

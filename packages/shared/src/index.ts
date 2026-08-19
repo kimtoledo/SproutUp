@@ -17,3 +17,13 @@ export {
   type PermissionKey,
   type RoleKey,
 } from './authorization.js';
+export {
+  canTransitionOnboardingCase,
+  onboardingCaseStatusSchema,
+  onboardingCaseTypeSchema,
+  onboardingEventTypeSchema,
+  onboardingTransitions,
+  type OnboardingCaseStatus,
+  type OnboardingCaseType,
+  type OnboardingEventType,
+} from './onboarding.js';

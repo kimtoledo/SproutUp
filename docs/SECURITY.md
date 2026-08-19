@@ -43,7 +43,9 @@ Administrative read APIs enforce `roles.read` and `users.read` independently. Us
 
 ## Audit evidence
 
-`audit_events` and `approval_actions` are append-only. PostgreSQL triggers reject row updates, row deletes, and table truncation. Corrections must be represented by new events.
+`audit_events`, `approval_actions`, and `onboarding_case_events` are append-only. PostgreSQL triggers reject row updates, row deletes, and table truncation. Corrections must be represented by new events.
+
+The onboarding foundation stores workflow identity/state only; regulated profile fields, documents, suitability answers, and screening/provider results are not yet collected. The database prevents an applicant from reviewing their own case, permits only one open case per applicant/journey, versions every transition, and retains corrections as new events rather than overwriting history.
 
 Audit metadata is rejected before persistence when a key indicates a password, token, secret, authorization header, cookie, API key, or credential. Audit events preserve actor and role snapshots without a foreign key that could erase attribution when a user record changes.
 

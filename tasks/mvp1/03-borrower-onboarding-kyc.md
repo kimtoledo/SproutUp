@@ -3,6 +3,12 @@
 **Status:** WIP  
 **Outcome:** An SME can submit a Philippine borrower profile for compliant review and approval.
 
+## Implementation progress
+
+- **2026-08-19 — Shared workflow foundation:** Added versioned `onboarding_cases` and append-only `onboarding_case_events` for borrower/investor journeys, without encoding unresolved entity types, required fields/documents, or provider policy.
+- The database permits one open borrower case per user, separates applicant/reviewer identities, and preserves every state transition. The shared state machine supports draft → submitted → review → information/decision plus correction/re-KYC reopening.
+- No borrower profile, KYB evidence, compliance queue API, or decision command is implemented yet; this task stays **WIP** pending the Philippine entity/document matrix and screening/escalation policy.
+
 ## Scope
 
 - Company registration, authorized representative, beneficial-owner, director, address, and contact details.

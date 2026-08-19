@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Onboarding workflow and evidence foundation
+
+**Status:** Done
+
+### Updated
+
+- Added shared borrower/investor onboarding case, status, event types, and an explicit allowed-transition map.
+- Added versioned `onboarding_cases` with applicant/reviewer separation, queue indexes, and a partial unique index permitting only one open case per user and journey.
+- Added append-only `onboarding_case_events` with positive case versions, explicit user/system attribution, from/to state, reason, and deterministic event indexes.
+- Added generated schema migration and custom PostgreSQL triggers rejecting onboarding event update, delete, and truncate operations.
+- Added shared state tests plus embedded-PostgreSQL tests for schema creation, duplicate-open-case denial, reviewer self-assignment denial, and event immutability.
+- Updated security, developer, borrower, investor, portal, schema, MVP, and handoff documentation.
+
+### Decisions
+
+- The first onboarding slice is a workflow spine only. It intentionally does not encode unresolved Philippine entity types, document requirements, suitability scoring, screening providers/results, retention, or escalation rules.
+- Rejected and expired cases may reopen to draft for correction/re-KYC without duplicating the login identity; withdrawn cases are terminal.
+- A needs-information case must return through submission and review rather than jumping directly to approval.
+
+### Open items
+
+- Approve Philippine borrower entity types/requirements and investor individual/institutional pilot scope.
+- Approve the document/evidence matrix, AML/sanctions provider, screening cadence, retention, suitability/limits, and escalation rules.
+- Define onboarding permissions and first-role bootstrap behavior before exposing create/submit/review APIs.
+
+### Next
+
+- Implement the policy-neutral onboarding case service only after explicitly resolving who may open each journey and how a newly registered zero-role user obtains their initial applicant access.
+
 ## 2026-08-19 — Role approval history and integrity view
 
 **Status:** Done
