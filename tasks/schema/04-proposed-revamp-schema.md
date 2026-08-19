@@ -4,7 +4,7 @@
 
 ## Implementation status
 
-The first reviewed identity, approval, and onboarding-workflow slices were implemented on 2026-08-19: `users`, `sessions`, `accounts`, `verifications`, `rate_limits`, `roles`, `permissions`, `user_roles`, `role_permissions`, append-only `audit_events`, `approval_requests`, append-only `approval_actions`, `onboarding_cases`, and append-only `onboarding_case_events`. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
+The first reviewed identity, approval, onboarding-workflow, and durable-job slices were implemented on 2026-08-19: `users`, `sessions`, `accounts`, `verifications`, `rate_limits`, `roles`, `permissions`, `user_roles`, `role_permissions`, append-only `audit_events`, `approval_requests`, append-only `approval_actions`, `onboarding_cases`, append-only `onboarding_case_events`, `background_jobs`, and `background_job_attempts`. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
 
 This is a normalized domain outline for the Philippine revamp. It intentionally avoids copying legacy table names and duplicated summary tables.
 
@@ -61,7 +61,7 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 ## Operations and communications
 
 - `workflow_tasks`; `approval_requests` and `approval_actions` are implemented
-- `outbox_events`, `jobs`, `job_attempts`, `dead_letter_events`
+- `background_jobs`, `background_job_attempts` — implemented provider-neutral durable work/outbox state; dead-letter state is represented on the job, while handler-specific business evidence remains in owning domains
 - `notification_templates`, `notifications`, `delivery_attempts`
 - `report_exports`, `data_import_runs`, `data_import_errors`
 

@@ -9,7 +9,8 @@
 - Process liveness (`GET /health`) and database readiness (`GET /v1/health`) are implemented and tested, including the degraded `503` response.
 - CI now runs lint, strict type checks, tests, production builds, and a high-severity production dependency audit on Node 20.
 - Local setup, environment variables, health behavior, validation commands, and the migration workflow are documented in [`../../docs/DEVELOPER.md`](../../docs/DEVELOPER.md).
-- Authentication/RBAC, initial domain schema and migrations, durable queues/outbox, observability provider, backups, and financial primitives remain open; this task stays **WIP**.
+- Authentication/RBAC, initial domain schema/migrations, and the provider-neutral durable-job persistence foundation are implemented. Worker execution/recovery, observability provider, backups, and financial primitives remain open; this task stays **WIP**.
+- Added generated migration `0009_moaning_argent.sql` for idempotent background jobs, bounded priorities/retries, exclusive leases, terminal timestamps, and unique per-job attempt evidence. Startup readiness now requires both job relations.
 
 ## Scope
 

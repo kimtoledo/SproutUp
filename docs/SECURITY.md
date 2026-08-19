@@ -75,6 +75,8 @@ Only the assigned reviewer can request information from an in-review case. A rea
 
 Audit metadata is rejected before persistence when a key indicates a password, token, secret, authorization header, cookie, API key, or credential. Audit events preserve actor and role snapshots without a foreign key that could erase attribution when a user record changes.
 
+Durable job payloads must contain only minimum identifiers and non-sensitive execution context. Credentials, session material, raw private documents, and provider secrets are prohibited. The database now enforces idempotency, retry, lease, terminal-state, and attempt-number invariants; worker authorization, audited operator replay/cancellation, redacted error handling, and alerting remain required before production job execution.
+
 The initial writer and schema are implemented, but every privileged/domain command must integrate audit writes in its own transaction or reliable outbox workflow before that command is considered complete.
 
 ## Secrets

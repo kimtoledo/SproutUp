@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Durable job persistence foundation
+
+**Status:** Done
+
+### Updated
+
+- Added generated Drizzle migration `0009_moaning_argent.sql` with PostgreSQL `background_jobs` and `background_job_attempts` relations.
+- Enforced globally unique namespaced idempotency, availability/priority claim ordering, 1–100 retry budgets, paired processing leases, explicit retry/success/dead-letter/cancel states, and consistent terminal timestamps.
+- Added per-job unique attempt numbers with worker/lease attribution and paired outcome/finish evidence.
+- Added both relations to API startup readiness and every embedded-PostgreSQL migration fixture.
+- Added migration tests for duplicate idempotency, processing without a lease, retry overflow, duplicate attempt numbers, and an outcome without a finish time; the DB suite now has 13 tests.
+- Added the durable-job architecture document and updated developer, security, technology-stack, platform, scheduler, MVP-index, schema, and handoff documentation.
+
+### Decisions
+
+- PostgreSQL is the authoritative transactional acceptance layer for durable jobs/outbox work. A future external queue may accelerate delivery but cannot replace the database record committed with domain state.
+- Idempotency keys are globally unique and must be namespaced by domain/command identity. Financial/provider handlers still require their own authoritative idempotency constraints.
+- Job payloads are minimal non-sensitive context; secrets, tokens, cookies, credentials, and raw private documents are prohibited.
+
+### Open items
+
+- Implement bounded concurrent claim, heartbeat, lease recovery, settlement/backoff, dead-letter, and cancellation services.
+- Approve worker topology, concurrency/capacity, retention, alerting, and audited operator replay/break-glass controls.
+- Register production topics and runbooks only as their owning domain tasks become approved.
+
+### Next
+
+- Implement and integration-test the PostgreSQL job-control service against this schema without selecting an external queue provider.
+
 ## 2026-08-19 — API compatibility and retirement policy
 
 **Status:** Done

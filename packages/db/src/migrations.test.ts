@@ -20,6 +20,7 @@ beforeAll(async () => {
     '0006_onboarding-events-immutability.sql',
     '0007_narrow_wolfsbane.sql',
     '0008_applicant-role-bootstrap.sql',
+    '0009_moaning_argent.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
@@ -45,6 +46,8 @@ describe('initial authentication migration', () => {
         'approval_actions',
         'approval_requests',
         'audit_events',
+        'background_job_attempts',
+        'background_jobs',
         'onboarding_case_events',
         'onboarding_cases',
         'permissions',
@@ -57,6 +60,57 @@ describe('initial authentication migration', () => {
         'verifications',
       ]),
     );
+  });
+
+  it('enforces durable job idempotency, lease, retry, and attempt invariants', async () => {
+    const jobId = '00000000-0000-4000-8000-000000000010';
+    const attemptId = '00000000-0000-4000-8000-000000000011';
+    await database.query(
+      `insert into background_jobs
+        (id, topic, payload, idempotency_key, status, attempt_count, lease_owner, lease_expires_at)
+       values ($1, 'pilot.test', '{"caseId":"opaque"}', 'pilot:test:1', 'processing', 1,
+         'worker-test-1', now() + interval '1 minute')`,
+      [jobId],
+    );
+    await database.query(
+      `insert into background_job_attempts
+        (id, job_id, attempt_number, worker_id, lease_expires_at)
+       values ($1, $2, 1, 'worker-test-1', now() + interval '1 minute')`,
+      [attemptId, jobId],
+    );
+
+    await expect(
+      database.query(
+        `insert into background_jobs (topic, payload, idempotency_key)
+         values ('pilot.test', '{}', 'pilot:test:1')`,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      database.query(
+        `insert into background_jobs (topic, payload, idempotency_key, status)
+         values ('pilot.test', '{}', 'pilot:test:no-lease', 'processing')`,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      database.query(
+        `insert into background_jobs (topic, payload, idempotency_key, attempt_count, max_attempts)
+         values ('pilot.test', '{}', 'pilot:test:attempt-overflow', 2, 1)`,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      database.query(
+        `insert into background_job_attempts
+          (job_id, attempt_number, worker_id, lease_expires_at)
+         values ($1, 1, 'worker-test-2', now() + interval '1 minute')`,
+        [jobId],
+      ),
+    ).rejects.toThrow();
+    await expect(
+      database.query(
+        `update background_job_attempts set outcome = 'succeeded' where id = $1`,
+        [attemptId],
+      ),
+    ).rejects.toThrow();
   });
 
   it('enforces onboarding workflow uniqueness, reviewer separation, and immutable events', async () => {

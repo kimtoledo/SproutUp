@@ -11,6 +11,7 @@ export const migrationFiles = [
   '0006_onboarding-events-immutability.sql',
   '0007_narrow_wolfsbane.sql',
   '0008_applicant-role-bootstrap.sql',
+  '0009_moaning_argent.sql',
 ] as const;
 
 export async function applyMigrations(database: PGlite): Promise<void> {

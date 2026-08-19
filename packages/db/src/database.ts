@@ -23,6 +23,8 @@ export const REQUIRED_DATABASE_RELATIONS = [
   'audit_events',
   'approval_requests',
   'approval_actions',
+  'background_jobs',
+  'background_job_attempts',
   'onboarding_cases',
   'onboarding_case_events',
 ] as const;
