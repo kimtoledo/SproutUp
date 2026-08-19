@@ -8,7 +8,11 @@
 - **2026-08-19 — Durable persistence foundation:** Added `background_jobs` and `background_job_attempts` through generated migration `0009_moaning_argent.sql`.
 - Jobs have globally unique namespaced idempotency keys, minimum payloads, availability/priority ordering, bounded retry budgets, explicit processing leases, retry/dead-letter/cancel/success states, and consistent terminal timestamps.
 - Attempts have unique job/attempt numbers, worker/lease attribution, and paired outcome/finish evidence. Migration tests cover duplicate work, missing leases, retry overflow, duplicate attempts, and incomplete terminal attempt records.
-- The worker claim/heartbeat/recovery/settlement service, topic registry, scheduler, operational API, metrics/alerts, provider choice, and per-job runbooks remain; this task stays **WIP**.
+- Added transaction-aware enqueue so domain state and required work roll back together; exact retries safely return the existing job while the same key with a different topic/payload returns an idempotency conflict. Sensitive payload keys are rejected.
+- Added bounded priority/availability claims with `FOR UPDATE SKIP LOCKED`, worker leases/heartbeats, stale settlement denial, exponential retry, attempt-budget dead-lettering, expired-lease recovery, terminal success, and cancellation limited to unleased work.
+- Added custom migration `0010_job-attempt-evidence.sql` so active attempts may heartbeat/settle once while completed evidence cannot be changed, deleted, or truncated.
+- Seven service integration tests cover atomic rollback, duplicate/conflicting enqueue, sensitive payload denial, exclusive/ordered claims, heartbeats/success, retry/dead-letter, lease recovery/stale workers, and cancellation.
+- Topic registry/handlers, worker loop/scheduler, operational replay API/audit, metrics/alerts, provider choice, retention, and per-job runbooks remain; this task stays **WIP**.
 
 ## Scope
 

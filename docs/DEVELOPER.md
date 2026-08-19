@@ -124,7 +124,7 @@ npm run db:check
 
 `db:migrate` applies committed migrations and idempotently seeds the approved role/permission baseline. `db:check` verifies connectivity and every relation currently required by API startup, including approval workflow and durable-job relations.
 
-Migration `0009_moaning_argent.sql` creates the provider-neutral `background_jobs` and `background_job_attempts` foundation. Read [JOBS.md](./JOBS.md) before adding a topic or worker. The tables are persistence/control state only until the lease/retry/recovery service and runbook described there are implemented.
+Migration `0009_moaning_argent.sql` creates the provider-neutral `background_jobs` and `background_job_attempts` foundation; `0010_job-attempt-evidence.sql` protects completed attempt evidence and blocks delete/truncate. Read [JOBS.md](./JOBS.md) before adding a topic or worker. The transaction-aware enqueue and lease/retry/recovery control service are implemented and integration-tested, but no worker loop or production topic is active yet.
 
 The onboarding schema currently provides only `onboarding_cases` and append-only `onboarding_case_events`. Its shared state machine lives in `packages/shared/src/onboarding.ts`. Do not add entity types, KYC requirements, provider result payloads, suitability scoring, document categories, or retention behavior until the corresponding open decision in tasks 03–05 is approved.
 

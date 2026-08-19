@@ -21,6 +21,7 @@ beforeAll(async () => {
     '0007_narrow_wolfsbane.sql',
     '0008_applicant-role-bootstrap.sql',
     '0009_moaning_argent.sql',
+    '0010_job-attempt-evidence.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
@@ -111,6 +112,24 @@ describe('initial authentication migration', () => {
         [attemptId],
       ),
     ).rejects.toThrow();
+    await database.query(
+      `update background_job_attempts
+       set outcome = 'succeeded', finished_at = now()
+       where id = $1`,
+      [attemptId],
+    );
+    await expect(
+      database.query(
+        `update background_job_attempts set error_code = 'CHANGED' where id = $1`,
+        [attemptId],
+      ),
+    ).rejects.toThrow('completed background_job_attempts evidence is immutable');
+    await expect(
+      database.query('delete from background_job_attempts where id = $1', [attemptId]),
+    ).rejects.toThrow('background_job_attempts evidence cannot be deleted');
+    await expect(database.exec('truncate table background_job_attempts')).rejects.toThrow(
+      'background_job_attempts evidence cannot be truncated',
+    );
   });
 
   it('enforces onboarding workflow uniqueness, reviewer separation, and immutable events', async () => {

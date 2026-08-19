@@ -34,6 +34,37 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Transactional job control and lease recovery
+
+**Status:** Done
+
+### Updated
+
+- Added `enqueueDurableJob` for insertion inside an owning domain transaction and verified a failed domain transaction rolls back its job.
+- Exact idempotent retries return the existing job; reuse of the same key with different topic/payload returns an explicit conflict. Sensitive payload keys are rejected before persistence.
+- Added bounded priority/availability claims using PostgreSQL row locks with `SKIP LOCKED`, unique attempt creation, worker leases, and heartbeats.
+- Added current-worker/current-attempt/unexpired-lease enforcement for success and failure settlement, exponential bounded retries, attempt-budget dead-lettering, expired-lease recovery, and cancellation restricted to unleased work.
+- Added custom migration `0010_job-attempt-evidence.sql`; active attempts can heartbeat and settle once, while completed evidence cannot be edited, deleted, or truncated.
+- Added seven embedded-PostgreSQL service tests; the API suite now has 65 tests across 23 files and the DB suite retains 13 migration/audit tests.
+- Updated durable-job, developer, security, technology-stack, platform, scheduler, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Domain code must call the transaction-aware enqueue primitive in the same transaction as authoritative state. Standalone enqueue is reserved for work with no companion domain mutation.
+- Lower numeric priority is claimed first; equal-priority work is ordered by availability, creation time, and ID. Batches and leases are bounded, and stale workers cannot settle recovered work.
+- In-flight jobs cannot be synchronously cancelled because external effects may already have started. Future cooperative cancellation requires a handler handshake; the current service cancels only pending/retry-scheduled work.
+- Attempt evidence is mutable only while active for heartbeat and first settlement. Terminal attempts are immutable and retained.
+
+### Open items
+
+- Add a versioned topic/payload registry and handler ownership before registering production jobs.
+- Add the graceful worker loop, scheduler trigger, metrics/alerts, retention, and recovery runbook.
+- Add capability-protected, audited dead-letter inspection/replay/cancellation only after the break-glass operating model is approved.
+
+### Next
+
+- Implement the in-process worker runtime around the tested control service with an empty explicit topic registry and graceful shutdown behavior.
+
 ## 2026-08-19 — Durable job persistence foundation
 
 **Status:** Done

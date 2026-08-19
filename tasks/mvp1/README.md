@@ -6,7 +6,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 
 ## Task checklist
 
-- [ ] [01 — Platform Foundation](./01-platform-foundation.md) — monorepo, web/API health, shared contracts, database/CI, auth/audit, and durable-job persistence implemented; worker recovery, infrastructure, and financial foundations remain
+- [ ] [01 — Platform Foundation](./01-platform-foundation.md) — monorepo, web/API health, shared contracts, database/CI, auth/audit, and durable job persistence/control implemented; worker runtime, infrastructure, and financial foundations remain
 - [ ] [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md) — password/session boundary, audited customer-intent bootstrap, access catalogue, own-session revocation, canonical RBAC, immutable audit, and dual-controlled role changes implemented; recovery/MFA and remaining controls remain
 - [ ] [03 — Borrower Onboarding & KYC](./03-borrower-onboarding-kyc.md) — versioned case/state/events and protected own create/read/submit implemented; Philippine profile, evidence, queue, and decisions remain
 - [ ] [04 — Investor Onboarding & KYC](./04-investor-onboarding-kyc.md) — versioned case/state/events and protected own create/read/submit implemented; classification, suitability, bank, and eligibility controls remain
@@ -24,7 +24,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 - [ ] [16 — Migration, Reconciliation & Pilot Readiness](./16-migration-reconciliation-pilot.md)
 - [ ] [17 — Legacy Schema Baseline & Data Mapping](./17-legacy-schema-data-mapping.md)
 - [ ] [18 — API Contracts & Security Boundary](./18-api-contracts-security-boundary.md) — every current application-owned operation has an enforced CI-validated OpenAPI 3.1 contract and `/v1` compatibility/retirement policy; future domain, file, and webhook contracts remain
-- [ ] [19 — Scheduler, Queues & Job Control](./19-scheduler-queues-job-control.md) — PostgreSQL idempotency/lease/retry/attempt persistence implemented; worker, scheduler, observability, recovery controls, and domain jobs remain
+- [ ] [19 — Scheduler, Queues & Job Control](./19-scheduler-queues-job-control.md) — transaction-aware enqueue and PostgreSQL claim/lease/retry/dead-letter/recovery controls implemented; worker runtime, topic handlers, operations/observability, and domain jobs remain
 - [ ] [20 — Admin Information Architecture & Work Queues](./20-admin-information-architecture-work-queues.md) — initial bounded compliance queue and safe reviewer claim implemented; policy, UI, and remaining domain queues remain
 - [ ] [21 — Borrower & Investor Portal Journeys](./21-borrower-investor-portal-journeys.md) — server-authoritative onboarding state and own-case API implemented; profile forms, screens, and end-to-end journeys remain
 - [ ] [22 — Maker/Checker Approval Matrix](./22-maker-checker-approval-matrix.md) — hash-bound role grant/revocation, reject/cancel, and history/detail implemented; domain matrix, amendment, and emergency paths remain

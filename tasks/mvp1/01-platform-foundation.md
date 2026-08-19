@@ -11,6 +11,7 @@
 - Local setup, environment variables, health behavior, validation commands, and the migration workflow are documented in [`../../docs/DEVELOPER.md`](../../docs/DEVELOPER.md).
 - Authentication/RBAC, initial domain schema/migrations, and the provider-neutral durable-job persistence foundation are implemented. Worker execution/recovery, observability provider, backups, and financial primitives remain open; this task stays **WIP**.
 - Added generated migration `0009_moaning_argent.sql` for idempotent background jobs, bounded priorities/retries, exclusive leases, terminal timestamps, and unique per-job attempt evidence. Startup readiness now requires both job relations.
+- Added a transaction-aware enqueue primitive and PostgreSQL job-control service for bounded concurrent claims, heartbeats, stale-worker denial, exponential retry, dead-lettering, expired-lease recovery, success, and unclaimed cancellation. Custom migration `0010_job-attempt-evidence.sql` protects completed attempt evidence.
 
 ## Scope
 
