@@ -34,6 +34,39 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Authentication, RBAC, and immutable audit foundation
+
+**Status:** WIP
+
+### Updated
+
+- Added Better Auth email/password and session handling behind Fastify `/v1/auth/*`, plus `GET /v1/session-context` for server-resolved active-user roles and permissions.
+- Added database-backed auth throttling, API rate limiting, secure production-cookie defaults, seven-day sessions, hashed verification identifiers, and strong password length bounds.
+- Added shared canonical role/permission contracts and a deny-by-default authorization helper for the seven approved roles.
+- Added Drizzle schemas for users, Better Auth accounts/sessions/verifications/rate limits, normalized RBAC, and append-only audit events.
+- Generated migration `0000_yielding_zombie.sql` and explicit custom migration `0001_audit-immutability.sql`; added idempotent role/permission seeding and schema-readiness checks.
+- Added embedded-PostgreSQL migration tests proving all ten relations are created, authorization seeding is idempotent, and audit update/delete/truncate operations are rejected by the database.
+- Added auth proxy, session-context, configuration, policy, and audit-metadata tests; added `docs/SECURITY.md` and updated developer, schema, task, and project documentation.
+
+### Decisions
+
+- Better Auth remains behind an application service boundary and uses its default scrypt password hashing.
+- Authorization is capability-based and deny-by-default. Only auth-domain capabilities are seeded now; later task owners must add and review their own capability grants.
+- Authentication rate limits use PostgreSQL rather than process memory so limits remain effective across API replicas.
+- An authenticated session is insufficient by itself: suspended/disabled accounts and identities without server-resolved access remain denied at the authorization boundary.
+- Audit history is immutable at the database layer and intentionally does not foreign-key actor IDs, preventing later account changes from erasing attribution.
+
+### Open items
+
+- Select email/SMS providers and implement email verification, password-reset delivery, and the approved OTP/TOTP step-up policy.
+- Implement audited role assignment/permission administration with maker/checker controls after the final matrix and emergency-access procedure are approved.
+- Add session/device management UI and integration tests against the selected managed PostgreSQL runtime.
+- Integrate audit writes into each privileged and financial workflow as those domain commands are implemented.
+
+### Next
+
+- Implement audited role-assignment and session-revocation commands that enforce the current auth capabilities, while keeping permission-matrix mutation behind the unresolved maker/checker design.
+
 ## 2026-08-19 — Initial SproutUp platform scaffold implemented
 
 **Status:** WIP

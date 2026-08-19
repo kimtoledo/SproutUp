@@ -2,6 +2,10 @@
 
 **Status:** Proposed — implementation requires design review.
 
+## Implementation status
+
+The first reviewed identity slice was implemented on 2026-08-19: `users`, `sessions`, `accounts`, `verifications`, `rate_limits`, `roles`, `permissions`, `user_roles`, `role_permissions`, and append-only `audit_events`. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
+
 This is a normalized domain outline for the Philippine revamp. It intentionally avoids copying legacy table names and duplicated summary tables.
 
 ## Identity and authorization

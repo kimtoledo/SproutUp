@@ -1,12 +1,19 @@
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { HealthResponse } from '@sproutup/shared';
 import type { ApiConfig } from './config.js';
+import type { AuthServices } from './auth/types.js';
+import { registerAuthRoutes } from './routes/auth.js';
 
 export interface AppDependencies {
   config: Pick<ApiConfig, 'appOrigin' | 'environment'>;
   checkDatabase(): Promise<void>;
+  auth?: {
+    service: AuthServices;
+    baseUrl: string;
+  };
   logger?: boolean;
 }
 
@@ -21,6 +28,7 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
   });
 
   await app.register(helmet);
+  await app.register(rateLimit, { max: 120, timeWindow: '1 minute' });
   await app.register(cors, {
     origin(origin, callback) {
       callback(null, !origin || origin === dependencies.config.appOrigin);
@@ -56,6 +64,13 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
       };
     }
   });
+
+  if (dependencies.auth) {
+    await registerAuthRoutes(app, {
+      auth: dependencies.auth.service,
+      authBaseUrl: dependencies.auth.baseUrl,
+    });
+  }
 
   return app;
 }

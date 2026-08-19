@@ -1,13 +1,27 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import * as schema from './schema/index.js';
 
-export type Database = ReturnType<typeof drizzle>;
+export type Database = ReturnType<typeof drizzle<typeof schema>>;
 
 export interface DatabaseServices {
   db: Database;
   check(): Promise<void>;
   close(): Promise<void>;
 }
+
+export const REQUIRED_DATABASE_RELATIONS = [
+  'users',
+  'sessions',
+  'accounts',
+  'verifications',
+  'rate_limits',
+  'roles',
+  'permissions',
+  'user_roles',
+  'role_permissions',
+  'audit_events',
+] as const;
 
 export function createDatabase(databaseUrl: string): DatabaseServices {
   const client = postgres(databaseUrl, {
@@ -17,9 +31,21 @@ export function createDatabase(databaseUrl: string): DatabaseServices {
   });
 
   return {
-    db: drizzle(client),
+    db: drizzle(client, { schema }),
     async check() {
       await client`select 1 as ready`;
+      const checks = await Promise.all(
+        REQUIRED_DATABASE_RELATIONS.map(async (relation) => {
+          const [result] = await client<{ relation: string | null }[]>`
+            select to_regclass(${`public.${relation}`})::text as relation
+          `;
+          return { relation, exists: Boolean(result?.relation) };
+        }),
+      );
+      const missing = checks.filter(({ exists }) => !exists).map(({ relation }) => relation);
+      if (missing.length > 0) {
+        throw new Error(`Database schema is not ready; missing relations: ${missing.join(', ')}`);
+      }
     },
     async close() {
       await client.end({ timeout: 5 });

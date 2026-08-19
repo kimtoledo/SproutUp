@@ -3,6 +3,15 @@
 **Status:** WIP  
 **Outcome:** Secure access for staff, SME borrowers, and investors with traceable privileged activity.
 
+## Implementation progress
+
+- **2026-08-19 — Auth foundation complete:** Better Auth email/password and database sessions are mounted at `/v1/auth/*`; `GET /v1/session-context` returns only server-resolved active-user roles and permissions.
+- Added the seven approved roles, ten initial auth-domain capability keys, deny-by-default policy helper, idempotent authorization seed, and normalized `roles`, `permissions`, `user_roles`, and `role_permissions` tables.
+- Added database-backed authentication throttling plus an API rate-limit layer, secure-cookie production defaults, seven-day sessions, hashed verification identifiers, and 12–128-character password limits.
+- Added append-only `audit_events`, sensitive-metadata rejection, and PostgreSQL triggers that reject update, delete, and truncate operations.
+- Generated and tested migrations against embedded PostgreSQL; tests cover schema creation, immutable audit enforcement, idempotent authorization seed, auth proxying, inactive/unauthenticated denial boundary, and server-resolved context.
+- Password-reset/email-verification delivery, MFA/OTP, role-management commands, audit integration into each privileged workflow, final grants, emergency access, and device UI remain; this task stays **WIP**.
+
 ## Scope
 
 - Email/password authentication, password reset, session/device management, and OTP step-up.
@@ -26,6 +35,7 @@
 
 - Required OTP events and session lifetime per user type.
 - Final role-permission matrix and emergency-access procedure.
+- Transactional-email and SMS providers for verification, recovery, and OTP delivery.
 
 ## Legacy findings to reconcile
 

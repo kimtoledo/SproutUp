@@ -9,19 +9,25 @@
   },
   "scripts": {
     "generate": "drizzle-kit generate --config=drizzle.config.ts",
-    "migrate": "drizzle-kit migrate --config=drizzle.config.ts",
+    "migrate": "drizzle-kit migrate --config=drizzle.config.ts && npm run seed:authorization",
+    "check": "tsx src/check-readiness.ts",
+    "seed:authorization": "tsx src/seed-authorization.ts",
     "studio": "drizzle-kit studio --config=drizzle.config.ts",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@sproutup/shared": "*",
     "drizzle-orm": "0.45.2",
     "postgres": "3.4.9"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.5",
     "@types/node": "20.19.17",
     "dotenv": "16.6.1",
     "drizzle-kit": "0.31.10",
+    "tsx": "4.23.12",
     "typescript": "5.9.3"
   }
 }

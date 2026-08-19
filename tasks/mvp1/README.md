@@ -7,7 +7,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 ## Task checklist
 
 - [ ] [01 — Platform Foundation](./01-platform-foundation.md) — initial monorepo, web/API health slice, shared contracts, database boundary, and CI implemented; infrastructure and financial foundations remain
-- [ ] [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md)
+- [ ] [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md) — password/session boundary, canonical RBAC schema, throttling, and immutable audit foundation implemented; delivery-backed recovery/MFA and admin commands remain
 - [ ] [03 — Borrower Onboarding & KYC](./03-borrower-onboarding-kyc.md)
 - [ ] [04 — Investor Onboarding & KYC](./04-investor-onboarding-kyc.md)
 - [ ] [05 — Document & Consent Management](./05-document-consent-management.md)

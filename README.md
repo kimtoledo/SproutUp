@@ -34,3 +34,5 @@ npm run dev:web
 ```
 
 Run `npm run dev:api` in a second terminal after configuring a reachable PostgreSQL `DATABASE_URL`. See [`docs/DEVELOPER.md`](./docs/DEVELOPER.md) for setup, health endpoints, validation, and migration commands.
+
+The first authentication foundation is implemented: database-backed Better Auth sessions, canonical roles and capability permissions, fail-closed server-resolved session context, database-backed auth throttling, and append-only audit storage. See [`docs/SECURITY.md`](./docs/SECURITY.md) for implemented controls and explicit release blockers.

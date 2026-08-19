@@ -1,14 +1,17 @@
 import { createDatabase } from '@sproutup/db';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
+import { createAuthServices } from './auth/service.js';
 
 const config = loadConfig();
 const database = createDatabase(config.databaseUrl);
 await database.check();
+const auth = createAuthServices(config, database.db);
 
 const app = await buildApp({
   config,
   checkDatabase: database.check,
+  auth: { service: auth, baseUrl: config.authBaseUrl },
 });
 
 app.addHook('onClose', async () => {

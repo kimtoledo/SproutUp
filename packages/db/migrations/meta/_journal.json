@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1787139626045,
+      "tag": "0000_yielding_zombie",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787139639243,
+      "tag": "0001_audit-immutability",
+      "breakpoints": true
+    }
+  ]
+}

@@ -20,6 +20,8 @@ cp .env.example .env
 
 Never commit `.env` or place credentials in Markdown, source files, logs, or test fixtures.
 
+Generate a local `BETTER_AUTH_SECRET` with `openssl rand -base64 48`. Do not reuse local secrets in shared environments.
+
 ## Run locally
 
 Start the web application:
@@ -41,7 +43,9 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | Endpoint | Purpose |
 | --- | --- |
 | `GET /health` | Process liveness; does not query dependencies |
-| `GET /v1/health` | Readiness; returns `503` when PostgreSQL cannot be reached |
+| `GET /v1/health` | Readiness; returns `503` when PostgreSQL or required schema relations are unavailable |
+| `/v1/auth/*` | Better Auth email/password and session endpoints |
+| `GET /v1/session-context` | Server-resolved current user, roles, and permissions; returns `401` without an active authorized account |
 
 ## Validate a change
 
@@ -59,9 +63,12 @@ Schemas belong in `packages/db/src/schema/`. Every schema change must be tied to
 npm run db:generate
 # Review the generated SQL under packages/db/migrations/.
 npm run db:migrate
+npm run db:check
 ```
 
-Commit schema and generated migration files together. Never edit a migration already applied to a shared environment, use schema push against shared environments, or run manual DDL as a substitute for a migration.
+`db:migrate` applies committed migrations and idempotently seeds the approved role/permission baseline. `db:check` verifies connectivity and every relation currently required by API startup.
+
+Commit schema and generated migration files together. Custom SQL, such as append-only audit triggers, belongs in an explicitly generated custom migration. Never edit a migration already applied to a shared environment, use schema push against shared environments, or run manual DDL as a substitute for a migration.
 
 ## Repository layout
 

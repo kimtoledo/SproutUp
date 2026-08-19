@@ -1,2 +1,4 @@
-// Domain tables are introduced through reviewed MVP tasks and generated migrations.
-export {};
+export * from './audit.js';
+export * from './auth.js';
+export * from './rbac.js';
+export * from './users.js';

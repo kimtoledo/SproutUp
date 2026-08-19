@@ -22,6 +22,7 @@
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "db:generate": "npm run generate --workspace @sproutup/db",
     "db:migrate": "npm run migrate --workspace @sproutup/db",
+    "db:check": "npm run check --workspace @sproutup/db",
     "db:studio": "npm run studio --workspace @sproutup/db"
   },
   "devDependencies": {

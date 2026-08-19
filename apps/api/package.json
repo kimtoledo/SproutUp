@@ -15,6 +15,7 @@
     "@better-auth/drizzle-adapter": "1.6.26",
     "@fastify/cors": "11.3.0",
     "@fastify/helmet": "13.1.0",
+    "@fastify/rate-limit": "11.2.0",
     "@sproutup/db": "*",
     "@sproutup/shared": "*",
     "better-auth": "1.6.26",
