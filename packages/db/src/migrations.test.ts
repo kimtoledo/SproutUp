@@ -22,6 +22,8 @@ beforeAll(async () => {
     '0008_applicant-role-bootstrap.sql',
     '0009_moaning_argent.sql',
     '0010_job-attempt-evidence.sql',
+    '0011_wide_nemesis.sql',
+    '0012_ledger-invariants.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
@@ -49,6 +51,9 @@ describe('initial authentication migration', () => {
         'audit_events',
         'background_job_attempts',
         'background_jobs',
+        'ledger_accounts',
+        'ledger_entries',
+        'ledger_transactions',
         'onboarding_case_events',
         'onboarding_cases',
         'permissions',
@@ -61,6 +66,93 @@ describe('initial authentication migration', () => {
         'verifications',
       ]),
     );
+  });
+
+  it('enforces exact balanced append-only ledger postings at transaction commit', async () => {
+    const debitAccountId = '00000000-0000-4000-8000-000000000020';
+    const creditAccountId = '00000000-0000-4000-8000-000000000021';
+    const transactionId = '00000000-0000-4000-8000-000000000022';
+    await database.query(
+      `insert into ledger_accounts (id, code, name, normal_balance)
+       values
+         ($1, 'test.asset', 'Test Asset', 'debit'),
+         ($2, 'test.liability', 'Test Liability', 'credit')`,
+      [debitAccountId, creditAccountId],
+    );
+    await database.exec(`
+      begin;
+      insert into ledger_transactions
+        (id, idempotency_key, payload_hash, source_type, source_id, description, effective_at)
+      values
+        ('${transactionId}', 'ledger:test:balanced', repeat('a', 64), 'test', 'balanced',
+         'Balanced migration test', now());
+      insert into ledger_entries
+        (transaction_id, line_number, account_id, direction, amount)
+      values
+        ('${transactionId}', 1, '${debitAccountId}', 'debit', 100.01),
+        ('${transactionId}', 2, '${creditAccountId}', 'credit', 100.01);
+      commit;
+    `);
+
+    const totals = await database.query<{ debit: string; credit: string }>(
+      `select
+        sum(amount) filter (where direction = 'debit')::text as debit,
+        sum(amount) filter (where direction = 'credit')::text as credit
+       from ledger_entries where transaction_id = $1`,
+      [transactionId],
+    );
+    expect(totals.rows[0]).toEqual({ debit: '100.01', credit: '100.01' });
+    await expect(
+      database.query(
+        `update ledger_entries set amount = 99.99
+         where transaction_id = $1 and line_number = 1`,
+        [transactionId],
+      ),
+    ).rejects.toThrow('ledger_entries is append-only');
+    await expect(
+      database.query('delete from ledger_transactions where id = $1', [transactionId]),
+    ).rejects.toThrow('ledger_transactions is append-only');
+    await expect(database.exec('truncate table ledger_entries')).rejects.toThrow(
+      'ledger_entries is append-only and cannot be truncated',
+    );
+    await expect(
+      database.query(
+        `update ledger_accounts set code = 'changed' where id = $1`,
+        [debitAccountId],
+      ),
+    ).rejects.toThrow('ledger account code, normal balance, and currency are immutable');
+    await database.query(
+      `update ledger_accounts set name = 'Renamed Test Asset', is_active = false where id = $1`,
+      [debitAccountId],
+    );
+
+    await expect(database.exec(`
+      begin;
+      insert into ledger_transactions
+        (idempotency_key, payload_hash, source_type, source_id, description, effective_at)
+      values
+        ('ledger:test:unbalanced', repeat('b', 64), 'test', 'unbalanced',
+         'Unbalanced migration test', now());
+      insert into ledger_entries
+        (transaction_id, line_number, account_id, direction, amount)
+      select id, 1, '${debitAccountId}', 'debit', 10.00
+      from ledger_transactions where idempotency_key = 'ledger:test:unbalanced';
+      insert into ledger_entries
+        (transaction_id, line_number, account_id, direction, amount)
+      select id, 2, '${creditAccountId}', 'credit', 9.99
+      from ledger_transactions where idempotency_key = 'ledger:test:unbalanced';
+      commit;
+    `)).rejects.toThrow('is not balanced');
+
+    await expect(database.exec(`
+      begin;
+      insert into ledger_transactions
+        (idempotency_key, payload_hash, source_type, source_id, description, effective_at)
+      values
+        ('ledger:test:empty', repeat('c', 64), 'test', 'empty',
+         'Empty migration test', now());
+      commit;
+    `)).rejects.toThrow('requires at least two entries');
   });
 
   it('enforces durable job idempotency, lease, retry, and attempt invariants', async () => {

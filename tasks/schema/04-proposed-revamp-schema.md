@@ -4,7 +4,7 @@
 
 ## Implementation status
 
-The first reviewed identity, approval, onboarding-workflow, and durable-job slices were implemented on 2026-08-19: `users`, `sessions`, `accounts`, `verifications`, `rate_limits`, `roles`, `permissions`, `user_roles`, `role_permissions`, append-only `audit_events`, `approval_requests`, append-only `approval_actions`, `onboarding_cases`, append-only `onboarding_case_events`, `background_jobs`, and `background_job_attempts`. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
+The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19: `users`, `sessions`, `accounts`, `verifications`, `rate_limits`, `roles`, `permissions`, `user_roles`, `role_permissions`, append-only `audit_events`, `approval_requests`, append-only `approval_actions`, `onboarding_cases`, append-only `onboarding_case_events`, `background_jobs`, `background_job_attempts`, `ledger_accounts`, append-only `ledger_transactions`, and append-only `ledger_entries`. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
 
 This is a normalized domain outline for the Philippine revamp. It intentionally avoids copying legacy table names and duplicated summary tables.
 
@@ -44,9 +44,9 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 
 ## Ledger and reconciliation
 
-- `ledger_accounts`
-- `ledger_transactions` — posting group/header and idempotency identity
-- `ledger_entries` — signed debit/credit lines with currency
+- `ledger_accounts` — generic stable account identity implemented; production chart/ownership remains proposed
+- `ledger_transactions` — immutable posting header, idempotency/source/hash/reversal identity implemented
+- `ledger_entries` — immutable positive debit/credit PHP lines with deferred exact balance enforcement implemented
 - `fund_holds`, `hold_events`
 - `payment_intents`, `provider_events`, `bank_statement_lines`
 - `reconciliation_runs`, `reconciliation_matches`, `reconciliation_exceptions`

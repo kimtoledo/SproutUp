@@ -14,6 +14,7 @@
 - Added a transaction-aware enqueue primitive and PostgreSQL job-control service for bounded concurrent claims, heartbeats, stale-worker denial, exponential retry, dead-lettering, expired-lease recovery, success, and unclaimed cancellation. Custom migration `0010_job-attempt-evidence.sql` protects completed attempt evidence.
 - Added a deny-by-default worker runtime with explicit versioned topic registration, bounded non-overlapping polling/concurrency, automatic heartbeats, safe error classification, and graceful drain/lease handoff. The application registry remains intentionally empty and the server starts no worker.
 - Added canonical two-decimal PHP string contracts and an immutable `bigint`-centavo money value for exact parsing, formatting, signed addition/subtraction, comparison, transport conversion, and `numeric(30,2)` overflow enforcement. Rate/rounding operations remain deliberately unavailable.
+- Added generated ledger schema migration `0011_wide_nemesis.sql` and custom invariant migration `0012_ledger-invariants.sql`: stable PHP accounts, immutable posting headers/positive debit-credit lines, unique idempotency/reversal identities, and deferred exact balance enforcement at commit.
 
 ## Scope
 

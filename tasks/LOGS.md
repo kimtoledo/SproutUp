@@ -34,6 +34,36 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Balanced append-only ledger schema
+
+**Status:** Done
+
+### Updated
+
+- Added generated migration `0011_wide_nemesis.sql` with generic ledger accounts, immutable posting headers, and positive debit/credit entry lines using PHP-only `numeric(30,2)`.
+- Added global posting idempotency and payload hashes, source references, optional actor/request evidence, unique full-reversal identity, unique line/account identities, and account activity/normal-balance metadata.
+- Added custom migration `0012_ledger-invariants.sql` with deferred commit-time enforcement requiring at least two entries and exact equal debit/credit totals.
+- Added database triggers preventing posting/entry update, delete, and truncate while protecting account code, normal balance, and currency from drift.
+- Added embedded-PostgreSQL tests for exact balanced posting, unbalanced/empty commit rejection, append-only evidence, and permitted account name/status maintenance; the DB suite now has 14 tests.
+- Added the ledger architecture document and updated developer, money, security, technology-stack, platform, wallet/ledger, MVP-index, schema, and handoff documentation.
+
+### Decisions
+
+- The ledger is double-entry with positive line amounts and explicit debit/credit direction. PostgreSQL exact totals and deferred constraint triggers—not application-only checks—enforce final balance at transaction commit.
+- Posting headers and lines are immutable. Corrections use a new full reversal transaction; at most one full reversal may reference an original transaction.
+- The schema is generic and no production chart/account ownership or business posting rule is seeded. Normal balance is descriptive/control metadata, not permission to derive unresolved wallet behavior.
+- Financial transaction idempotency is global and hash-bound; the posting service must return only exact retries and reject key reuse with a different effect.
+
+### Open items
+
+- Implement the atomic audited posting/idempotency service and full reversal command.
+- Approve and seed the production chart, account ownership, available/held/settled dimensions, and domain posting matrices.
+- Define bank evidence/reconciliation, value-date/cutoff, maker/checker, and calculation rules in their owning tasks.
+
+### Next
+
+- Implement the posting primitive that validates exact balance/active accounts, canonicalizes and hashes lines, commits audit evidence atomically, and safely resolves idempotent retries.
+
 ## 2026-08-19 — Exact PHP settled-money primitive
 
 **Status:** Done

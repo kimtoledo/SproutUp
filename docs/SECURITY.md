@@ -85,6 +85,8 @@ The initial writer and schema are implemented, but every privileged/domain comma
 
 Shared PHP money contracts reject JSON numbers, exponent notation, grouping/currency text, non-two-decimal values, leading zeros, negative zero, and values outside `numeric(30,2)`. Exact runtime arithmetic uses `bigint` centavos. This removes binary floating-point drift and ambiguous textual representations but does not authorize any rate, tax, interest, allocation, or rounding formula; those remain owning-domain decisions.
 
+Ledger headers and lines are immutable database evidence. Deferred constraint triggers reject empty or unbalanced transactions at commit; entry amounts must be positive exact PHP values, transaction/account line identities are unique, and account code/normal-balance/currency cannot change. Application writes remain prohibited until the atomic audited posting service is present.
+
 ## Secrets
 
 `BETTER_AUTH_SECRET` must contain at least 32 random characters and must come from environment-specific secret management. Generate a local value with:

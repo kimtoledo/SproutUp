@@ -25,6 +25,9 @@ export const REQUIRED_DATABASE_RELATIONS = [
   'approval_actions',
   'background_jobs',
   'background_job_attempts',
+  'ledger_accounts',
+  'ledger_transactions',
+  'ledger_entries',
   'onboarding_cases',
   'onboarding_case_events',
 ] as const;

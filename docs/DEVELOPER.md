@@ -130,6 +130,8 @@ Migration `0009_moaning_argent.sql` creates the provider-neutral `background_job
 
 [JOB_CATALOG.md](./JOB_CATALOG.md) is the activation authority for MVP work. Do not register a topic merely because the runtime exists; the catalogue entry must be **Ready** with its owning domain decisions, payload/idempotency, owner, service objective, alerts, tests, and runbook.
 
+Migrations `0011_wide_nemesis.sql` and `0012_ledger-invariants.sql` add exact PHP ledger accounts/transactions/entries plus deferred commit-time balance and append-only controls. Read [LEDGER.md](./LEDGER.md). The schema is not permission to insert directly or seed an assumed chart; use it only through the posting service once that boundary is implemented.
+
 The onboarding schema currently provides only `onboarding_cases` and append-only `onboarding_case_events`. Its shared state machine lives in `packages/shared/src/onboarding.ts`. Do not add entity types, KYC requirements, provider result payloads, suitability scoring, document categories, or retention behavior until the corresponding open decision in tasks 03–05 is approved.
 
 Onboarding create/read/submit routes use distinct borrower/investor own-case capabilities. Submission bodies contain `{ "version": <positive integer> }`; a stale version returns `409 STALE_CASE_VERSION`. Case creation returns `409 OPEN_CASE_EXISTS` when the database already contains an open case for that user/journey. API retries therefore cannot create duplicate open workflows or silently overwrite newer state.

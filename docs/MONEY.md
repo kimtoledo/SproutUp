@@ -38,7 +38,7 @@ Implement those only in the owning financial task with golden examples and recon
 
 ## Database and API rules
 
-- PostgreSQL money columns use `numeric(30,2)`, never floating types.
+- PostgreSQL money columns use `numeric(30,2)`, never floating types. The implemented `ledger_entries.amount` is the first enforced use of this shared precision.
 - Database drivers return/accept canonical decimal strings at the boundary; convert through `parsePhpMoney` before arithmetic.
 - API/OpenAPI amounts use strings with currency alongside the amount unless the enclosing resource fixes `PHP` unambiguously.
 - Ledger entries preserve signed amounts, while command inputs state whether zero/negative values are permitted.

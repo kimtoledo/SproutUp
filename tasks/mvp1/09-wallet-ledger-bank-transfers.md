@@ -7,7 +7,8 @@
 
 - **2026-08-19 — Exact settled-money primitive:** Added canonical `PHP` decimal-string contracts and immutable `bigint`-centavo runtime values with exact signed arithmetic and a shared `numeric(30,2)` persistence boundary.
 - Numeric JSON, ambiguous formats, floating-point arithmetic, negative zero, and overflow are rejected. Multiplication, allocation, and rounding remain unavailable until the ledger/calculation rules are approved.
-- Ledger accounts/transactions/entries, holds, transfer evidence, approval, balance derivation, and reconciliation remain unimplemented; this task stays **WIP**.
+- Added generic `ledger_accounts`, immutable `ledger_transactions`, and immutable positive debit/credit `ledger_entries` with PHP `numeric(30,2)`, global posting idempotency, source/reversal identity, and commit-deferred minimum-line/balance enforcement.
+- No production chart or domain posting rule is seeded. The posting/reversal service, holds, transfer evidence, approval, balance derivation, and reconciliation remain unimplemented; this task stays **WIP**.
 
 ## Scope
 
