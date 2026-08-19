@@ -15,6 +15,7 @@
 - Added responsive, keyboard-focus-visible registration and sign-in pages linked from the public landing page. Registration chooses one primary SME borrower/investor journey, password guidance matches the API, and safe loading/error states are present; authenticated portal state and recovery remain unimplemented.
 - Added `/portal`, which resolves server session context before owned onboarding cases, renders only permission-granted borrower/investor journey controls, and supports draft creation, exact-version submit/resubmit, and reasoned withdrawal. It includes loading, empty, unavailable, conflict-refresh, session-expiry, sign-out, and responsive states; profile/detail/timeline screens remain.
 - Added lazy owned-case history inside the portal with ordered event labels, timestamps, versions, and applicant-visible reasons. Missing/foreign/malformed detail responses use bounded messages; full profile/evidence detail remains unimplemented.
+- Staff accounts with the server-granted queue capability can navigate from the portal to the responsive compliance workspace; customer accounts are not shown that entry point.
 
 ## Scope
 

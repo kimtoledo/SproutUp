@@ -2,7 +2,15 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowRight, Building2, LogOut, RefreshCw, Sprout, TrendingUp } from 'lucide-react';
+import {
+  ArrowRight,
+  Building2,
+  ClipboardCheck,
+  LogOut,
+  RefreshCw,
+  Sprout,
+  TrendingUp,
+} from 'lucide-react';
 import {
   createOnboardingCase,
   loadPortal,
@@ -148,6 +156,12 @@ export default function PortalPage() {
           <span>{state.session.roles.join(' · ')}</span>
         </div>
       </section>
+
+      {state.session.permissions.includes('onboarding_cases.read') ? (
+        <Link className="staff-workspace-link" href="/admin/onboarding">
+          <ClipboardCheck aria-hidden="true" size={18} /> Open compliance workspace
+        </Link>
+      ) : null}
 
       <section className="portal-section" aria-labelledby="journeys-title">
         <div className="portal-section-heading">

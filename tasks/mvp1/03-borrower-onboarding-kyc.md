@@ -16,6 +16,7 @@
 - The assigned compliance reviewer can reject an `in_review` case with an exact version and reason; decision timestamp, transition, and audit evidence commit atomically. Approval is intentionally unavailable.
 - The authenticated portal now renders the server-granted borrower journey, lists owned cases, starts a draft, submits/resubmits the displayed version, and performs reasoned withdrawal. Profile/evidence forms remain absent.
 - Borrowers can expand an owned case to view its ordered immutable state/version timeline and reasons for information requests, withdrawal, or terminal decisions.
+- Compliance staff now have a responsive permission-driven queue UI for borrower filtering, claim/resume, reasoned information requests, and rejection over the existing protected APIs.
 - No borrower profile, KYB evidence, completeness rules, or approval command is implemented yet; this task stays **WIP** pending the Philippine entity/document matrix and screening/escalation policy.
 
 ## Scope

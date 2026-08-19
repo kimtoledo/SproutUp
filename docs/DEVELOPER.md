@@ -38,6 +38,8 @@ The portal first resolves `/v1/session-context`, then loads `/v1/onboarding/case
 
 Each case can lazily load its owner-bound `/v1/onboarding/cases/:caseId` detail. The portal renders the immutable event order, case version, occurrence time, and any applicant-visible information-request, withdrawal, or decision reason. A hidden/foreign case maps to a bounded unavailable message and never falls back to a broader queue endpoint.
 
+Staff with `onboarding_cases.read` receive a link to `/admin/onboarding`. The workspace resolves session permissions before loading a page-size-25 queue and supports case-type, status, assigned-to-me, and page filters. `onboarding_cases.review` separately controls claim/resume, information-request, and rejection actions. A resubmitted case retains its reviewer, so only that reviewer sees “Resume review”; another reviewer sees assignment ownership but no action. Every command uses the displayed version and reloads the queue.
+
 In another terminal, start the API:
 
 ```bash

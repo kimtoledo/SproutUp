@@ -34,6 +34,36 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Staff compliance queue workspace
+
+**Status:** Done
+
+### Updated
+
+- Added responsive `/admin/onboarding` with session/capability resolution before protected queue loading and no case rendering on unauthenticated, forbidden, malformed, or unavailable states.
+- Added page-size-25 queue navigation, matching total count, borrower/investor type filter, lifecycle status filter, assigned-to-me filter, refresh, and empty states.
+- Added UI actions for claiming unassigned submitted work, resuming reviewer-retained resubmissions, assigned-reviewer information requests, and assigned-reviewer rejection with 10–1000 character reason forms.
+- Added exact displayed-version command payloads, pending duplicate-action prevention, bounded stable error messages, assignment ownership cues, and authoritative queue reload after every command.
+- Added a staff-only workspace link based on server-returned `onboarding_cases.read` and four client tests covering permission short-circuit, bounded filter construction, exact command payloads, and non-leaking assignment/stale errors; the web suite now has fifteen tests.
+- Updated developer, security, borrower, investor, admin-queue, portal, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Queue visibility requires `onboarding_cases.read`; review controls independently require `onboarding_cases.review`. The UI reflects, but never replaces, API enforcement.
+- Submitted unassigned work can be claimed. A resubmitted case retains assignment and only its current reviewer can resume; another reviewer cannot take it over.
+- Staff command forms send the queue row's exact version and reload after every outcome, preventing the client from assuming a transition succeeded.
+- Approval remains absent from both API and UI until completeness, screening, escalation, authority, and eligibility effects are implemented.
+
+### Open items
+
+- Add staff case detail/timeline UI and future profile/evidence review once those records exist.
+- Define queue SLA/aging/priority, assignment transfer/escalation, saved views, and bulk-action policy.
+- Add end-to-end responsive/accessibility/browser tests against the deployed cookie/CORS topology.
+
+### Next
+
+- Add protected staff case detail/timeline UI to the workspace without broadening the current allowlisted applicant projection.
+
 ## 2026-08-19 — Owned onboarding case timeline UI
 
 **Status:** Done

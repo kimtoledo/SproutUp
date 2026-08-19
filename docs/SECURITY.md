@@ -37,6 +37,8 @@ The portal does not infer access from URL, registration intent, or browser state
 
 Case history is fetched lazily from the own-case detail boundary, which binds case ID, applicant ID, and permitted journey type in SQL. The web client displays only the allowlisted event fields already returned by that contract. Missing/foreign cases receive the same bounded message, and no staff queue or applicant identity search is used as a fallback.
 
+The staff compliance workspace resolves session context and requires `onboarding_cases.read` before issuing the queue request. Review controls additionally require `onboarding_cases.review` and are rendered only for unassigned submitted work or work assigned to the current reviewer; the API independently enforces claim ownership, self-review denial, exact version, state, and reason. Stable error codes are mapped to bounded UI messages and server-provided exception/message text is not rendered.
+
 ## Authorization
 
 The API resolves roles and permissions from the authenticated user ID. Client-supplied role, permission, or ownership claims are never authoritative.
