@@ -43,4 +43,6 @@ The following still must be added before this foundation is production-operation
 - redacted structured logs, metrics, alerts, and a tested recovery runbook; and
 - retention/archival rules and an approved operational replay API.
 
+The policy-gated MVP inventory and promotion checklist live in [JOB_CATALOG.md](./JOB_CATALOG.md). It currently marks no production topic **Ready**, so the application registry remains empty.
+
 Financial handlers must still enforce their own posting/provider idempotency keys. A job lease prevents concurrent processing; it is not a substitute for an authoritative financial uniqueness constraint.

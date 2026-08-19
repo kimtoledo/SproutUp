@@ -15,6 +15,8 @@
 - Added explicit lowercase topic registration with required Zod/version validation plus a bounded non-overlapping worker poll loop. Unknown/malformed work is dead-lettered, expected/unexpected failures persist only safe codes, and long work receives automatic lease heartbeats.
 - Added bounded graceful shutdown: stop prevents new claims, drains active handlers when possible, then abort-signals timed-out work without stale settlement so another worker can recover the lease.
 - Five runtime tests cover empty/duplicate/invalid registration, dispatch and payload denial, safe error classification, concurrency/heartbeats, graceful drain, and timed lease handoff.
+- Added the MVP 1 job catalogue covering authentication, compliance, files/signing, campaigns, bank/ledger, disbursement, repayment, distribution, notifications, reports/reconciliation, migration, and break-glass work. Each candidate is classified as blocked, synchronous/manual for the pilot, or non-production operational work with explicit promotion gates.
+- No production topic is currently ready, so the empty registry/no-worker state remains the approved fail-closed activation state.
 - Production topic handlers, deployed worker/scheduler composition, operational replay API/audit, metrics/alerts, provider choice, retention, and per-job runbooks remain; this task stays **WIP**.
 
 ## Scope

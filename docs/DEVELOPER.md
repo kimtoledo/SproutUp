@@ -126,6 +126,8 @@ npm run db:check
 
 Migration `0009_moaning_argent.sql` creates the provider-neutral `background_jobs` and `background_job_attempts` foundation; `0010_job-attempt-evidence.sql` protects completed attempt evidence and blocks delete/truncate. Read [JOBS.md](./JOBS.md) before adding a topic or worker. Transaction-aware enqueue, lease/retry/recovery controls, and the bounded graceful worker runtime are integration-tested. `createApplicationJobTopicRegistry()` intentionally registers no production topics, so no worker is active in the API server.
 
+[JOB_CATALOG.md](./JOB_CATALOG.md) is the activation authority for MVP work. Do not register a topic merely because the runtime exists; the catalogue entry must be **Ready** with its owning domain decisions, payload/idempotency, owner, service objective, alerts, tests, and runbook.
+
 The onboarding schema currently provides only `onboarding_cases` and append-only `onboarding_case_events`. Its shared state machine lives in `packages/shared/src/onboarding.ts`. Do not add entity types, KYC requirements, provider result payloads, suitability scoring, document categories, or retention behavior until the corresponding open decision in tasks 03–05 is approved.
 
 Onboarding create/read/submit routes use distinct borrower/investor own-case capabilities. Submission bodies contain `{ "version": <positive integer> }`; a stale version returns `409 STALE_CASE_VERSION`. Case creation returns `409 OPEN_CASE_EXISTS` when the database already contains an open case for that user/journey. API retries therefore cannot create duplicate open workflows or silently overwrite newer state.

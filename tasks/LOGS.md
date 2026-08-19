@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Policy-gated MVP job catalogue
+
+**Status:** Done
+
+### Updated
+
+- Added the MVP 1 job catalogue for authentication/recovery, OTP, onboarding, compliance screening, document scanning/signing, campaigns, funding holds, bank events, disbursement, repayment, distribution, notifications, reports, reconciliation, migration, diagnostics, and break-glass work.
+- Classified candidates as blocked, synchronous/manual for the controlled pilot, or separate non-production operational commands and recorded each owning task/gate.
+- Added a seven-step promotion checklist covering versioned safe payloads, enqueue/handler idempotency, retry classification, service objectives, alerts, recovery, tests, and runbooks.
+- Confirmed there are no approved **Ready** production topics; the explicit application registry remains empty and no worker starts.
+- Updated job, developer, scheduler, MVP-index, and handoff documentation.
+
+### Decisions
+
+- Runtime availability does not authorize domain automation. A topic is registered only after its catalogue entry is **Ready** and its owning policy/provider/data model is approved.
+- Onboarding state/event/audit work remains synchronous for the pilot; future screening or notification jobs require their own approved providers/contracts.
+- Manual disbursement and receipt allocation may remain synchronous controlled-pilot operations, but they still require ledger idempotency, dual control, evidence, and reconciliation before implementation.
+- Migrations, diagnostics, and break-glass corrections are separate operational commands with dedicated authority/runbooks, not ordinary production topics.
+
+### Open items
+
+- All external delivery/screening/signing/banking topics remain blocked on provider and contract decisions.
+- Financial/campaign/repayment/distribution/reconciliation topics remain blocked on their authoritative domain models and approved calculation/control policies.
+- Worker deployment/capacity and operator replay controls remain unnecessary until at least one topic becomes **Ready**.
+
+### Next
+
+- Continue with a provider-independent financial foundation, beginning with exact PHP money representation and explicit rounding boundaries without encoding unresolved rates or formulas.
+
 ## 2026-08-19 — Deny-by-default graceful job worker runtime
 
 **Status:** Done
