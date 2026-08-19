@@ -34,6 +34,34 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Exact PHP settled-money primitive
+
+**Status:** Done
+
+### Updated
+
+- Added shared canonical `PHP` amount and money-contract schemas requiring decimal strings with exactly two places; numeric JSON, exponent/grouped/currency text, leading zeros, and negative zero are rejected.
+- Added immutable branded `PhpMoney` values backed by `bigint` centavos plus exact parsing, formatting, transport conversion, addition, subtraction, negation, and comparison.
+- Established a shared PostgreSQL `numeric(30,2)` technical precision and enforced the same overflow boundary during parsing and arithmetic.
+- Added 20 money-focused cases across six tests, increasing the shared suite to 28 tests across four files.
+- Added the exact-money architecture document and updated developer, security, technology-stack, platform, wallet/ledger, MVP-index, schema, and handoff documentation.
+
+### Decisions
+
+- BSP's statutory 100-centavos-per-peso definition supports two-decimal settled PHP values. External contracts use strings and internal settled values use integer centavos; JavaScript `number` is never accepted for money.
+- `numeric(30,2)` is a technical persistence/overflow boundary, not a product transaction limit. Domain limits must be smaller, named, configurable where appropriate, and separately approved.
+- No generic multiply/divide/rate/allocation/rounding operation is provided. Those require owning-domain rule versions, intermediate precision, rounding stage/mode, residual policy, and golden reconciliation tests.
+
+### Open items
+
+- Approve the ledger model, account catalogue, posting invariants, balance dimensions, and reversal semantics.
+- Approve an exact intermediate-rate representation and every task-specific rounding/residual rule before financial formulas.
+- Define product transaction/aggregate limits independently of the broad storage precision.
+
+### Next
+
+- Implement the provider-independent append-only balanced ledger schema and posting primitive, limited to exact PHP amounts and reversals with no unresolved fees/rates.
+
 ## 2026-08-19 — Policy-gated MVP job catalogue
 
 **Status:** Done

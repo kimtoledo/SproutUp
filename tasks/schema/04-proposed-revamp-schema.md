@@ -69,6 +69,7 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 
 - Use stable opaque IDs and explicit foreign keys with indexes.
 - Use exact decimal amounts and ISO currency codes; MVP 1 permits only PHP.
+- PHP amount contracts use canonical two-decimal strings and exact runtime centavos; database money columns use the shared `numeric(30,2)` technical precision unless an owning task documents a stricter requirement.
 - Use timestamps with a defined storage timezone plus separate business/value dates where required.
 - Preserve immutable financial, approval, consent, and audit history.
 - Keep configuration effective-dated so historical calculations are reproducible.

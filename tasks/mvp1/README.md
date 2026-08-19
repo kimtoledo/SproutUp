@@ -6,7 +6,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 
 ## Task checklist
 
-- [ ] [01 — Platform Foundation](./01-platform-foundation.md) — monorepo, web/API health, shared contracts, database/CI, auth/audit, and durable job persistence/control/runtime implemented; production topics/deployment, infrastructure, and financial foundations remain
+- [ ] [01 — Platform Foundation](./01-platform-foundation.md) — monorepo, web/API health, shared contracts, database/CI, auth/audit, jobs, and exact settled-PHP money implemented; production infrastructure and remaining financial foundations remain
 - [ ] [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md) — password/session boundary, audited customer-intent bootstrap, access catalogue, own-session revocation, canonical RBAC, immutable audit, and dual-controlled role changes implemented; recovery/MFA and remaining controls remain
 - [ ] [03 — Borrower Onboarding & KYC](./03-borrower-onboarding-kyc.md) — versioned case/state/events and protected own create/read/submit implemented; Philippine profile, evidence, queue, and decisions remain
 - [ ] [04 — Investor Onboarding & KYC](./04-investor-onboarding-kyc.md) — versioned case/state/events and protected own create/read/submit implemented; classification, suitability, bank, and eligibility controls remain
@@ -14,7 +14,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 - [ ] [06 — Credit Scoring & Underwriting](./06-credit-scoring-underwriting.md)
 - [ ] [07 — Campaign & Loan Management](./07-campaign-loan-management.md)
 - [ ] [08 — Investor Commitments](./08-investor-commitments.md)
-- [ ] [09 — Wallet Ledger & Bank Transfers](./09-wallet-ledger-bank-transfers.md)
+- [ ] [09 — Wallet Ledger & Bank Transfers](./09-wallet-ledger-bank-transfers.md) — exact PHP contract/value foundation implemented; ledger, holds, transfer workflow, approved calculations, and reconciliation remain
 - [ ] [10 — Disbursement & Financial Controls](./10-disbursement-controls.md)
 - [ ] [11 — Repayment & Collections](./11-repayment-collections.md)
 - [ ] [12 — Investor Distribution](./12-investor-distribution.md)

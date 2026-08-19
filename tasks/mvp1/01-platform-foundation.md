@@ -13,6 +13,7 @@
 - Added generated migration `0009_moaning_argent.sql` for idempotent background jobs, bounded priorities/retries, exclusive leases, terminal timestamps, and unique per-job attempt evidence. Startup readiness now requires both job relations.
 - Added a transaction-aware enqueue primitive and PostgreSQL job-control service for bounded concurrent claims, heartbeats, stale-worker denial, exponential retry, dead-lettering, expired-lease recovery, success, and unclaimed cancellation. Custom migration `0010_job-attempt-evidence.sql` protects completed attempt evidence.
 - Added a deny-by-default worker runtime with explicit versioned topic registration, bounded non-overlapping polling/concurrency, automatic heartbeats, safe error classification, and graceful drain/lease handoff. The application registry remains intentionally empty and the server starts no worker.
+- Added canonical two-decimal PHP string contracts and an immutable `bigint`-centavo money value for exact parsing, formatting, signed addition/subtraction, comparison, transport conversion, and `numeric(30,2)` overflow enforcement. Rate/rounding operations remain deliberately unavailable.
 
 ## Scope
 

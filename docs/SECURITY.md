@@ -81,6 +81,10 @@ Worker dispatch is deny-by-default: the runtime refuses to start with an empty r
 
 The initial writer and schema are implemented, but every privileged/domain command must integrate audit writes in its own transaction or reliable outbox workflow before that command is considered complete.
 
+## Financial input integrity
+
+Shared PHP money contracts reject JSON numbers, exponent notation, grouping/currency text, non-two-decimal values, leading zeros, negative zero, and values outside `numeric(30,2)`. Exact runtime arithmetic uses `bigint` centavos. This removes binary floating-point drift and ambiguous textual representations but does not authorize any rate, tax, interest, allocation, or rounding formula; those remain owning-domain decisions.
+
 ## Secrets
 
 `BETTER_AUTH_SECRET` must contain at least 32 random characters and must come from environment-specific secret management. Generate a local value with:

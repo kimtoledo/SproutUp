@@ -5,6 +5,23 @@ export {
   type HealthResponse,
 } from './health.js';
 export {
+  addPhpMoney,
+  comparePhpMoney,
+  formatPhpMoney,
+  negatePhpMoney,
+  nonNegativePhpAmountSchema,
+  parsePhpMoney,
+  phpAmountSchema,
+  phpMoneyContract,
+  phpMoneyContractSchema,
+  phpMoneyPrecision,
+  phpMoneyScale,
+  subtractPhpMoney,
+  type PhpAmount,
+  type PhpMoney,
+  type PhpMoneyContract,
+} from './money.js';
+export {
   hasPermission,
   initialRolePermissions,
   permissionDefinitions,

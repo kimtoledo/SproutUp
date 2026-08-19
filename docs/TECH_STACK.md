@@ -58,7 +58,7 @@ Create further packages only when code has a real cross-application boundary. Av
 
 MedicalHub is a useful application foundation, but it is not a financial-ledger reference architecture. SproutUp additionally requires:
 
-1. **Exact money:** PostgreSQL `numeric`; an approved decimal library/value object in TypeScript; explicit currency, scale, rounding mode, and rule version.
+1. **Exact money:** shared canonical PHP decimal-string contracts and immutable `bigint`-centavo `PhpMoney` values are implemented for exact settled-amount addition/subtraction/comparison, with a common PostgreSQL `numeric(30,2)` overflow boundary. Rate/percentage calculations still require an approved exact-decimal implementation plus explicit rounding mode, stage, residual rule, and rule version.
 2. **Append-only ledgers:** balanced entries, immutable posting identifiers, reversals, reconciliation references, and database constraints. A mutable wallet balance is never the source of truth.
 3. **Idempotency and concurrency:** idempotency keys, unique provider references, row locking or equivalent concurrency control, atomic state transitions, and safe retries.
 4. **Durable background work:** PostgreSQL `background_jobs` and protected `background_job_attempts` provide provider-neutral idempotency, `SKIP LOCKED` claims, bounded leases/backoff/retries, scheduling, dead-letter/terminal state, and attempt evidence. The enqueue primitive accepts an owning domain transaction so state and work commit atomically. Worker runtime topology and any external queue/scheduler provider remain open infrastructure decisions.

@@ -3,6 +3,12 @@
 **Status:** WIP  
 **Outcome:** Investor and borrower balances are derived from an auditable ledger with a controlled manual bank-transfer path.
 
+## Implementation progress
+
+- **2026-08-19 — Exact settled-money primitive:** Added canonical `PHP` decimal-string contracts and immutable `bigint`-centavo runtime values with exact signed arithmetic and a shared `numeric(30,2)` persistence boundary.
+- Numeric JSON, ambiguous formats, floating-point arithmetic, negative zero, and overflow are rejected. Multiplication, allocation, and rounding remain unavailable until the ledger/calculation rules are approved.
+- Ledger accounts/transactions/entries, holds, transfer evidence, approval, balance derivation, and reconciliation remain unimplemented; this task stays **WIP**.
+
 ## Scope
 
 - Append-only double-entry or equivalently balanced ledger with available, held, and settled balances.
@@ -29,4 +35,4 @@
 
 ## Open decisions
 
-- Ledger design, settlement accounts, bank statement format, and withdrawal service fee.
+- Ledger design, settlement accounts, bank statement format, withdrawal service fee, and calculation rounding/residual rules.
