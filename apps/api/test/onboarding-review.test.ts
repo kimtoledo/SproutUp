@@ -25,6 +25,7 @@ function authWithPermissions(permissions: PermissionKey[]): AuthServices {
 function reviewService(overrides: Partial<OnboardingReviewService> = {}): OnboardingReviewService {
   return {
     list: async ({ page, pageSize }) => ({ cases: [], page, pageSize, total: 0 }),
+    detail: async () => null,
     startReview: async () => ({ ok: false, reason: 'not_found' }),
     requestInformation: async () => ({ ok: false, reason: 'not_found' }),
     ...overrides,
@@ -122,6 +123,22 @@ describe('onboarding review routes', () => {
       });
       expect(response.statusCode).toBe(403);
       expect(response.json()).toMatchObject({ error: { code: 'NOT_ASSIGNED_REVIEWER' } });
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('returns not found for an unavailable staff case detail', async () => {
+    const app = await buildApp({
+      config: { appOrigin: 'http://localhost:3000', environment: 'test' },
+      checkDatabase: async () => undefined,
+      auth: { service: authWithPermissions(['onboarding_cases.read']), baseUrl: 'http://localhost:3001' },
+      onboarding: { cases: ownCases, review: reviewService() },
+    });
+    try {
+      const response = await app.inject({ method: 'GET', url: `/v1/admin/onboarding/cases/${caseId}` });
+      expect(response.statusCode).toBe(404);
+      expect(response.json()).toMatchObject({ error: { code: 'CASE_NOT_FOUND' } });
     } finally {
       await app.close();
     }

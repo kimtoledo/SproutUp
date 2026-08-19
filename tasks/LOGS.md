@@ -34,6 +34,34 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Staff onboarding case detail
+
+**Status:** Done
+
+### Updated
+
+- Added a capability-protected staff case-detail endpoint from the compliance queue.
+- Returned applicant identity context, current case state/version/assignment/timestamps, and the ordered append-only event/reason timeline.
+- Kept the response limited to implemented workflow fields; no unapproved KYC profile, document, suitability, or screening data is invented or exposed.
+- Added embedded-PostgreSQL detail coverage across the full correction/resubmission timeline plus route-level not-found behavior.
+- Updated developer, security, borrower, investor, admin-queue, and handoff documentation.
+
+### Decisions
+
+- Staff detail uses `onboarding_cases.read`; state-changing actions continue to require `onboarding_cases.review` separately.
+- Event order is deterministic by occurrence time and opaque ID.
+- Future sensitive sections must define field-level access/masking before joining this response.
+
+### Open items
+
+- Approve sensitive profile/evidence field access and masking by staff role.
+- Define completeness/screening prerequisites and dual control for approve/reject decisions.
+- Build the corresponding accessible staff detail screen.
+
+### Next
+
+- Stop before KYC decision execution until compliance policy is approved; continue with document/consent storage only after its type, retention, scanning, and provider decisions are resolved.
+
 ## 2026-08-19 — Onboarding information-request correction loop
 
 **Status:** Done

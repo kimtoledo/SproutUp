@@ -65,6 +65,7 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `POST /v1/onboarding/cases` | Open one permitted borrower/investor draft journey |
 | `POST /v1/onboarding/cases/:caseId/submit` | Submit an owned draft/information response using its exact current version |
 | `GET /v1/admin/onboarding/cases` | List the bounded compliance queue; requires `onboarding_cases.read` |
+| `GET /v1/admin/onboarding/cases/:caseId` | Read applicant context and the complete immutable case timeline |
 | `POST /v1/admin/onboarding/cases/:caseId/start-review` | Claim a submitted case and begin review; requires `onboarding_cases.review` |
 | `POST /v1/admin/onboarding/cases/:caseId/request-information` | Return an assigned in-review case for applicant correction with a reason |
 

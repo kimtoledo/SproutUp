@@ -10,6 +10,7 @@
 - Added the same protected own-case create/list/detail/submit boundary for the investor journey, with type-specific capability checks, SQL ownership binding, one-open-case enforcement, optimistic versioning, and immutable event/audit evidence.
 - Investor cases now appear in the same capability-protected compliance queue and can be claimed for review with self-review/takeover denial and atomic reviewer/state/evidence updates; suitability/eligibility decisions remain unimplemented.
 - Assigned reviewers can request information with a versioned reason, and the investor can resubmit the same owned case without losing assignment or immutable correction history.
+- Staff can inspect investor case identity/current state and the complete ordered immutable transition/reason timeline through the queue-read capability.
 - Investor subject classification, profile/evidence fields, suitability questionnaire versions, eligibility restrictions, bank verification, and decision APIs remain unimplemented because the individual/institutional pilot scope and approved rules are still open; this task stays **WIP**.
 
 ## Scope

@@ -144,5 +144,21 @@ describe('onboarding review service', () => {
     ]);
     expect(audits.map(({ action }) => action)).toContain('onboarding_case.review_started');
     expect(audits.map(({ action }) => action)).toContain('onboarding_case.information_requested');
+
+    const detail = await service.detail(caseId);
+    expect(detail).toMatchObject({
+      id: caseId,
+      applicantUserId: applicantId,
+      applicantEmail: 'review-applicant@sproutup.ph',
+      status: 'submitted',
+      version: 5,
+      events: [
+        { eventType: 'created' },
+        { eventType: 'submitted' },
+        { eventType: 'review_started' },
+        { eventType: 'information_requested', reason: 'Please provide clearer registration evidence' },
+        { eventType: 'submitted' },
+      ],
+    });
   });
 });

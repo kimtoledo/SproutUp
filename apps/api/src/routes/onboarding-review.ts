@@ -61,6 +61,19 @@ export async function registerOnboardingReviewRoutes(app: FastifyInstance, optio
     });
   });
 
+  app.get('/v1/admin/onboarding/cases/:caseId', async (request, reply) => {
+    const identity = await resolveAuthenticatedRequest(request, options.auth);
+    if (!identity) return unauthenticated(reply);
+    if (!hasPermission(identity.authorization, 'onboarding_cases.read')) return forbidden(reply);
+    const parameters = parametersSchema.safeParse(request.params);
+    if (!parameters.success) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'A valid case ID is required' } });
+    }
+    const detail = await options.review.detail(parameters.data.caseId);
+    if (!detail) return failure(reply, 'not_found');
+    return reply.send({ success: true, data: detail });
+  });
+
   app.post('/v1/admin/onboarding/cases/:caseId/start-review', async (request, reply) => {
     const identity = await resolveAuthenticatedRequest(request, options.auth);
     if (!identity) return unauthenticated(reply);

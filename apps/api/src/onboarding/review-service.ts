@@ -18,6 +18,15 @@ export interface OnboardingReviewService {
     status?: OnboardingCaseStatus;
     reviewerUserId?: string;
   }): Promise<{ cases: Array<OnboardingCaseSummary & { applicantName: string; applicantEmail: string }>; page: number; pageSize: number; total: number }>;
+  detail(caseId: string): Promise<
+    | (OnboardingCaseSummary & {
+        applicantUserId: string;
+        applicantName: string;
+        applicantEmail: string;
+        events: Array<Record<string, unknown>>;
+      })
+    | null
+  >;
   startReview(input: {
     reviewerUserId: string;
     reviewerRoles: RoleKey[];
@@ -73,6 +82,38 @@ export function createOnboardingReviewService(database: Database): OnboardingRev
           .offset((input.page - 1) * input.pageSize),
       ]);
       return { cases, page: input.page, pageSize: input.pageSize, total: totalRow?.value ?? 0 };
+    },
+
+    async detail(caseId) {
+      const [onboardingCase] = await database
+        .select({
+          ...summarySelection,
+          applicantUserId: schema.onboardingCases.applicantUserId,
+          applicantName: schema.users.name,
+          applicantEmail: schema.users.email,
+        })
+        .from(schema.onboardingCases)
+        .innerJoin(schema.users, eq(schema.onboardingCases.applicantUserId, schema.users.id))
+        .where(eq(schema.onboardingCases.id, caseId))
+        .limit(1);
+      if (!onboardingCase) return null;
+
+      const events = await database
+        .select({
+          id: schema.onboardingCaseEvents.id,
+          eventType: schema.onboardingCaseEvents.eventType,
+          fromStatus: schema.onboardingCaseEvents.fromStatus,
+          toStatus: schema.onboardingCaseEvents.toStatus,
+          caseVersion: schema.onboardingCaseEvents.caseVersion,
+          actorType: schema.onboardingCaseEvents.actorType,
+          actorUserId: schema.onboardingCaseEvents.actorUserId,
+          reason: schema.onboardingCaseEvents.reason,
+          occurredAt: schema.onboardingCaseEvents.occurredAt,
+        })
+        .from(schema.onboardingCaseEvents)
+        .where(eq(schema.onboardingCaseEvents.caseId, onboardingCase.id))
+        .orderBy(asc(schema.onboardingCaseEvents.occurredAt), asc(schema.onboardingCaseEvents.id));
+      return { ...onboardingCase, events };
     },
 
     async startReview(input) {
