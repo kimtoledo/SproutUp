@@ -4,6 +4,8 @@
 
 Better Auth is mounted behind the Fastify API at `/v1/auth/*`. The web application does not read credentials, session tables, or role tables directly.
 
+`GET /openapi.json` publishes route/contract metadata only. It declares the HTTP-only session-cookie security scheme but contains no cookie values, credentials, environment secrets, or internal database configuration; the generated document is covered by a secret-regression test.
+
 - Email/password credentials use Better Auth's memory-hard scrypt hashing.
 - Password length is 12–128 characters.
 - Session tokens are stored in the database and transported through HTTP-only, SameSite=Lax cookies; production cookies are Secure.

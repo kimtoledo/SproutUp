@@ -9,7 +9,8 @@
 - The implemented routes resolve server-side authorization, require explicit capabilities, return stable structured error codes, use UUID request correlation, and have negative permission/validation tests.
 - The user catalogue caps pages at 100 records and returns only an allowlisted access summary. Credentials, provider-account data, session IDs, and tokens are not part of its response contract.
 - Added owner-bound onboarding case routes with journey-specific capabilities, database uniqueness for duplicate create retries, optimistic version conflicts for stale submission retries, and atomic state/event/audit writes.
-- OpenAPI generation/CI validation, idempotency standards, private-file and webhook contracts, version/deprecation policy, and all domain operations remain; this task stays **WIP**.
+- Added generated OpenAPI 3.1 at `/openapi.json` with product metadata, a session-cookie security scheme, tags, and automated route-group/secret regression coverage in the normal CI test gate.
+- Full per-operation request/response schemas and actor/permission/idempotency/side-effect/audit metadata, private-file and webhook contracts, version/deprecation policy, and remaining domain operations remain; this task stays **WIP**.
 
 ## Scope
 
@@ -35,4 +36,4 @@
 ## Open decisions
 
 - Fastify with resource-oriented, Zod-validated routes under `/v1` is the approved API technology/style; liveness remains unversioned at `/health`.
-- Token/session model details, version support policy, OpenAPI generation, and provider-specific webhook requirements remain open.
+- Version support policy, complete OpenAPI operation metadata, and provider-specific webhook requirements remain open.

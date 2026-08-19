@@ -34,6 +34,35 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Generated OpenAPI route contract baseline
+
+**Status:** Done
+
+### Updated
+
+- Added exact-pinned `@fastify/swagger` 9.8.1, compatible with the Fastify 5 runtime.
+- Added generated OpenAPI 3.1 product metadata, route tags, and an HTTP-only Better Auth session-cookie security-scheme declaration.
+- Exposed the generated machine-readable contract at `GET /openapi.json` while hiding that endpoint from its own path list.
+- Added a full-composition contract test verifying every current application route group, OpenAPI version/product metadata, cookie scheme, and absence of obvious secret material.
+- Integrated contract validation into the existing test/CI gate and updated the lockfile.
+- Updated technology-stack, developer, security, API-task, MVP, and handoff documentation.
+
+### Decisions
+
+- OpenAPI generation is dynamic from the Fastify route tree; the contract test composes all optional services so route omissions fail CI.
+- The contract endpoint is public metadata and must never include runtime values or secrets.
+- This is route-coverage infrastructure, not completion of Task 18: full request/response and operational metadata must be added per operation.
+
+### Open items
+
+- Add operation IDs, input/output/error schemas, authentication/security requirements, actor/permission, idempotency, side effects, and audit event declarations for every route.
+- Define API version support/deprecation policy and provider-specific webhook/private-file contracts.
+- Decide whether interactive documentation is appropriate and how it would be protected; only JSON is served now.
+
+### Next
+
+- Add a reusable Fastify operation metadata contract and annotate the implemented onboarding endpoints first, failing CI when required metadata is absent.
+
 ## 2026-08-19 — Staff onboarding case detail
 
 **Status:** Done

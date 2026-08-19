@@ -1,6 +1,7 @@
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import swagger from '@fastify/swagger';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import type { HealthResponse } from '@sproutup/shared';
@@ -63,6 +64,32 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
     },
     credentials: true,
   });
+  await app.register(swagger, {
+    openapi: {
+      openapi: '3.1.0',
+      info: {
+        title: 'SproutUp API',
+        description: 'Versioned API contract for the SproutUp Philippine controlled pilot.',
+        version: '0.1.0',
+      },
+      components: {
+        securitySchemes: {
+          sessionCookie: {
+            type: 'apiKey',
+            in: 'cookie',
+            name: 'better-auth.session_token',
+            description: 'HTTP-only Better Auth session cookie; exact production prefix is environment-managed.',
+          },
+        },
+      },
+      tags: [
+        { name: 'health', description: 'Process and dependency health' },
+        { name: 'authentication', description: 'Identity and session boundary' },
+        { name: 'access', description: 'RBAC and approval administration' },
+        { name: 'onboarding', description: 'Borrower and investor onboarding workflows' },
+      ],
+    },
+  });
 
   app.get('/health', async (): Promise<HealthResponse> => ({
     status: 'ok',
@@ -92,6 +119,12 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
       };
     }
   });
+
+  app.get(
+    '/openapi.json',
+    { schema: { hide: true } },
+    async (_request, reply) => reply.type('application/json').send(app.swagger()),
+  );
 
   if (dependencies.auth) {
     await registerAuthRoutes(app, {

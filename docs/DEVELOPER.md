@@ -44,6 +44,7 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | --- | --- |
 | `GET /health` | Process liveness; does not query dependencies |
 | `GET /v1/health` | Readiness; returns `503` when PostgreSQL or required schema relations are unavailable |
+| `GET /openapi.json` | Generated OpenAPI 3.1 contract; hidden from its own path list |
 | `/v1/auth/*` | Better Auth email/password and session endpoints |
 | `GET /v1/session-context` | Server-resolved current user, roles, and permissions; returns `401` without an active authorized account |
 | `GET /v1/sessions` | List the authenticated user's sessions without exposing tokens |
@@ -95,6 +96,8 @@ npm run check
 ```
 
 This runs workspace linting, strict type checks, tests, and production builds. CI runs the same command and audits production dependencies.
+
+The API contract test composes every current service boundary and verifies that all implemented route groups appear in `/openapi.json`, OpenAPI 3.1 metadata and the session-cookie scheme are present, and obvious secret material is absent. When adding a route, add its path to `apps/api/test/openapi.test.ts`; Task 18 still requires full request/response, actor, permission, idempotency, side-effect, and audit metadata per operation.
 
 ## Database workflow
 

@@ -14,7 +14,7 @@
 | Repository | npm workspaces with `apps/*` and `packages/*` | Root `package.json` and lockfile use npm workspaces | npm is authoritative. Do not copy MedicalHub's stale pnpm wording. Commit `package-lock.json`. |
 | Frontend | Next.js 16 App Router, React 19, strict TypeScript | MedicalHub's `apps/web` architecture, upgraded from its vulnerable Next.js 14 dependency line | One web application may use route groups/layouts for public, borrower, investor, and admin surfaces; all privileged rules stay in the API. |
 | Styling/UI | Tailwind CSS 3, PostCSS, Autoprefixer, Lucide icons | `apps/web` and root dependencies | Establish SproutUp-specific tokens and accessible reusable components before feature UI; do not copy Dentra branding. |
-| API | Fastify 5, TypeScript, Zod, Pino-compatible structured logging | `apps/api` | Version routes under `/v1`; keep route handlers thin and organize lending logic into domain services. |
+| API | Fastify 5, TypeScript, Zod, `@fastify/swagger` OpenAPI 3.1, Pino-compatible structured logging | `apps/api` | Version routes under `/v1`; keep route handlers thin, generate a CI-validated contract, and organize lending logic into domain services. |
 | API security | Fastify Helmet, CORS, cookie, multipart, and rate-limit plugins | `apps/api` | Apply explicit origin, upload, rate-limit, and secure-cookie policy per environment. Public onboarding and callbacks need endpoint-specific abuse controls. |
 | Authentication | Better Auth with Drizzle adapter behind an auth-service boundary | `apps/api/src/auth` | Roles, permissions, KYC state, account ownership, and active operating context are resolved server-side. Keep the boundary replaceable. |
 | Database | PostgreSQL with Drizzle ORM and generated Drizzle Kit migrations | `packages/db` | Use `numeric` plus a decimal-money abstraction for PHP amounts. Add append-only ledger, approval, audit, and idempotency constraints. |
@@ -79,6 +79,8 @@ The initial clean install requires `legacy-peer-deps=true` because both npm 10.9
 The MedicalHub snapshot currently mixes Zod 3 in the root/shared package with Zod 4 in the API. SproutUp must resolve that mismatch before its first scaffold rather than reproduce it.
 
 The initial SproutUp scaffold resolves that mismatch on Zod 4. It also upgrades MedicalHub's Next.js 14/React 18 combination to Next.js 16/React 19 because the copied Next.js 14 release fails the production dependency audit with multiple high-severity advisories. The App Router architecture remains the same; future framework upgrades require passing tests, builds, and the production audit before adoption.
+
+The API uses exact-pinned `@fastify/swagger` 9.8.1, whose 9.x line is compatible with Fastify 5. Generated OpenAPI 3.1 route coverage is tested in CI; complete per-operation schemas and operational metadata remain an incremental Task 18 deliverable.
 
 ## Decisions still open
 
