@@ -3,6 +3,13 @@
 **Status:** WIP  
 **Outcome:** Admin, borrower, investor, and integration clients use a versioned API with explicit authentication, authorization, validation, and error behavior.
 
+## Implementation progress
+
+- **2026-08-19 — Initial protected API patterns:** Added versioned Zod-validated auth context, own-session, role-assignment approval, role catalogue, and paginated user catalogue routes.
+- The implemented routes resolve server-side authorization, require explicit capabilities, return stable structured error codes, use UUID request correlation, and have negative permission/validation tests.
+- The user catalogue caps pages at 100 records and returns only an allowlisted access summary. Credentials, provider-account data, session IDs, and tokens are not part of its response contract.
+- OpenAPI generation/CI validation, idempotency standards, private-file and webhook contracts, version/deprecation policy, and all domain operations remain; this task stays **WIP**.
+
 ## Scope
 
 - Define resource-oriented endpoints and schemas for every MVP 1 workflow.

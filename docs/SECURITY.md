@@ -35,6 +35,8 @@ Authorization is capability-based and deny-by-default. The initial permissions c
 
 Role grants are not exposed as direct mutations. A caller with `roles.assign` proposes an exact target/role payload and reason; a different caller with the same capability must approve it before the grant is created. Proposals expire after 24 hours, are protected from duplicate pending payloads, are locked while being checked, and bind approval to a SHA-256 payload hash. The maker cannot target their own account, the checker cannot be the maker or target, and `super_admin` cannot be granted through this workflow until an emergency/bootstrap policy is approved.
 
+Administrative read APIs enforce `roles.read` and `users.read` independently. User results are paginated and expose only the access-management summary; credential-provider data, password hashes, session IDs, and tokens are outside the response model.
+
 ## Audit evidence
 
 `audit_events` and `approval_actions` are append-only. PostgreSQL triggers reject row updates, row deletes, and table truncation. Corrections must be represented by new events.

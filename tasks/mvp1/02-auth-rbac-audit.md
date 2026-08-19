@@ -12,6 +12,7 @@
 - Generated and tested migrations against embedded PostgreSQL; tests cover schema creation, immutable audit enforcement, idempotent authorization seed, auth proxying, inactive/unauthenticated denial boundary, and server-resolved context.
 - Added capability-protected own-session listing and revocation. The API exposes opaque IDs rather than tokens, enforces ownership in the delete query, and commits revocation plus immutable audit evidence atomically.
 - Added dual-controlled role assignment: an authorized maker proposes a hash-bound role grant, a different authorized checker approves and executes it, and append-only approval/audit evidence is committed with the grant. Duplicate pending requests, self-targeting, self-approval, expired/stale requests, and `super_admin` elevation are denied.
+- Added separately capability-protected role and user catalogues. Role results include effective permission keys; user results use bounded pagination and exclude credentials, provider accounts, sessions, and tokens.
 - Password-reset/email-verification delivery, MFA/OTP, role revocation/permission administration, audit integration into each privileged workflow, final grants, emergency access, and device UI remain; this task stays **WIP**.
 
 ## Scope

@@ -11,6 +11,8 @@ import { registerSessionRoutes } from './routes/sessions.js';
 import type { SessionService } from './auth/sessions-service.js';
 import type { RoleAssignmentService } from './auth/role-assignments-service.js';
 import { registerRoleAssignmentRoutes } from './routes/role-assignments.js';
+import type { AccessCatalogueService } from './auth/access-catalogue-service.js';
+import { registerAccessCatalogueRoutes } from './routes/access-catalogue.js';
 
 export interface AppDependencies {
   config: Pick<ApiConfig, 'appOrigin' | 'environment'>;
@@ -20,6 +22,7 @@ export interface AppDependencies {
     baseUrl: string;
     sessions?: SessionService;
     roleAssignments?: RoleAssignmentService;
+    catalogue?: AccessCatalogueService;
   };
   logger?: boolean;
 }
@@ -88,6 +91,12 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
       await registerRoleAssignmentRoutes(app, {
         auth: dependencies.auth.service,
         roleAssignments: dependencies.auth.roleAssignments,
+      });
+    }
+    if (dependencies.auth.catalogue) {
+      await registerAccessCatalogueRoutes(app, {
+        auth: dependencies.auth.service,
+        catalogue: dependencies.auth.catalogue,
       });
     }
   }

@@ -34,6 +34,34 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-19 — Protected access administration catalogue
+
+**Status:** Done
+
+### Updated
+
+- Added `GET /v1/admin/roles` behind `roles.read`, returning role status and server-stored effective permission keys.
+- Added `GET /v1/admin/users` behind `users.read`, with validated status/search filters, deterministic pagination, a maximum page size of 100, total counts, and assigned role keys.
+- Defined an allowlisted user access summary that excludes credential-provider rows, password hashes, session identifiers, and tokens.
+- Added route tests for independent capability enforcement and pagination validation plus embedded-PostgreSQL service tests for permission resolution, filtering, assigned roles, and secret-free output.
+- Updated developer, security, authentication, API-contract, MVP, and handoff documentation.
+
+### Decisions
+
+- Read-only role and user administration uses separate capabilities; possession of one does not imply the other.
+- Name/email search treats wildcard characters literally and requires at least two characters.
+- Offset pagination is sufficient for the controlled-pilot access catalogue; high-volume domain queues will define cursor or snapshot semantics in their owning tasks.
+
+### Open items
+
+- Add OpenAPI generation and contract validation in CI.
+- Define masking/export policy before user data is exposed outside this narrow access-administration response.
+- Role revocation, user suspension, permission mutation, emergency access, and delivery-backed recovery/MFA remain open.
+
+### Next
+
+- Add dual-controlled role revocation on the established approval boundary, then begin the shared borrower/investor party and onboarding state foundation.
+
 ## 2026-08-19 — Dual-controlled role assignment
 
 **Status:** Done

@@ -51,8 +51,12 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `GET /v1/admin/role-assignments` | List unexpired pending role-assignment proposals; requires `roles.assign` |
 | `POST /v1/admin/role-assignments` | Propose a target/role grant with a 10–500 character reason; requires `roles.assign` |
 | `POST /v1/admin/role-assignments/:approvalId/approve` | Approve and execute a proposal as a different authorized actor |
+| `GET /v1/admin/roles` | List role status and effective permission keys; requires `roles.read` |
+| `GET /v1/admin/users` | List bounded user access summaries; requires `users.read` |
 
 Role-assignment proposals expire after 24 hours. The API rejects duplicate pending payloads, self-targeting, maker self-approval, checker self-approval, stale/non-pending requests, and hash mismatches. `super_admin` assignment is intentionally unavailable until the bootstrap/emergency-access policy is approved.
+
+The user catalogue defaults to page 1 with 25 records and accepts `page`, `pageSize` (maximum 100), `query` (literal name/email search), and `status`. Its response is intentionally limited to identity, verification/status, role keys, and creation time; it never returns password hashes, account-provider records, session identifiers, or tokens.
 
 ## Validate a change
 
