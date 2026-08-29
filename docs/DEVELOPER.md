@@ -183,6 +183,13 @@ Read [IDENTITY.md](./IDENTITY.md) before changing authentication, account owners
 or migration logic. These relations are an additive cutover foundation: the legacy unified auth
 routes remain active until credential/session data and every identity foreign key are reconciled.
 
+Run `npm run db:report-identity-cutover` before migration `0021_backfill-portal-identities.sql`.
+The report uses opaque user IDs and roles, never emails or credential values. Migration `0021`
+refuses ambiguous customer identities or non-empty targets, copies accounts/credentials/sessions,
+requires exact source/target counts, and records an immutable summary audit event. Legacy
+verification and rate-limit records are invalidated rather than copied because they have no
+trustworthy account foreign key.
+
 A fresh database has no staff accounts, and dual-controlled role administration needs at least two independent `roles.assign` holders before it can execute. After the target user has registered, run `npm run db:bootstrap-super-admin -- <email>` once per initial administrator. It promotes that one active account to `super_admin`, is idempotent, refuses unknown/inactive accounts, and writes an immutable `account.super_admin_bootstrapped` audit event. It bypasses maker/checker and is for controlled setup only — never wire it into a request path. See [SECURITY.md](./SECURITY.md#break-glass-administrator-bootstrap).
 
 Migration `0009_moaning_argent.sql` creates the provider-neutral `background_jobs` and `background_job_attempts` foundation; `0010_job-attempt-evidence.sql` protects completed attempt evidence and blocks delete/truncate. Read [JOBS.md](./JOBS.md) before adding a topic or worker. Transaction-aware enqueue, lease/retry/recovery controls, and the bounded graceful worker runtime are integration-tested. `createApplicationJobTopicRegistry()` intentionally registers no production topics, so no worker is active in the API server.

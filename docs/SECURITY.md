@@ -7,7 +7,8 @@ Better Auth is mounted behind the Fastify API at `/v1/auth/*`. The web applicati
 The target authentication topology uses separate admin, borrower, and investor account,
 credential, session, verification, and rate-limit relations. Migrations `0019`/`0020` implement
 those relations plus a globally unique normalized-email registry, immutable account identity, and
-disable-instead-of-delete enforcement. The runtime still uses the legacy unified `/v1/auth/*`
+disable-instead-of-delete enforcement. Migration `0021` performs a fail-closed, exactly reconciled
+legacy account/credential/session backfill; ambiguous identities abort before copy. The runtime still uses the legacy unified `/v1/auth/*`
 boundary during the controlled forward migration; separate route/cookie boundaries and foreign-key
 cutover are release blockers. Borrower and investor must not remain RBAC roles after cutover. See
 [IDENTITY.md](./IDENTITY.md).

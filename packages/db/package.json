@@ -13,6 +13,7 @@
     "check": "tsx src/check-readiness.ts",
     "seed:authorization": "tsx src/seed-authorization.ts",
     "bootstrap:super-admin": "tsx src/bootstrap-super-admin.ts",
+    "report:identity-cutover": "tsx src/identity-cutover-report.ts",
     "studio": "drizzle-kit studio --config=drizzle.config.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

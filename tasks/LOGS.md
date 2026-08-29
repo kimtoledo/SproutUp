@@ -34,6 +34,50 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Portal identity preflight and exact legacy backfill
+
+**Status:** Done
+
+### Updated
+
+- Added `buildIdentityCutoverReport` and `npm run db:report-identity-cutover`. It classifies legacy
+  users with staff precedence, identifies non-staff `ambiguous_customer_types` / missing account
+  type records, and returns only aggregate counts plus opaque exception IDs/roles—never emails or
+  credential data.
+- Added forward-only migration `0021_backfill-portal-identities.sql`. It aborts before copying when
+  any identity is unsafe or a target account table is non-empty; otherwise it copies every legacy
+  account, credential, and session into exactly one admin/borrower/investor namespace.
+- The migration reconciles exact source/target user, credential, and session counts and writes
+  `identity.portal_backfill_completed` immutable audit evidence. Unattributable legacy verification
+  and rate-limit rows are counted as invalidated rather than guessed into a portal namespace.
+- Added report and migration integration tests for staff precedence, both exception classes,
+  redacted output, exact three-namespace copying, credential/session preservation, audit evidence,
+  and fail-before-copy ambiguity handling. Database suite: 30 tests.
+- Applied the migration locally after a zero-exception report: 9 users → 6 admin + 3 borrower + 0
+  investor; 9/9 credentials and 13/13 sessions reconciled. Database readiness remained green.
+
+### Decisions
+
+- Staff-role presence wins over stale customer roles. A non-staff identity must have exactly one
+  legacy customer role; both or neither requires operator resolution.
+- Password hashes and session tokens are copied database-to-database and never printed. Legacy
+  verification/rate-limit rows cannot be reliably attributed and are deliberately invalidated.
+- Legacy tables stay in place while routes and foreign keys still depend on them; backfill is not
+  permission to enable the new auth boundary prematurely.
+
+### Open items
+
+- Move staff RBAC/approvals to `admin_accounts`; split onboarding/document/consent ownership between
+  borrower and investor accounts; preserve audit attribution without polymorphic weak foreign keys.
+- Mount portal-specific Better Auth routes and cookie names, switch the three web auth experiences,
+  reconcile live sessions, then disable the legacy wildcard and customer-role bootstrap.
+- Existing `.claude/` and `packages/db/src/schema/borrower.ts` remain untouched/uncommitted.
+
+### Next
+
+- Implement staff-side foreign-key/RBAC migration and admin auth service boundary first, then the
+  borrower and investor boundaries, keeping every stage forward-only and count-reconciled.
+
 ## 2026-08-30 — Separate portal identity schema foundation
 
 **Status:** Done

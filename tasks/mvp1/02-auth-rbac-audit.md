@@ -31,6 +31,13 @@
   additive: migration of legacy `users` foreign keys, separate Better Auth route/cookie boundaries,
   and removal of customer roles remain required before release. See
   [`../../docs/IDENTITY.md`](../../docs/IDENTITY.md).
+- **2026-08-30 — Identity cutover report and backfill:** Added the redacted
+  `db:report-identity-cutover` preflight with deterministic staff precedence and explicit
+  `ambiguous_customer_types` / `missing_account_type` exceptions. Migration `0021` refuses unsafe
+  or pre-populated targets, copies each safe legacy account/credential/session into exactly one
+  portal namespace, reconciles exact counts, invalidates unattributable verification/rate-limit
+  state, and writes an immutable summary audit event. Runtime routes/cookies and domain foreign keys
+  remain on the next cutover step.
 - Password-reset/email-verification delivery, MFA/OTP, audit integration into each privileged workflow, final grants, and emergency access remain; this task stays **WIP**.
 
 ## Scope

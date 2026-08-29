@@ -1,6 +1,6 @@
 # Portal Identity Isolation
 
-**Status:** Foundation implemented; runtime cutover in progress.
+**Status:** Foundation and legacy data backfill implemented; runtime/foreign-key cutover in progress.
 
 SproutUp treats administrator, borrower, and investor as separate account classes. Borrower and
 investor are not target RBAC roles and a credential issued in one portal must never authenticate
@@ -22,6 +22,17 @@ an investor email cannot later register as a borrower or administrator. Account 
 globally unique. Account ID and email are immutable, and account rows cannot be deleted or
 truncated; access is removed by changing status so attribution remains intact.
 
+Migration `0021_backfill-portal-identities.sql` classifies and copies legacy identities. Any staff
+role takes precedence over stale customer-role grants. A non-staff record must have exactly one of
+the legacy borrower/investor roles; both or neither abort the migration before any copy. Account,
+credential, and session counts must reconcile exactly before an immutable summary audit event is
+written. Verification and rate-limit rows are intentionally invalidated instead of copied because
+their legacy keys do not carry a trustworthy account foreign key.
+
+Run `npm run db:report-identity-cutover` before applying the backfill. Its output contains aggregate
+counts and opaque exception user IDs/role keys only; it does not print email addresses or password
+material.
+
 ## Authorization model
 
 - `admin_accounts` use staff RBAC: Super Admin, Sales Officer, Credit Analyst, Compliance Officer,
@@ -39,9 +50,10 @@ The new relations are additive in the foundation commit. The existing `users` / 
 `sessions` boundary remains temporarily active so deployed data and all existing foreign keys can
 be migrated forward safely. Before release, the cutover must:
 
-1. classify each legacy `users` record into exactly one account class, with staff identity taking
-   precedence and ambiguous customer records rejected for operator review;
-2. copy credential/session evidence into the matching namespace without exposing password hashes;
+1. **Done:** classify each legacy `users` record into exactly one account class, with staff identity
+   taking precedence and ambiguous customer records rejected for operator review;
+2. **Done:** copy credential/session evidence into the matching namespace without exposing password
+   hashes, with exact count reconciliation;
 3. move staff RBAC foreign keys to `admin_accounts` and customer ownership to the matching borrower
    or investor account;
 4. mount separate Better Auth boundaries and distinct cookie names for admin, borrower, and

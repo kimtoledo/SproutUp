@@ -23,6 +23,7 @@ export const migrationFiles = [
   '0018_document-version-immutability.sql',
   '0019_faithful_siren.sql',
   '0020_portal-identity-isolation.sql',
+  '0021_backfill-portal-identities.sql',
 ] as const;
 
 export async function applyMigrations(database: PGlite): Promise<void> {

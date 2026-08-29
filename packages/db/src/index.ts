@@ -11,4 +11,11 @@ export {
   type AuditWriterDatabase,
   type WriteAuditInput,
 } from './write-audit.js';
+export {
+  buildIdentityCutoverReport,
+  type IdentityCutoverException,
+  type IdentityCutoverExceptionReason,
+  type IdentityCutoverReport,
+  type TargetAccountType,
+} from './identity-cutover-report.js';
 export * as schema from './schema/index.js';

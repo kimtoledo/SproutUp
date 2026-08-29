@@ -1,0 +1,182 @@
+import { readFile } from 'node:fs/promises';
+import { describe, expect, it } from 'vitest';
+import { PGlite } from '@electric-sql/pglite';
+import { drizzle } from 'drizzle-orm/pglite';
+import { seedAuthorization } from './seed-authorization.js';
+import type { Database } from './database.js';
+import * as schema from './schema/index.js';
+
+const foundationMigrations = [
+  '0000_yielding_zombie.sql',
+  '0001_audit-immutability.sql',
+  '0002_little_union_jack.sql',
+  '0003_approval-actions-immutability.sql',
+  '0004_perpetual_mikhail_rasputin.sql',
+  '0005_lowly_shadow_king.sql',
+  '0006_onboarding-events-immutability.sql',
+  '0007_narrow_wolfsbane.sql',
+  '0008_applicant-role-bootstrap.sql',
+  '0009_moaning_argent.sql',
+  '0010_job-attempt-evidence.sql',
+  '0011_wide_nemesis.sql',
+  '0012_ledger-invariants.sql',
+  '0013_robust_corsair.sql',
+  '0014_consent-evidence-invariants.sql',
+  '0015_wise_lockjaw.sql',
+  '0016_config-rule-immutability.sql',
+  '0017_salty_molten_man.sql',
+  '0018_document-version-immutability.sql',
+  '0019_faithful_siren.sql',
+  '0020_portal-identity-isolation.sql',
+] as const;
+
+async function applyMigration(database: PGlite, migration: string): Promise<void> {
+  const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
+  await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
+}
+
+async function createFixture(): Promise<{ pglite: PGlite; db: Database }> {
+  const pglite = new PGlite();
+  for (const migration of foundationMigrations) await applyMigration(pglite, migration);
+  const db = drizzle(pglite, { schema }) as unknown as Database;
+  await seedAuthorization(db);
+  return { pglite, db };
+}
+
+describe('portal identity backfill migration', () => {
+  it('copies each safe legacy identity, credential, and session exactly once', async () => {
+    const { pglite, db } = await createFixture();
+    try {
+      const adminId = '00000000-0000-4000-8000-00000000e101';
+      const borrowerId = '00000000-0000-4000-8000-00000000e102';
+      const investorId = '00000000-0000-4000-8000-00000000e103';
+      await db.insert(schema.users).values([
+        {
+          id: adminId,
+          name: 'Admin',
+          email: 'backfill-admin@sproutup.ph',
+          registrationIntent: 'investor',
+        },
+        {
+          id: borrowerId,
+          name: 'Borrower',
+          email: 'backfill-borrower@sproutup.ph',
+          registrationIntent: 'borrower',
+        },
+        {
+          id: investorId,
+          name: 'Investor',
+          email: 'backfill-investor@sproutup.ph',
+          registrationIntent: 'investor',
+        },
+      ]);
+      await db.insert(schema.userRoles).values({ userId: adminId, roleKey: 'super_admin' });
+      await db.insert(schema.accounts).values([
+        {
+          id: '00000000-0000-4000-8000-00000000e201',
+          userId: adminId,
+          providerId: 'credential',
+          accountId: 'backfill-admin@sproutup.ph',
+          password: 'opaque-admin-hash',
+        },
+        {
+          id: '00000000-0000-4000-8000-00000000e202',
+          userId: borrowerId,
+          providerId: 'credential',
+          accountId: 'backfill-borrower@sproutup.ph',
+          password: 'opaque-borrower-hash',
+        },
+        {
+          id: '00000000-0000-4000-8000-00000000e203',
+          userId: investorId,
+          providerId: 'credential',
+          accountId: 'backfill-investor@sproutup.ph',
+          password: 'opaque-investor-hash',
+        },
+      ]);
+      await db.insert(schema.sessions).values([
+        {
+          id: '00000000-0000-4000-8000-00000000e301',
+          userId: adminId,
+          token: 'opaque-admin-session',
+          expiresAt: new Date('2030-01-01T00:00:00Z'),
+        },
+        {
+          id: '00000000-0000-4000-8000-00000000e302',
+          userId: borrowerId,
+          token: 'opaque-borrower-session',
+          expiresAt: new Date('2030-01-01T00:00:00Z'),
+        },
+        {
+          id: '00000000-0000-4000-8000-00000000e303',
+          userId: investorId,
+          token: 'opaque-investor-session',
+          expiresAt: new Date('2030-01-01T00:00:00Z'),
+        },
+      ]);
+
+      await applyMigration(pglite, '0021_backfill-portal-identities.sql');
+
+      const counts = await pglite.query<{
+        admins: number;
+        borrowers: number;
+        investors: number;
+        credentials: number;
+        sessions: number;
+      }>(`select
+        (select count(*)::int from admin_accounts) admins,
+        (select count(*)::int from borrower_accounts) borrowers,
+        (select count(*)::int from investor_accounts) investors,
+        ((select count(*) from admin_credentials)
+          + (select count(*) from borrower_credentials)
+          + (select count(*) from investor_credentials))::int credentials,
+        ((select count(*) from admin_sessions)
+          + (select count(*) from borrower_sessions)
+          + (select count(*) from investor_sessions))::int sessions`);
+      expect(counts.rows[0]).toEqual({
+        admins: 1,
+        borrowers: 1,
+        investors: 1,
+        credentials: 3,
+        sessions: 3,
+      });
+      const admin = await pglite.query<{ email: string }>(
+        'select email from admin_accounts where id = $1',
+        [adminId],
+      );
+      expect(admin.rows[0]?.email).toBe('backfill-admin@sproutup.ph');
+      const audit = await pglite.query<{ metadata: Record<string, number> }>(
+        `select metadata from audit_events where action = 'identity.portal_backfill_completed'`,
+      );
+      expect(audit.rows.at(-1)?.metadata).toMatchObject({ users: 3, credentials: 3, sessions: 3 });
+    } finally {
+      await pglite.close();
+    }
+  });
+
+  it('refuses ambiguous customer identity without partially copying it', async () => {
+    const { pglite, db } = await createFixture();
+    try {
+      const userId = '00000000-0000-4000-8000-00000000e401';
+      await db.insert(schema.users).values({
+        id: userId,
+        name: 'Ambiguous',
+        email: 'backfill-ambiguous@sproutup.ph',
+        registrationIntent: 'borrower',
+      });
+      await db.insert(schema.userRoles).values({ userId, roleKey: 'investor' });
+
+      await expect(
+        applyMigration(pglite, '0021_backfill-portal-identities.sql'),
+      ).rejects.toThrow('portal identity backfill refused');
+      const count = await pglite.query<{ count: number }>(
+        `select ((select count(*) from admin_accounts)
+          + (select count(*) from borrower_accounts)
+          + (select count(*) from investor_accounts))::int count`,
+      );
+      expect(count.rows[0]?.count).toBe(0);
+    } finally {
+      await pglite.close();
+    }
+  });
+});

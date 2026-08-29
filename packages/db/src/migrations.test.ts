@@ -32,6 +32,7 @@ beforeAll(async () => {
     '0018_document-version-immutability.sql',
     '0019_faithful_siren.sql',
     '0020_portal-identity-isolation.sql',
+    '0021_backfill-portal-identities.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
