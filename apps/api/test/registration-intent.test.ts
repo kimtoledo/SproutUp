@@ -17,6 +17,7 @@ const config: ApiConfig = {
   authSecret: 'registration-test-secret-at-least-32-characters',
   databaseUrl: 'postgresql://unused:unused@localhost:5432/unused',
   environment: 'test',
+  trustProxy: false,
 };
 
 beforeAll(async () => {

@@ -59,6 +59,13 @@ export function createAuthServices(config: ApiConfig, database: Database): AuthS
         sameSite: 'lax',
         secure: config.environment === 'production',
       },
+      // The Fastify boundary resolves the client IP (honouring API_TRUST_PROXY)
+      // and forwards it on this header. Without this, Better Auth cannot key its
+      // sign-in/sign-up rate limits per client and falls back to one shared
+      // global bucket, so a handful of failures locks out every user.
+      ipAddress: {
+        ipAddressHeaders: ['x-sproutup-client-ip'],
+      },
     },
   });
 

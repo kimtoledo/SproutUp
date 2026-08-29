@@ -32,6 +32,8 @@ npm run dev:web
 
 The web application is available at `http://localhost:3000`.
 
+`npm run dev:web`, `npm run dev:api`, `npm start` (api), and every `db:*` command load the monorepo root `.env` themselves (`--env-file-if-exists` for the API, an explicit `dotenv` path for `packages/db`, and a small loader in `next.config.mjs` for the web app), so a plain `cp .env.example .env` is enough — you no longer need to export the variables into your shell first. When the file is absent (for example in CI) the environment is used as-is. The web app also serves baseline security response headers (CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS) on every route.
+
 Web routes currently include the public landing page, `/register`, `/login`, and the client-rendered `/portal`. Registration asks for one primary borrower/investor journey and calls the API's Better Auth boundary using `NEXT_PUBLIC_API_URL`; sign-in uses the same cookie-bearing request boundary and continues to `/portal`.
 
 The portal first resolves `/v1/session-context`, then loads `/v1/onboarding/cases`. A `401` removes authenticated content and offers sign-in; a dependency/contract failure renders a retry state without partial account data. Create, submit/resubmit, and reasoned withdrawal controls appear only when the returned permission keys and case states allow them, but the API re-authorizes every command. Commands send the exact displayed case version and reload authoritative state after completion or conflict.
@@ -83,6 +85,7 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `POST /v1/admin/onboarding/cases/:caseId/start-review` | Claim a submitted case and begin review; requires `onboarding_cases.review` |
 | `POST /v1/admin/onboarding/cases/:caseId/request-information` | Return an assigned in-review case for applicant correction with a reason |
 | `POST /v1/admin/onboarding/cases/:caseId/reject` | Reject an assigned in-review case with an exact version and reason |
+| `POST /v1/admin/onboarding/cases/:caseId/approve` | Approve an assigned in-review case with an exact version and reason |
 
 All `/v1` responses carry `SproutUp-API-Version: 1`, including error and Better Auth adapter responses. The current version is not deprecated. Read [API_COMPATIBILITY.md](./API_COMPATIBILITY.md) before changing a request, response, validation rule, enum, retry model, or route path.
 
@@ -140,7 +143,9 @@ npm run db:migrate
 npm run db:check
 ```
 
-`db:migrate` applies committed migrations and idempotently seeds the approved role/permission baseline. `db:check` verifies connectivity and every relation currently required by API startup, including approval workflow and durable-job relations.
+`db:migrate` applies committed migrations and idempotently seeds the approved role/permission baseline. `db:check` verifies connectivity and every relation currently required by API startup, including approval workflow and durable-job relations. All `db:*` commands load the monorepo root `.env` themselves.
+
+A fresh database has no staff accounts, and dual-controlled role administration needs at least two independent `roles.assign` holders before it can execute. After the target user has registered, run `npm run db:bootstrap-super-admin -- <email>` once per initial administrator. It promotes that one active account to `super_admin`, is idempotent, refuses unknown/inactive accounts, and writes an immutable `account.super_admin_bootstrapped` audit event. It bypasses maker/checker and is for controlled setup only — never wire it into a request path. See [SECURITY.md](./SECURITY.md#break-glass-administrator-bootstrap).
 
 Migration `0009_moaning_argent.sql` creates the provider-neutral `background_jobs` and `background_job_attempts` foundation; `0010_job-attempt-evidence.sql` protects completed attempt evidence and blocks delete/truncate. Read [JOBS.md](./JOBS.md) before adding a topic or worker. Transaction-aware enqueue, lease/retry/recovery controls, and the bounded graceful worker runtime are integration-tested. `createApplicationJobTopicRegistry()` intentionally registers no production topics, so no worker is active in the API server.
 
@@ -164,7 +169,11 @@ The compliance queue defaults to page 1 with 25 cases and accepts `page`, `pageS
 
 Information requests require `{ "version": <positive integer>, "reason": "10–1000 characters" }` from the assigned reviewer. The case moves to `needs_information`; the applicant corrects future profile/evidence records and calls the existing submit endpoint with the new version. Resubmission returns the same case to `submitted` and retains the reviewer assignment/history.
 
-Rejection uses the same assigned-reviewer, exact-version, and bounded-reason controls from `in_review`. It stamps `decidedAt` and commits rejected state, immutable case event, and audit evidence atomically. Approval is intentionally absent until profile/evidence completeness, screening, escalation, eligibility effects, and decision authority are approved; do not reuse rejection code as an approval shortcut.
+Rejection and approval use the same assigned-reviewer, exact-version, and bounded-reason controls from `in_review`. Each stamps `decidedAt` and commits the decided state, an immutable case event (`rejected` / `approved`), and audit evidence atomically. Approval is currently a bare `in_review → approved` transition added to unblock end-to-end pilot exercise: regulated profile/evidence completeness, screening, escalation, decision authority, and downstream eligibility effects remain open decisions under tasks 03–05, and an approved case does not yet block a fresh onboarding for the same applicant/journey.
+
+The compliance queue hides `draft` (never submitted) and `withdrawn` cases by default; pass an explicit `status` filter to see them.
+
+Separation-of-duties denials in the review workflow (applicant self-review, acting on another reviewer's assigned case) are written as `onboarding_case.review_denied` audit events with `outcome: denied`. Privileged/compliance/onboarding/session/role-approval audit writes carry a one-way SHA-256 of the resolved client IP.
 
 Commit schema and generated migration files together. Custom SQL, such as append-only audit triggers, belongs in an explicitly generated custom migration. Never edit a migration already applied to a shared environment, use schema push against shared environments, or run manual DDL as a substitute for a migration.
 

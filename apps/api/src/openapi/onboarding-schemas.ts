@@ -46,6 +46,16 @@ export const rejectionBody = {
   },
 } as const;
 
+export const approvalBody = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['version', 'reason'],
+  properties: {
+    version: { type: 'integer', minimum: 1 },
+    reason: { type: 'string', minLength: 10, maxLength: 1000 },
+  },
+} as const;
+
 export const createCaseBody = {
   type: 'object',
   additionalProperties: false,

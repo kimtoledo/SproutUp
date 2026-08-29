@@ -1,8 +1,20 @@
+import { createHash } from 'node:crypto';
 import type { RoleKey } from '@sproutup/shared';
 import type { Database } from './database.js';
 import { auditEvents } from './schema/audit.js';
 
 const sensitiveKey = /(authorization|cookie|password|secret|token|api.?key|credential)/i;
+
+/**
+ * One-way SHA-256 of a client IP for audit evidence. Storing the hash keeps the
+ * evidence useful for correlation without persisting the raw address. Returns
+ * `undefined` for a missing/blank value so callers can pass it through directly.
+ */
+export function hashIpAddress(ip: string | null | undefined): string | undefined {
+  const value = ip?.trim();
+  if (!value) return undefined;
+  return createHash('sha256').update(value).digest('hex');
+}
 
 export interface WriteAuditInput {
   actorType: 'user' | 'system';

@@ -49,6 +49,7 @@ const dependencies: AppDependencies = {
       startReview: async () => ({ ok: false as const, reason: 'not_found' as const }),
       requestInformation: async () => ({ ok: false as const, reason: 'not_found' as const }),
       reject: async () => ({ ok: false as const, reason: 'not_found' as const }),
+      approve: async () => ({ ok: false as const, reason: 'not_found' as const }),
     },
   },
 };
@@ -143,6 +144,7 @@ describe('OpenAPI contract generation', () => {
           'requestOnboardingInformation',
         ],
         ['/v1/admin/onboarding/cases/{caseId}/reject', 'post', 'rejectOnboardingCase'],
+        ['/v1/admin/onboarding/cases/{caseId}/approve', 'post', 'approveOnboardingCase'],
       ] as const;
 
       for (const [path, method, operationId] of contractedOperations) {

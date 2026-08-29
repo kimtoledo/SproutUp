@@ -38,7 +38,8 @@ const actionLabels: Record<string, string> = {
   failed: 'Failed',
 };
 
-function roleLabel(key: RoleKey): string {
+function roleLabel(key: RoleKey | null | undefined): string {
+  if (!key) return 'unknown role';
   return roleDefinitions.find((role) => role.key === key)?.name ?? key;
 }
 
@@ -46,8 +47,8 @@ function commandLabel(type: ApprovalCommandType): string {
   return type === 'role.assign' ? 'Grant' : 'Revoke';
 }
 
-function shortId(id: string): string {
-  return id.slice(0, 8);
+function shortId(id: string | null | undefined): string {
+  return id ? id.slice(0, 8) : 'unknown';
 }
 
 export default function AdminRoleApprovalsPage() {

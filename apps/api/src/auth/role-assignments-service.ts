@@ -50,6 +50,7 @@ export interface RoleAssignmentService {
     roleKey: RoleKey;
     reason: string;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<{ ok: true; request: PendingRoleAssignment } | { ok: false; reason: ProposalFailure }>;
   approve(input: {
     checkerUserId: string;
@@ -57,6 +58,7 @@ export interface RoleAssignmentService {
     approvalId: string;
     reason?: string;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<{ ok: true } | { ok: false; reason: ApprovalFailure }>;
 }
 
@@ -183,6 +185,7 @@ export function createRoleAssignmentService(
           resourceType: 'approval_request',
           resourceId: request.id,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
           reason: input.reason,
           metadata: payload,
         });
@@ -252,6 +255,7 @@ export function createRoleAssignmentService(
             resourceType: 'approval_request',
             resourceId: request.id,
             requestId: input.requestId,
+            ipAddressHash: input.ipAddressHash,
             reason: 'Approval request expired before execution',
             metadata: { approvalRequestId: request.id, payloadHash: request.payloadHash },
           });
@@ -311,6 +315,7 @@ export function createRoleAssignmentService(
           resourceType: 'user_role',
           resourceId: `${payload.targetUserId}:${payload.roleKey}`,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
           reason: input.reason,
           metadata: { ...payload, approvalRequestId: request.id, payloadHash: request.payloadHash },
         });

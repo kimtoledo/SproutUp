@@ -23,6 +23,7 @@ export interface ApprovalLifecycleService {
     approvalId: string;
     reason: string;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<{ ok: true } | { ok: false; reason: LifecycleFailure }>;
   cancel(input: {
     makerUserId: string;
@@ -30,6 +31,7 @@ export interface ApprovalLifecycleService {
     approvalId: string;
     reason: string;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<{ ok: true } | { ok: false; reason: LifecycleFailure }>;
 }
 
@@ -87,6 +89,7 @@ export function createApprovalLifecycleService(
             resourceType: 'approval_request',
             resourceId: request.id,
             requestId: input.requestId,
+            ipAddressHash: input.ipAddressHash,
             reason: 'Approval request expired before rejection',
             metadata: { commandType: request.commandType, payloadHash: request.payloadHash },
           });
@@ -113,6 +116,7 @@ export function createApprovalLifecycleService(
           resourceType: 'approval_request',
           resourceId: request.id,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
           reason: input.reason,
           metadata: { commandType: request.commandType, payloadHash: request.payloadHash },
         });
@@ -160,6 +164,7 @@ export function createApprovalLifecycleService(
             resourceType: 'approval_request',
             resourceId: request.id,
             requestId: input.requestId,
+            ipAddressHash: input.ipAddressHash,
             reason: 'Approval request expired before cancellation',
             metadata: { commandType: request.commandType, payloadHash: request.payloadHash },
           });
@@ -186,6 +191,7 @@ export function createApprovalLifecycleService(
           resourceType: 'approval_request',
           resourceId: request.id,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
           reason: input.reason,
           metadata: { commandType: request.commandType, payloadHash: request.payloadHash },
         });

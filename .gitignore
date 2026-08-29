@@ -25,6 +25,10 @@ dist/
 coverage/
 *.tsbuildinfo
 
+### Next.js generated files (the monorepo maintains its own root AGENTS.md)
+apps/web/AGENTS.md
+apps/web/CLAUDE.md
+
 ### Local configuration and logs
 .env
 .env.*

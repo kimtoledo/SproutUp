@@ -24,12 +24,16 @@ export function AuthCard({ mode }: { mode: 'login' | 'register' }) {
     const form = new FormData(event.currentTarget);
     const email = String(form.get('email') ?? '');
     const password = String(form.get('password') ?? '');
+    const submittedIntent = form.get('registrationIntent');
     const result = mode === 'register'
       ? await registerWithEmail({
           name: String(form.get('name') ?? ''),
           email,
           password,
-          registrationIntent: intent,
+          registrationIntent:
+            submittedIntent === 'borrower' || submittedIntent === 'investor'
+              ? submittedIntent
+              : intent,
         })
       : await signInWithEmail({ email, password });
     if (result.ok) {
@@ -58,24 +62,28 @@ export function AuthCard({ mode }: { mode: 'login' | 'register' }) {
         {registering ? (
           <fieldset className="intent-picker">
             <legend>I am joining as</legend>
-            <button
-              aria-pressed={intent === 'borrower'}
-              className="intent-option"
-              onClick={() => setIntent('borrower')}
-              type="button"
-            >
+            <label className={`intent-option${intent === 'borrower' ? ' is-selected' : ''}`}>
+              <input
+                checked={intent === 'borrower'}
+                name="registrationIntent"
+                onChange={() => setIntent('borrower')}
+                type="radio"
+                value="borrower"
+              />
               <Building2 aria-hidden="true" size={20} />
               <span><strong>SME borrower</strong><small>Seek responsible growth capital</small></span>
-            </button>
-            <button
-              aria-pressed={intent === 'investor'}
-              className="intent-option"
-              onClick={() => setIntent('investor')}
-              type="button"
-            >
+            </label>
+            <label className={`intent-option${intent === 'investor' ? ' is-selected' : ''}`}>
+              <input
+                checked={intent === 'investor'}
+                name="registrationIntent"
+                onChange={() => setIntent('investor')}
+                type="radio"
+                value="investor"
+              />
               <TrendingUp aria-hidden="true" size={20} />
               <span><strong>Investor</strong><small>Review structured opportunities</small></span>
-            </button>
+            </label>
           </fieldset>
         ) : null}
 

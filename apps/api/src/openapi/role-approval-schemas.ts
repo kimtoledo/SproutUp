@@ -11,6 +11,20 @@ const roleChangePayloadSchema = {
   },
 } as const;
 
+// History rows can carry a payload that failed its own integrity check, so the
+// projection is the same shape but every field is optional and unknown keys are
+// preserved for the reviewer to inspect.
+const historyPayloadSchema = {
+  type: 'object',
+  additionalProperties: true,
+  properties: {
+    targetUserId: { type: 'string', format: 'uuid' },
+    roleKey: { type: 'string', enum: [...roleKeys] },
+  },
+} as const;
+
+const payloadHashSchema = { type: 'string', pattern: '^[a-f0-9]{64}$' } as const;
+
 const nullableUuid = {
   anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }],
 } as const;
@@ -65,7 +79,7 @@ export const pendingRoleChangeSchema = {
   properties: {
     id: { type: 'string', format: 'uuid' },
     payload: roleChangePayloadSchema,
-    payloadHash: { type: 'string', pattern: '^[a-f0-9]{64}$' },
+    payloadHash: payloadHashSchema,
     makerUserId: { type: 'string', format: 'uuid' },
     reason: { type: 'string' },
     expiresAt: { type: 'string', format: 'date-time' },
@@ -119,8 +133,8 @@ const approvalHistoryItemSchema = {
       type: 'string',
       enum: ['pending', 'executed', 'rejected', 'cancelled', 'expired', 'failed'],
     },
-    payload: { type: 'object' },
-    payloadHash: { type: 'string', minLength: 1, maxLength: 64 },
+    payload: historyPayloadSchema,
+    payloadHash: payloadHashSchema,
     version: { type: 'integer', minimum: 1 },
     makerUserId: { type: 'string', format: 'uuid' },
     checkerUserId: nullableUuid,
@@ -152,10 +166,10 @@ const approvalActionSchema = {
       enum: ['proposed', 'approved', 'executed', 'rejected', 'cancelled', 'expired', 'failed'],
     },
     actorUserId: { type: 'string', format: 'uuid' },
-    payloadHash: { type: 'string', minLength: 1, maxLength: 64 },
+    payloadHash: payloadHashSchema,
     reason: nullableString,
     occurredAt: { type: 'string', format: 'date-time' },
-    metadata: { type: 'object' },
+    metadata: { type: 'object', additionalProperties: true },
   },
 } as const;
 

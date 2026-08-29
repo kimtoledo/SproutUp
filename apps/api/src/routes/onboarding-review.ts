@@ -1,11 +1,13 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { hashIpAddress } from '@sproutup/db';
 import { hasPermission, onboardingCaseStatusSchema, onboardingCaseTypeSchema } from '@sproutup/shared';
 import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
 import type { OnboardingReviewService } from '../onboarding/review-service.js';
 import { operation } from '../openapi/operation.js';
 import {
+  approvalBody,
   caseIdParameters,
   caseSummarySchema,
   commonErrors,
@@ -29,6 +31,7 @@ const parametersSchema = z.object({ caseId: z.uuid() });
 const versionSchema = z.object({ version: z.number().int().positive() });
 const informationRequestSchema = versionSchema.extend({ reason: z.string().trim().min(10).max(1000) });
 const rejectionSchema = versionSchema.extend({ reason: z.string().trim().min(10).max(1000) });
+const approvalSchema = versionSchema.extend({ reason: z.string().trim().min(10).max(1000) });
 
 interface Options {
   auth: AuthServices;
@@ -186,6 +189,7 @@ export async function registerOnboardingReviewRoutes(app: FastifyInstance, optio
       caseId: parameters.data.caseId,
       expectedVersion: body.data.version,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
     if (!result.ok) return failure(reply, result.reason);
     return reply.send({ success: true, data: result.case });
@@ -236,6 +240,7 @@ export async function registerOnboardingReviewRoutes(app: FastifyInstance, optio
       expectedVersion: body.data.version,
       reason: body.data.reason,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
     if (!result.ok) return failure(reply, result.reason);
     return reply.send({ success: true, data: result.case });
@@ -289,6 +294,61 @@ export async function registerOnboardingReviewRoutes(app: FastifyInstance, optio
       expectedVersion: body.data.version,
       reason: body.data.reason,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
+    });
+    if (!result.ok) return failure(reply, result.reason);
+    return reply.send({ success: true, data: result.case });
+  });
+
+  app.post('/v1/admin/onboarding/cases/:caseId/approve', {
+    schema: operation({
+      operationId: 'approveOnboardingCase',
+      summary: 'Approve an assigned in-review onboarding case with a reason',
+      tags: ['onboarding'],
+      metadata: {
+        actor: 'staff',
+        permissions: ['onboarding_cases.review'],
+        permissionMode: 'all',
+        retryModel: 'optimistic_version',
+        sideEffects: ['transition onboarding case', 'append case event', 'append audit event'],
+        auditEvent: 'onboarding_case.approved',
+      },
+      http: {
+        params: caseIdParameters,
+        body: approvalBody,
+        response: {
+          200: successResponse(caseSummarySchema),
+          400: commonErrors[400],
+          401: commonErrors[401],
+          403: commonErrors[403],
+          404: commonErrors[404],
+          409: commonErrors[409],
+        },
+      },
+    }),
+  }, async (request, reply) => {
+    const identity = await resolveAuthenticatedRequest(request, options.auth);
+    if (!identity) return unauthenticated(reply);
+    if (!hasPermission(identity.authorization, 'onboarding_cases.review')) return forbidden(reply);
+    const parameters = parametersSchema.safeParse(request.params);
+    const body = approvalSchema.safeParse(request.body);
+    if (!parameters.success || !body.success) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'A valid case ID, version, and 10–1000 character approval reason are required',
+        },
+      });
+    }
+    const result = await options.review.approve({
+      reviewerUserId: identity.authorization.user.id,
+      reviewerRoles: identity.authorization.roles,
+      caseId: parameters.data.caseId,
+      expectedVersion: body.data.version,
+      reason: body.data.reason,
+      requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
     if (!result.ok) return failure(reply, result.reason);
     return reply.send({ success: true, data: result.case });

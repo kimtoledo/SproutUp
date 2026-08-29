@@ -159,7 +159,7 @@ const messages: Record<string, string> = {
 
 async function command(
   caseId: string,
-  action: 'start-review' | 'request-information' | 'reject',
+  action: 'start-review' | 'request-information' | 'reject' | 'approve',
   body: Record<string, unknown>,
   fetcher: FetchLike,
 ): Promise<AdminCommandResult> {
@@ -206,4 +206,13 @@ export function rejectOnboardingCase(
   fetcher: FetchLike = fetch,
 ): Promise<AdminCommandResult> {
   return command(caseId, 'reject', { version, reason: reason.trim() }, fetcher);
+}
+
+export function approveOnboardingCase(
+  caseId: string,
+  version: number,
+  reason: string,
+  fetcher: FetchLike = fetch,
+): Promise<AdminCommandResult> {
+  return command(caseId, 'approve', { version, reason: reason.trim() }, fetcher);
 }

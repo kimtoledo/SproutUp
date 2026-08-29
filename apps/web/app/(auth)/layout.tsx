@@ -14,6 +14,11 @@ export default function AuthLayout({ children }: Readonly<{ children: ReactNode 
         <Link className="quiet-link" href="/">Back to home</Link>
       </header>
       <section className="auth-shell" aria-label="Account access">
+        <noscript>
+          <p className="form-message">
+            SproutUp sign-in and registration need JavaScript enabled in your browser.
+          </p>
+        </noscript>
         {children}
       </section>
     </main>

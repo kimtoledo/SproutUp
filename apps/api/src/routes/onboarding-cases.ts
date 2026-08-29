@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { hashIpAddress } from '@sproutup/db';
 import {
   hasPermission,
   onboardingCaseTypeSchema,
@@ -189,6 +190,7 @@ export async function registerOnboardingCaseRoutes(app: FastifyInstance, options
       actorRoles: identity.authorization.roles,
       caseType: parsed.data.caseType,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
     if (!result.ok) return failure(reply, result.reason);
     return reply.status(201).send({ success: true, data: result.case });
@@ -237,6 +239,7 @@ export async function registerOnboardingCaseRoutes(app: FastifyInstance, options
       caseId: parameters.data.caseId,
       expectedVersion: body.data.version,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
     if (!result.ok) return failure(reply, result.reason);
     return reply.send({ success: true, data: result.case });
@@ -292,6 +295,7 @@ export async function registerOnboardingCaseRoutes(app: FastifyInstance, options
       expectedVersion: body.data.version,
       reason: body.data.reason,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
     if (!result.ok) return failure(reply, result.reason);
     return reply.send({ success: true, data: result.case });

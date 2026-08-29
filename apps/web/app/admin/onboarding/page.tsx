@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, ClipboardCheck, RefreshCw, Sprout } from 'lucide-react';
 import {
+  approveOnboardingCase,
   loadAdminOnboardingCaseDetail,
   loadAdminOnboardingWorkspace,
   rejectOnboardingCase,
@@ -41,7 +42,7 @@ export default function AdminOnboardingPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [reasonCase, setReasonCase] = useState<{
     id: string;
-    action: 'information' | 'reject';
+    action: 'information' | 'reject' | 'approve';
   } | null>(null);
   const [detail, setDetail] = useState<AdminOnboardingCaseDetail | null>(null);
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
@@ -242,8 +243,8 @@ function AdminCaseCard({
   detail: AdminOnboardingCaseDetail | null;
   detailLoading: boolean;
   pending: boolean;
-  reasonAction: 'information' | 'reject' | null;
-  onReasonAction(action: 'information' | 'reject'): void;
+  reasonAction: 'information' | 'reject' | 'approve' | null;
+  onReasonAction(action: 'information' | 'reject' | 'approve'): void;
   onRun(action: () => Promise<{ ok: boolean; message?: string; unauthenticated?: boolean }>): void;
   onToggleDetail(): void;
 }) {
@@ -251,10 +252,17 @@ function AdminCaseCard({
   function submitReason(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const reason = String(new FormData(event.currentTarget).get('reason') ?? '');
-    onRun(() => reasonAction === 'information'
-      ? requestOnboardingInformation(item.id, item.version, reason)
-      : rejectOnboardingCase(item.id, item.version, reason));
+    onRun(() => {
+      if (reasonAction === 'information') return requestOnboardingInformation(item.id, item.version, reason);
+      if (reasonAction === 'approve') return approveOnboardingCase(item.id, item.version, reason);
+      return rejectOnboardingCase(item.id, item.version, reason);
+    });
   }
+  const reasonCopy = {
+    information: { label: 'Information request reason', submit: 'Send request' },
+    reject: { label: 'Rejection reason', submit: 'Confirm rejection' },
+    approve: { label: 'Approval reason', submit: 'Confirm approval' },
+  } as const;
   return (
     <article className="admin-case-card">
       <div className="admin-case-main">
@@ -287,6 +295,7 @@ function AdminCaseCard({
         ) : null}
         {canReview && item.status === 'in_review' && assignedToMe ? (
           <>
+            <button className="compact-action button-reset" onClick={() => onReasonAction('approve')} type="button">Approve</button>
             <button className="text-button" onClick={() => onReasonAction('information')} type="button">Request information</button>
             <button className="text-button danger-text" onClick={() => onReasonAction('reject')} type="button">Reject</button>
           </>
@@ -298,14 +307,14 @@ function AdminCaseCard({
       {reasonAction ? (
         <form className="review-reason-form" onSubmit={submitReason}>
           <label>
-            {reasonAction === 'information' ? 'Information request reason' : 'Rejection reason'}
+            {reasonCopy[reasonAction].label}
             <textarea minLength={10} maxLength={1000} name="reason" required />
           </label>
           <button
             className={reasonAction === 'reject' ? 'danger-action' : 'compact-action button-reset'}
             disabled={pending}
             type="submit"
-          >{pending ? 'Saving…' : reasonAction === 'information' ? 'Send request' : 'Confirm rejection'}</button>
+          >{pending ? 'Saving…' : reasonCopy[reasonAction].submit}</button>
         </form>
       ) : null}
       {detail ? (

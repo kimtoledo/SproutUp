@@ -29,6 +29,7 @@ export interface OnboardingCaseService {
     actorRoles: RoleKey[];
     caseType: OnboardingCaseType;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<{ ok: true; case: OnboardingCaseSummary } | { ok: false; reason: CaseFailure }>;
   submit(input: {
     applicantUserId: string;
@@ -37,6 +38,7 @@ export interface OnboardingCaseService {
     caseId: string;
     expectedVersion: number;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<{ ok: true; case: OnboardingCaseSummary } | { ok: false; reason: CaseFailure }>;
   withdraw(input: {
     applicantUserId: string;
@@ -46,6 +48,7 @@ export interface OnboardingCaseService {
     expectedVersion: number;
     reason: string;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<{ ok: true; case: OnboardingCaseSummary } | { ok: false; reason: CaseFailure }>;
 }
 
@@ -139,6 +142,7 @@ export function createOnboardingCaseService(
           resourceType: 'onboarding_case',
           resourceId: onboardingCase.id,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
           metadata: { caseType: input.caseType, version: onboardingCase.version },
         });
         return { ok: true as const, case: onboardingCase };
@@ -200,6 +204,7 @@ export function createOnboardingCaseService(
           resourceType: 'onboarding_case',
           resourceId: current.id,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
           metadata: { caseType: current.caseType, fromVersion: current.version, toVersion: nextVersion },
         });
         return { ok: true as const, case: submitted };
@@ -261,6 +266,7 @@ export function createOnboardingCaseService(
           resourceType: 'onboarding_case',
           resourceId: current.id,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
           reason: input.reason,
           metadata: {
             caseType: current.caseType,

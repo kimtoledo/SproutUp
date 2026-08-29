@@ -29,7 +29,7 @@ import { healthResponseSchema } from './openapi/system-schemas.js';
 import { apiVersionHeaders, currentApiVersionPolicy } from './openapi/api-version.js';
 
 export interface AppDependencies {
-  config: Pick<ApiConfig, 'appOrigin' | 'environment'>;
+  config: Pick<ApiConfig, 'appOrigin' | 'environment'> & Partial<Pick<ApiConfig, 'trustProxy'>>;
   checkDatabase(): Promise<void>;
   auth?: {
     service: AuthServices;
@@ -55,15 +55,33 @@ function now(): string {
 export async function buildApp(dependencies: AppDependencies): Promise<FastifyInstance> {
   const app = Fastify({
     logger: dependencies.logger ?? dependencies.config.environment !== 'test',
-    trustProxy: true,
+    trustProxy: dependencies.config.trustProxy ?? false,
     genReqId: () => randomUUID(),
   });
 
-  app.setErrorHandler((error, request, reply) => {
-    if (error && typeof error === 'object' && 'validation' in error) {
+  app.setErrorHandler((error: unknown, request, reply) => {
+    const details = (error ?? {}) as { statusCode?: unknown; code?: unknown; validation?: unknown };
+    const candidateStatus = typeof details.statusCode === 'number' ? details.statusCode : undefined;
+    const errorCode = typeof details.code === 'string' ? details.code : '';
+
+    // Schema validation and body-parsing failures are client errors, not server
+    // faults: keep them on the stable 400 envelope instead of a 500.
+    if (
+      details.validation !== undefined ||
+      candidateStatus === 400 ||
+      errorCode.startsWith('FST_ERR_CTP_')
+    ) {
       return reply.status(400).send({
         success: false,
         error: { code: 'VALIDATION_ERROR', message: 'The request does not match the operation contract' },
+      });
+    }
+
+    // Preserve other framework-raised client errors (e.g. 413, 415) as themselves.
+    if (candidateStatus && candidateStatus >= 400 && candidateStatus < 500) {
+      return reply.status(candidateStatus).send({
+        success: false,
+        error: { code: 'REQUEST_REJECTED', message: 'The request could not be processed' },
       });
     }
 
@@ -71,6 +89,13 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
     return reply.status(500).send({
       success: false,
       error: { code: 'INTERNAL_ERROR', message: 'The request could not be completed' },
+    });
+  });
+
+  app.setNotFoundHandler((_request, reply) => {
+    return reply.status(404).send({
+      success: false,
+      error: { code: 'NOT_FOUND', message: 'The requested resource does not exist' },
     });
   });
 

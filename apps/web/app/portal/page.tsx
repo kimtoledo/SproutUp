@@ -261,7 +261,6 @@ export default function PortalPage() {
                       <p>{item.caseType === 'borrower' ? 'SME borrower' : 'Investor'} journey</p>
                       <span className={`case-status status-${item.status}`}>{statusLabels[item.status]}</span>
                     </div>
-                    <small>Version {item.version}</small>
                   </div>
                   <p className="case-meta">Updated {new Date(item.updatedAt).toLocaleString('en-PH')}</p>
                   <div className="case-actions">
@@ -295,6 +294,13 @@ export default function PortalPage() {
                       </button>
                     ) : null}
                   </div>
+                  {item.status === 'rejected' ? (
+                    <p className="case-note">
+                      This application was declined. Open the case history for the reviewer&rsquo;s
+                      reason. You can start a fresh application from the options above when you are
+                      ready.
+                    </p>
+                  ) : null}
                   {withdrawCaseId === item.id ? (
                     <form
                       className="withdraw-form"
@@ -375,12 +381,12 @@ export default function PortalPage() {
                 <div className="case-card-heading">
                   <div className="journey-icon" aria-hidden="true"><Monitor size={21} /></div>
                   <div>
-                    <p>{session.ipAddress ?? 'Unknown location'}</p>
+                    <p>{session.ipAddress || 'Unknown location'}</p>
                     <span className="case-status">{session.current ? 'This device' : 'Active'}</span>
                   </div>
                   <small>Expires {new Date(session.expiresAt).toLocaleDateString('en-PH')}</small>
                 </div>
-                <p className="case-meta">{session.userAgent ?? 'Unknown device'}</p>
+                <p className="case-meta">{session.userAgent || 'Unknown device'}</p>
                 <p className="case-meta">Signed in {new Date(session.createdAt).toLocaleString('en-PH')}</p>
                 <div className="case-actions">
                   {session.current ? (

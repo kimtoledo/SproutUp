@@ -6,6 +6,7 @@ export {
 } from './database.js';
 export {
   assertSafeAuditMetadata,
+  hashIpAddress,
   writeAudit,
   type AuditWriterDatabase,
   type WriteAuditInput,

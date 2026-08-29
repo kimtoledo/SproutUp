@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import { fileURLToPath } from 'node:url';
+import { config as loadEnv } from 'dotenv';
 import {
   initialRolePermissions,
   permissionDefinitions,
@@ -7,6 +8,8 @@ import {
 import { sql } from 'drizzle-orm';
 import { createDatabase, type Database } from './database.js';
 import { permissions, rolePermissions, roles } from './schema/rbac.js';
+
+loadEnv({ path: fileURLToPath(new URL('../../../.env', import.meta.url)) });
 
 export async function seedAuthorization(database: Database): Promise<void> {
   await database.transaction(async (transaction) => {

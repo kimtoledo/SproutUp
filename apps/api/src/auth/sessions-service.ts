@@ -17,13 +17,14 @@ export interface SessionService {
     roles: RoleKey[];
     sessionId: string;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<boolean>;
 }
 
 export function createSessionService(database: Database): SessionService {
   return {
     async listOwn(userId) {
-      return database
+      const rows = await database
         .select({
           id: schema.sessions.id,
           createdAt: schema.sessions.createdAt,
@@ -34,6 +35,13 @@ export function createSessionService(database: Database): SessionService {
         .from(schema.sessions)
         .where(eq(schema.sessions.userId, userId))
         .orderBy(desc(schema.sessions.createdAt));
+      // Better Auth stores an unresolved IP/UA as an empty string; normalise to
+      // null so clients get one "unknown" representation.
+      return rows.map((row) => ({
+        ...row,
+        ipAddress: row.ipAddress?.trim() ? row.ipAddress : null,
+        userAgent: row.userAgent?.trim() ? row.userAgent : null,
+      }));
     },
 
     async revokeOwn(input) {
@@ -61,6 +69,7 @@ export function createSessionService(database: Database): SessionService {
           resourceType: 'session',
           resourceId: revoked.id,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
         });
 
         return true;

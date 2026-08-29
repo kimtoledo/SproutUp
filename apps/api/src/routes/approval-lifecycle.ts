@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { hashIpAddress } from '@sproutup/db';
 import { hasPermission } from '@sproutup/shared';
 import type { ApprovalLifecycleService } from '../auth/approval-lifecycle-service.js';
 import { resolveAuthenticatedRequest } from '../auth/request.js';
@@ -78,6 +79,7 @@ export async function registerApprovalLifecycleRoutes(app: FastifyInstance, opti
       approvalId: parameters.data.approvalId,
       reason: body.data.reason,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
     if (!result.ok) return failure(reply, result.reason);
     return reply.status(204).send();
@@ -119,6 +121,7 @@ export async function registerApprovalLifecycleRoutes(app: FastifyInstance, opti
       approvalId: parameters.data.approvalId,
       reason: body.data.reason,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
     if (!result.ok) return failure(reply, result.reason);
     return reply.status(204).send();

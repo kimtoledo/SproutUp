@@ -12,6 +12,7 @@
     "migrate": "drizzle-kit migrate --config=drizzle.config.ts && npm run seed:authorization",
     "check": "tsx src/check-readiness.ts",
     "seed:authorization": "tsx src/seed-authorization.ts",
+    "bootstrap:super-admin": "tsx src/bootstrap-super-admin.ts",
     "studio": "drizzle-kit studio --config=drizzle.config.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

@@ -1,7 +1,19 @@
-import { and, asc, count, eq, type SQL } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, type SQL } from 'drizzle-orm';
 import { canTransitionOnboardingCase, type OnboardingCaseStatus, type OnboardingCaseType, type RoleKey } from '@sproutup/shared';
-import { schema, writeAudit, type Database } from '@sproutup/db';
+import { schema, writeAudit, type AuditWriterDatabase, type Database } from '@sproutup/db';
 import type { OnboardingCaseSummary } from './case-service.js';
+
+// A case only enters the compliance queue once the applicant submits it. Drafts
+// (never submitted) and withdrawn cases are hidden unless a reviewer asks for
+// that exact status.
+const queueVisibleStatuses: OnboardingCaseStatus[] = [
+  'submitted',
+  'in_review',
+  'needs_information',
+  'approved',
+  'rejected',
+  'expired',
+];
 
 type ReviewFailure =
   | 'not_found'
@@ -33,6 +45,7 @@ export interface OnboardingReviewService {
     caseId: string;
     expectedVersion: number;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<{ ok: true; case: OnboardingCaseSummary } | { ok: false; reason: ReviewFailure }>;
   requestInformation(input: {
     reviewerUserId: string;
@@ -41,6 +54,7 @@ export interface OnboardingReviewService {
     expectedVersion: number;
     reason: string;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<{ ok: true; case: OnboardingCaseSummary } | { ok: false; reason: ReviewFailure | 'not_assigned_reviewer' }>;
   reject(input: {
     reviewerUserId: string;
@@ -49,7 +63,43 @@ export interface OnboardingReviewService {
     expectedVersion: number;
     reason: string;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<{ ok: true; case: OnboardingCaseSummary } | { ok: false; reason: ReviewFailure | 'not_assigned_reviewer' }>;
+  approve(input: {
+    reviewerUserId: string;
+    reviewerRoles: RoleKey[];
+    caseId: string;
+    expectedVersion: number;
+    reason: string;
+    requestId: string;
+    ipAddressHash?: string;
+  }): Promise<{ ok: true; case: OnboardingCaseSummary } | { ok: false; reason: ReviewFailure | 'not_assigned_reviewer' }>;
+}
+
+/**
+ * Records a separation-of-duties denial (self-review, cross-reviewer takeover)
+ * as immutable evidence. Written inside the caller's transaction, which still
+ * commits because the caller returns rather than throws.
+ */
+async function recordReviewDenial(
+  transaction: AuditWriterDatabase,
+  input: { reviewerUserId: string; reviewerRoles: RoleKey[]; requestId: string; ipAddressHash?: string },
+  caseRow: { id: string; caseType: OnboardingCaseType; status: OnboardingCaseStatus },
+  reason: string,
+): Promise<void> {
+  await writeAudit(transaction, {
+    actorType: 'user',
+    actorUserId: input.reviewerUserId,
+    actorRoles: input.reviewerRoles,
+    action: 'onboarding_case.review_denied',
+    outcome: 'denied',
+    resourceType: 'onboarding_case',
+    resourceId: caseRow.id,
+    requestId: input.requestId,
+    ipAddressHash: input.ipAddressHash,
+    reason,
+    metadata: { caseType: caseRow.caseType, status: caseRow.status },
+  });
 }
 
 const summarySelection = {
@@ -72,7 +122,11 @@ export function createOnboardingReviewService(
     async list(input) {
       const filters: SQL[] = [];
       if (input.caseType) filters.push(eq(schema.onboardingCases.caseType, input.caseType));
-      if (input.status) filters.push(eq(schema.onboardingCases.status, input.status));
+      if (input.status) {
+        filters.push(eq(schema.onboardingCases.status, input.status));
+      } else {
+        filters.push(inArray(schema.onboardingCases.status, queueVisibleStatuses));
+      }
       if (input.reviewerUserId) {
         filters.push(eq(schema.onboardingCases.assignedReviewerUserId, input.reviewerUserId));
       }
@@ -137,12 +191,14 @@ export function createOnboardingReviewService(
           .for('update');
         if (!current) return { ok: false as const, reason: 'not_found' as const };
         if (current.applicantUserId === input.reviewerUserId) {
+          await recordReviewDenial(transaction, input, current, 'self_review_not_allowed');
           return { ok: false as const, reason: 'self_review_not_allowed' as const };
         }
         if (
           current.assignedReviewerUserId &&
           current.assignedReviewerUserId !== input.reviewerUserId
         ) {
+          await recordReviewDenial(transaction, input, current, 'assigned_to_other');
           return { ok: false as const, reason: 'assigned_to_other' as const };
         }
         if (current.version !== input.expectedVersion) {
@@ -187,6 +243,7 @@ export function createOnboardingReviewService(
           resourceType: 'onboarding_case',
           resourceId: current.id,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
           metadata: { caseType: current.caseType, fromVersion: current.version, toVersion: nextVersion },
         });
         return { ok: true as const, case: reviewing };
@@ -203,9 +260,11 @@ export function createOnboardingReviewService(
           .for('update');
         if (!current) return { ok: false as const, reason: 'not_found' as const };
         if (current.applicantUserId === input.reviewerUserId) {
+          await recordReviewDenial(transaction, input, current, 'self_review_not_allowed');
           return { ok: false as const, reason: 'self_review_not_allowed' as const };
         }
         if (current.assignedReviewerUserId !== input.reviewerUserId) {
+          await recordReviewDenial(transaction, input, current, 'not_assigned_reviewer');
           return { ok: false as const, reason: 'not_assigned_reviewer' as const };
         }
         if (current.version !== input.expectedVersion) {
@@ -248,6 +307,7 @@ export function createOnboardingReviewService(
           resourceType: 'onboarding_case',
           resourceId: current.id,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
           reason: input.reason,
           metadata: { caseType: current.caseType, fromVersion: current.version, toVersion: nextVersion },
         });
@@ -265,9 +325,11 @@ export function createOnboardingReviewService(
           .for('update');
         if (!current) return { ok: false as const, reason: 'not_found' as const };
         if (current.applicantUserId === input.reviewerUserId) {
+          await recordReviewDenial(transaction, input, current, 'self_review_not_allowed');
           return { ok: false as const, reason: 'self_review_not_allowed' as const };
         }
         if (current.assignedReviewerUserId !== input.reviewerUserId) {
+          await recordReviewDenial(transaction, input, current, 'not_assigned_reviewer');
           return { ok: false as const, reason: 'not_assigned_reviewer' as const };
         }
         if (current.version !== input.expectedVersion) {
@@ -312,6 +374,7 @@ export function createOnboardingReviewService(
           resourceType: 'onboarding_case',
           resourceId: current.id,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
           reason: input.reason,
           metadata: {
             caseType: current.caseType,
@@ -320,6 +383,77 @@ export function createOnboardingReviewService(
           },
         });
         return { ok: true as const, case: rejected };
+      });
+    },
+
+    async approve(input) {
+      return database.transaction(async (transaction) => {
+        const [current] = await transaction
+          .select()
+          .from(schema.onboardingCases)
+          .where(eq(schema.onboardingCases.id, input.caseId))
+          .limit(1)
+          .for('update');
+        if (!current) return { ok: false as const, reason: 'not_found' as const };
+        if (current.applicantUserId === input.reviewerUserId) {
+          await recordReviewDenial(transaction, input, current, 'self_review_not_allowed');
+          return { ok: false as const, reason: 'self_review_not_allowed' as const };
+        }
+        if (current.assignedReviewerUserId !== input.reviewerUserId) {
+          await recordReviewDenial(transaction, input, current, 'not_assigned_reviewer');
+          return { ok: false as const, reason: 'not_assigned_reviewer' as const };
+        }
+        if (current.version !== input.expectedVersion) {
+          return { ok: false as const, reason: 'stale_version' as const };
+        }
+        if (!canTransitionOnboardingCase(current.status, 'approved')) {
+          return { ok: false as const, reason: 'invalid_transition' as const };
+        }
+
+        const nextVersion = current.version + 1;
+        const decidedAt = clock();
+        const [approved] = await transaction
+          .update(schema.onboardingCases)
+          .set({ status: 'approved', version: nextVersion, decidedAt })
+          .where(
+            and(
+              eq(schema.onboardingCases.id, current.id),
+              eq(schema.onboardingCases.version, input.expectedVersion),
+              eq(schema.onboardingCases.assignedReviewerUserId, input.reviewerUserId),
+            ),
+          )
+          .returning(summarySelection);
+        if (!approved) return { ok: false as const, reason: 'stale_version' as const };
+
+        await transaction.insert(schema.onboardingCaseEvents).values({
+          caseId: current.id,
+          eventType: 'approved',
+          fromStatus: current.status,
+          toStatus: 'approved',
+          caseVersion: nextVersion,
+          actorType: 'user',
+          actorUserId: input.reviewerUserId,
+          reason: input.reason,
+          occurredAt: decidedAt,
+        });
+        await writeAudit(transaction, {
+          actorType: 'user',
+          actorUserId: input.reviewerUserId,
+          actorRoles: input.reviewerRoles,
+          action: 'onboarding_case.approved',
+          outcome: 'succeeded',
+          resourceType: 'onboarding_case',
+          resourceId: current.id,
+          requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
+          reason: input.reason,
+          metadata: {
+            caseType: current.caseType,
+            fromVersion: current.version,
+            toVersion: nextVersion,
+          },
+        });
+        return { ok: true as const, case: approved };
       });
     },
   };

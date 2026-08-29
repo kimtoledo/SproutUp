@@ -29,6 +29,7 @@ function reviewService(overrides: Partial<OnboardingReviewService> = {}): Onboar
     startReview: async () => ({ ok: false, reason: 'not_found' }),
     requestInformation: async () => ({ ok: false, reason: 'not_found' }),
     reject: async () => ({ ok: false, reason: 'not_found' }),
+    approve: async () => ({ ok: false, reason: 'not_found' }),
     ...overrides,
   };
 }

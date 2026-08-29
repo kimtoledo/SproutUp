@@ -14,7 +14,9 @@ The framework-owned Better Auth wildcard is a rate-limited byte-preserving adapt
 
 API compatibility does not preserve known-unsafe behavior. A security-corrective change may narrow `v1` behavior only with a documented risk decision, stable non-disclosing error behavior, release notes, and controlled-pilot client notification. Routine breaking changes require a parallel major version and the deprecation/sunset process in `API_COMPATIBILITY.md`.
 
-Onboarding path, query, body, success, and structured error schemas are now enforced by Fastify and published in OpenAPI. Schema failures return a generic stable validation message rather than echoing submitted values or internal validator details; deeper state/ownership checks still execute in the domain services.
+Onboarding path, query, body, success, and structured error schemas are now enforced by Fastify and published in OpenAPI. Schema failures return a generic stable validation message rather than echoing submitted values or internal validator details; deeper state/ownership checks still execute in the domain services. Malformed request bodies and other framework 4xx conditions are mapped to the same stable envelope (`400 VALIDATION_ERROR`) rather than surfacing as `500`, and unmatched routes return a `404 NOT_FOUND` envelope.
+
+The web application origin sets baseline response security headers on every route: a `Content-Security-Policy` (`default-src 'self'`, `frame-ancestors 'none'`, an API-origin `connect-src`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, a restrictive `Permissions-Policy`, and `Strict-Transport-Security`. The `X-Powered-By` header is disabled.
 
 Own-session responses are schema-allowlisted to opaque session identity and display metadata and cannot serialize session tokens. Role and user catalogue responses likewise enforce the documented access-management projection, excluding credentials, provider accounts, sessions, and tokens. Session IDs and user-catalogue filters are bounded at the transport boundary before ownership or permission checks continue.
 
@@ -24,7 +26,9 @@ Own-session responses are schema-allowlisted to opaque session identity and disp
 - Sessions expire after seven days and refresh at most once per day.
 - Verification identifiers are stored hashed.
 - Authentication rate limits are database-backed so they apply across API replicas. Email sign-in is limited to five attempts per minute and password-reset requests to three per five minutes.
+- Authentication rate limits are keyed per client: the Fastify boundary resolves the client IP (subject to `API_TRUST_PROXY`, see below) and forwards it as `x-sproutup-client-ip`, and Better Auth is configured with `advanced.ipAddress.ipAddressHeaders` to bucket on that value instead of a single shared global bucket.
 - API-level rate limiting is also enabled as defense in depth.
+- `API_TRUST_PROXY` controls how much of `X-Forwarded-For` the API trusts when deriving `request.ip` (used for both rate-limit bucketing and audit evidence). It defaults to `false` (trust none — correct when the API is reached directly) and accepts `true`, a hop count, or a comma-separated proxy IP/CIDR allowlist. It must be set to the real proxy's address range in any deployment that terminates client connections at a proxy, and must never be left at `true` for a directly reachable API.
 - Suspended or disabled users cannot resolve an authorization context even if an old session cookie still exists.
 - Authenticated users can list and revoke only their own sessions through opaque session IDs. Session tokens are never returned by the session-management API.
 - Session revocation and its immutable audit event commit in one database transaction. A mismatched owner/session pair is treated as not found.
@@ -57,7 +61,11 @@ The initial role catalogue is:
 - SME Borrower
 - Investor
 
-Email signup requires a validated `registrationIntent` of `borrower` or `investor`. In the same PostgreSQL user-insert transaction, a database trigger grants exactly `sme_borrower` or `investor` and appends `account.registered` audit evidence. The enum cannot express staff or `super_admin`, and the API accepts no general role field at signup. This narrow customer bootstrap is the only exception to dual-controlled role administration; later or additional role changes use the approval workflow.
+Email signup requires a validated `registrationIntent` of `borrower` or `investor`. The auth boundary rejects any other value with the stable `400 VALIDATION_ERROR` envelope before the request reaches Better Auth. In the same PostgreSQL user-insert transaction, a database trigger grants exactly `sme_borrower` or `investor` and appends `account.registered` audit evidence. The enum cannot express staff or `super_admin`, and the API accepts no general role field at signup. This narrow customer bootstrap is the only exception to dual-controlled role administration; later or additional role changes use the approval workflow.
+
+### Break-glass administrator bootstrap
+
+A fresh environment has no staff accounts, and the dual-controlled role workflow needs at least two independent `roles.assign` holders before it can execute anything. `npm run db:bootstrap-super-admin -- <email>` promotes one existing, active account to `super_admin` so the maker/checker workflow has its first actors. It is idempotent, refuses unknown or non-active accounts, and records an immutable `account.super_admin_bootstrapped` audit event. It intentionally bypasses maker/checker and is a controlled operational action for initial setup only; it must not be wired into any runtime request path.
 
 Authorization is capability-based and deny-by-default. The initial permissions cover only users, roles, sessions, and audit access. Each later domain task must add explicit capability keys and reviewed grants; no role receives a domain permission merely because it is a staff role.
 
@@ -85,7 +93,11 @@ Staff case detail requires the queue-read capability and returns only the curren
 
 Only the assigned reviewer can request information from an in-review case. A reason and exact version are required, and state/event/audit writes commit atomically. Applicant resubmission uses the owner-bound submission query and version token, retaining the reviewer and complete correction trail.
 
-Only the assigned reviewer can reject an in-review case. Rejection requires an exact version and bounded reason, stamps the decision time, and atomically preserves state/event/audit evidence. Approval remains unavailable so an empty or policy-incomplete case cannot be marked eligible through this foundation.
+Only the assigned reviewer can reject or approve an in-review case. Both decisions require an exact version and bounded reason, stamp the decision time, and atomically preserve state/event/audit evidence (`onboarding_case.rejected` / `onboarding_case.approved`). Approval is a bare gated `in_review → approved` transition to unblock end-to-end pilot exercise; it does **not** yet implement regulated-profile/evidence completeness, screening, escalation, decision authority, or downstream eligibility effects, which remain open decisions under tasks 03–05. Approved onboarding does not yet block a fresh onboarding case for the same applicant/journey.
+
+Separation-of-duties denials in the review workflow — an applicant attempting to review their own case, or a reviewer attempting to act on another reviewer's assigned case — are recorded as immutable `onboarding_case.review_denied` audit events with `outcome: denied` and the resolved client-IP hash, not silently rejected.
+
+Privileged, compliance, onboarding, session-revocation, and role-approval audit writes now carry a one-way SHA-256 of the resolved client IP (`ip_address_hash`); the raw address is never stored. The trigger-written `account.registered` event does not yet carry this hash.
 
 Audit metadata is rejected before persistence when a key indicates a password, token, secret, authorization header, cookie, API key, or credential. Audit events preserve actor and role snapshots without a foreign key that could erase attribution when a user record changes.
 

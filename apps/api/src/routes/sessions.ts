@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { hashIpAddress } from '@sproutup/db';
 import { hasPermission } from '@sproutup/shared';
 import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
@@ -108,6 +109,7 @@ export async function registerSessionRoutes(
       roles: identity.authorization.roles,
       sessionId: parsed.data.sessionId,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
 
     if (!revoked) {

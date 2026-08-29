@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { hashIpAddress } from '@sproutup/db';
 import { hasPermission, roleKeySchema } from '@sproutup/shared';
 import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { RoleAssignmentService } from '../auth/role-assignments-service.js';
@@ -165,6 +166,7 @@ export async function registerRoleAssignmentRoutes(
       makerRoles: identity.authorization.roles,
       ...parsed.data,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
     if (!result.ok) return failure(reply, result.reason);
 
@@ -212,6 +214,7 @@ export async function registerRoleAssignmentRoutes(
       approvalId: parameters.data.approvalId,
       reason: body.data.reason,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
     if (!result.ok) return failure(reply, result.reason);
 

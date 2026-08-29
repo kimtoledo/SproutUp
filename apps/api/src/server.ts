@@ -12,6 +12,9 @@ import { createOnboardingCaseService } from './onboarding/case-service.js';
 import { createOnboardingReviewService } from './onboarding/review-service.js';
 
 const config = loadConfig();
+// Keep third-party libraries (Better Auth's dev/test detection, etc.) aligned
+// with the resolved environment when the process was started without NODE_ENV.
+process.env.NODE_ENV ??= config.environment;
 const database = createDatabase(config.databaseUrl);
 await database.check();
 const auth = createAuthServices(config, database.db);

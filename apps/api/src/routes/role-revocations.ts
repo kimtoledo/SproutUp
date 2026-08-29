@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { hashIpAddress } from '@sproutup/db';
 import { hasPermission, roleKeySchema } from '@sproutup/shared';
 import { resolveAuthenticatedRequest } from '../auth/request.js';
 import type { RoleRevocationService } from '../auth/role-revocations-service.js';
@@ -113,6 +114,7 @@ export async function registerRoleRevocationRoutes(app: FastifyInstance, options
       makerRoles: identity.authorization.roles,
       ...parsed.data,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
     if (!result.ok) return failure(reply, result.reason);
     return reply.status(201).send({ success: true, data: result.request });
@@ -154,6 +156,7 @@ export async function registerRoleRevocationRoutes(app: FastifyInstance, options
       approvalId: parameters.data.approvalId,
       reason: body.data.reason,
       requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
     });
     if (!result.ok) return failure(reply, result.reason);
     return reply.status(204).send();

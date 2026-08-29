@@ -40,6 +40,29 @@ export async function registerAuthRoutes(
       rateLimit: { max: 30, timeWindow: '1 minute' },
     },
     handler: async (request, reply) => {
+      // Fail bad registration intents on the stable validation envelope before
+      // they reach Better Auth, which would otherwise surface an opaque
+      // "Failed to create user" for an invalid enum value.
+      if (
+        request.method.toUpperCase() === 'POST'
+        && (request.raw.url ?? request.url).split('?', 1)[0]?.endsWith('/sign-up/email')
+      ) {
+        const body = request.body;
+        const intent =
+          body && typeof body === 'object' && 'registrationIntent' in body
+            ? (body as Record<string, unknown>).registrationIntent
+            : undefined;
+        if (intent !== undefined && intent !== 'borrower' && intent !== 'investor') {
+          return reply.status(400).send({
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'registrationIntent must be "borrower" or "investor"',
+            },
+          });
+        }
+      }
+
       const response = await options.auth.handler(toWebRequest(request, options.authBaseUrl));
       const headers = response.headers as Headers & { getSetCookie?: () => string[] };
 

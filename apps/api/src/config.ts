@@ -8,7 +8,27 @@ const environmentSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   DATABASE_URL: z.url(),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  // How much of `X-Forwarded-For` to trust when deriving the client IP used for
+  // rate-limit bucketing and audit evidence. `false` (default) trusts none —
+  // safe when the API is reached directly. Set to `true` only when a trusted
+  // proxy always terminates client connections; prefer a hop count (`1`) or a
+  // comma-separated proxy IP/CIDR allowlist.
+  API_TRUST_PROXY: z.string().min(1).optional(),
 });
+
+export type TrustProxyConfig = boolean | number | string[];
+
+function parseTrustProxy(value: string | undefined): TrustProxyConfig {
+  if (value === undefined) return false;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true') return true;
+  if (normalized === 'false' || normalized === '') return false;
+  if (/^\d+$/.test(normalized)) return Number(normalized);
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
 
 export interface ApiConfig {
   host: string;
@@ -18,6 +38,7 @@ export interface ApiConfig {
   authSecret: string;
   databaseUrl: string;
   environment: 'development' | 'test' | 'production';
+  trustProxy: TrustProxyConfig;
 }
 
 export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiConfig {
@@ -31,5 +52,6 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiCon
     authSecret: parsed.BETTER_AUTH_SECRET,
     databaseUrl: parsed.DATABASE_URL,
     environment: parsed.NODE_ENV,
+    trustProxy: parseTrustProxy(parsed.API_TRUST_PROXY),
   };
 }

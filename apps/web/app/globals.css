@@ -365,10 +365,27 @@ button:focus-visible {
   text-align: left;
 }
 
-.intent-option[aria-pressed="true"] {
+.intent-option.is-selected {
   border-color: #287a4b;
   background: #e9f4ec;
   box-shadow: inset 0 0 0 1px #287a4b;
+}
+
+.intent-option:focus-within {
+  outline: 3px solid rgba(233, 185, 73, 0.72);
+  outline-offset: 3px;
+}
+
+.intent-option input[type="radio"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .intent-option span {
@@ -630,6 +647,17 @@ button:focus-visible {
 .case-meta {
   margin: 14px 0;
   font-size: 0.82rem;
+}
+
+.case-note {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-left: 4px solid #765812;
+  border-radius: 6px;
+  color: #5b4a1f;
+  background: #fff7e0;
+  font-size: 0.9rem;
+  line-height: 1.55;
 }
 
 .case-actions {

@@ -34,6 +34,44 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-29 — QA findings remediation (auth hardening, audit IP, onboarding approve, admin bootstrap)
+
+**Status:** Done
+
+### Updated
+
+- **Response contract fidelity (`qa` F-01/F-20):** `apps/api/src/openapi/role-approval-schemas.ts` gave the role-approval history `payload` (and action `metadata`) a real shape; the list/detail endpoints and `openapi.json` were shipping `payload: {}`, which also crashed the `/admin/role-approvals` history panel (`shortId(undefined)`). Added a serialization round-trip test and hardened `roleLabel`/`shortId` in the page.
+- **Per-client auth rate limiting (F-02):** `apps/api/src/auth/service.ts` now sets `advanced.ipAddress.ipAddressHeaders: ['x-sproutup-client-ip']` (the Fastify proxy already forwards that header) so sign-in/sign-up limits bucket per client instead of one global `no-trusted-ip` bucket. `apps/api/src/server.ts` backfills `NODE_ENV` for Better Auth's env detection.
+- **Proxy trust (F-03):** added `API_TRUST_PROXY` (`apps/api/src/config.ts`); `buildApp` uses it for Fastify `trustProxy` instead of the unconditional `true` that let `X-Forwarded-For` spoofing defeat both rate limiters. Default `false`.
+- **Error envelope (F-06):** `apps/api/src/app.ts` maps schema/body-parse/4xx framework errors to the stable `400 VALIDATION_ERROR` (was `500` for malformed JSON) and adds a `404 NOT_FOUND` envelope via `setNotFoundHandler`.
+- **Audit client IP (F-08) + denial audit (F-09):** added `hashIpAddress` to `packages/db`; threaded a hashed client IP through every route → service → `writeAudit` call (onboarding, review, sessions, role assign/revoke, approval lifecycle). Review separation-of-duties denials (self-review, cross-reviewer) now emit `onboarding_case.review_denied` with `outcome: denied`. Trigger-written `account.registered` still has no IP hash (follow-up).
+- **Env loading / ports (F-10, F-13):** `apps/api` dev/start scripts use `--env-file-if-exists=../../.env`; `packages/db` scripts load the root `.env` by explicit path; `apps/web/next.config.mjs` (renamed from `.js`) loads root `.env` for `NEXT_PUBLIC_*`. A plain `cp .env.example .env` now works for the documented commands without exporting anything.
+- **Web security headers (F-07):** `next.config.mjs` adds CSP, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS on all routes, and `agentRules: false` so Next stops writing a competing `apps/web/AGENTS.md`/`CLAUDE.md` (also `.gitignore`d — F-14).
+- **Compliance queue scope (F-11):** `apps/api/src/onboarding/review-service.ts` hides `draft`/`withdrawn` from the default queue; an explicit `status` filter still returns them.
+- **Onboarding approval (F-04):** added `POST /v1/admin/onboarding/cases/:caseId/approve` (`approveOnboardingCase`) — a gated `in_review → approved` transition mirroring reject (assigned reviewer, exact version, 10–1000 char reason, `decidedAt`, immutable `approved` event, `onboarding_case.approved` audit), wired into `/admin/onboarding`. This is a bare transition to unblock end-to-end pilot exercise; the deferred KYC/screening/escalation/eligibility policy is unchanged.
+- **First-admin bootstrap (F-05):** added `packages/db/src/bootstrap-super-admin.ts` and `npm run db:bootstrap-super-admin -- <email>` — idempotent break-glass promotion of an existing active account to `super_admin`, audited, refusing unknown/inactive accounts. Two runs against two accounts make the maker/checker role workflow operable.
+- **Minor UI (F-15/F-16/F-18/F-19):** session location/device falls back with `||` (not `??`) and the API normalises `""` → `null`; a rejected onboarding case shows a "declined — start a fresh application" note; the registration intent picker is now real radio inputs (`name="registrationIntent"`) with a `<noscript>` notice; the internal "Version N" line was removed from portal case cards.
+- **`registrationIntent` validation (F-23):** the auth proxy rejects any non-`borrower`/`investor` value with `400 VALIDATION_ERROR` before Better Auth's opaque "Failed to create user".
+- Docs: `docs/DEVELOPER.md`, `docs/SECURITY.md`, `.env.example`, and `qa/` (findings marked resolved/deferred). `npm run check` is green (lint, typecheck, 173 tests, 4 builds).
+
+### Decisions
+
+- `approve` was added despite the prior "approval intentionally absent" note because QA finding F-04 identified "no successful terminal state exists" as release-blocking and the finding's own remedy is "at least a gated approve transition". It deliberately implements **only** the state transition; completeness/screening/escalation/decision-authority/eligibility remain open under tasks 03–05, and re-onboarding after approval is not yet blocked.
+- The bootstrap script bypasses maker/checker by design (operator with DB/env access is already inside the trust boundary). It is a setup-time CLI, never a route.
+- Denial auditing was scoped to the onboarding review workflow's separation-of-duties checks. Role-approval lifecycle denials and route-level 403s are not yet audited (follow-up).
+
+### Open items
+
+- `account.registered` (DB trigger) does not carry the client-IP hash; role-approval lifecycle denials and `/admin/*` 403s are not audited yet.
+- Reviewer unassign/transfer/escalation and queue SLA/aging policy still unbuilt (F-22, task 20).
+- "Needs information" is still a no-op for applicants until KYC profile/evidence fields exist (F-17, tasks 03–05).
+- Tailwind is still wired but unused (F-21) — deferred to avoid an unverifiable reset-replacement regression.
+- Approved onboarding does not block a new onboarding case for the same applicant/journey.
+
+### Next
+
+- Confirm the onboarding approval policy (or gate `approve` behind completeness/screening) and the re-onboarding rule with product/compliance; then extend denial auditing to the role-approval lifecycle and route-level authorization failures.
+
 ## 2026-08-20 — Active-sessions device UI
 
 **Status:** Done

@@ -50,6 +50,7 @@ export interface RoleRevocationService {
     roleKey: RoleKey;
     reason: string;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<{ ok: true; request: PendingRoleRevocation } | { ok: false; reason: ProposalFailure }>;
   approve(input: {
     checkerUserId: string;
@@ -57,6 +58,7 @@ export interface RoleRevocationService {
     approvalId: string;
     reason?: string;
     requestId: string;
+    ipAddressHash?: string;
   }): Promise<{ ok: true } | { ok: false; reason: ApprovalFailure }>;
 }
 
@@ -176,6 +178,7 @@ export function createRoleRevocationService(
           resourceType: 'approval_request',
           resourceId: request.id,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
           reason: input.reason,
           metadata: payload,
         });
@@ -245,6 +248,7 @@ export function createRoleRevocationService(
             resourceType: 'approval_request',
             resourceId: request.id,
             requestId: input.requestId,
+            ipAddressHash: input.ipAddressHash,
             reason: 'Approval request expired before execution',
             metadata: { approvalRequestId: request.id, payloadHash: request.payloadHash },
           });
@@ -315,6 +319,7 @@ export function createRoleRevocationService(
           resourceType: 'user_role',
           resourceId: `${payload.targetUserId}:${payload.roleKey}`,
           requestId: input.requestId,
+          ipAddressHash: input.ipAddressHash,
           reason: input.reason,
           metadata: { ...payload, approvalRequestId: request.id, payloadHash: request.payloadHash },
         });

@@ -60,6 +60,25 @@ describe.sequential('onboarding review service', () => {
     ]);
   });
 
+  it('hides never-submitted draft cases from the default queue', async () => {
+    const cases = createOnboardingCaseService(orm);
+    const draft = await cases.create({
+      applicantUserId: otherReviewerId,
+      actorRoles: ['sme_borrower'],
+      caseType: 'borrower',
+      requestId: '00000000-0000-4000-8000-000000000806',
+    });
+    if (!draft.ok) throw new Error('Expected draft creation');
+
+    const review = createOnboardingReviewService(orm);
+    const defaultQueue = await review.list({ page: 1, pageSize: 25 });
+    expect(defaultQueue.cases.some((item) => item.id === draft.case.id)).toBe(false);
+    expect(defaultQueue.cases.every((item) => item.status !== 'draft')).toBe(true);
+
+    const explicitDraftQueue = await review.list({ page: 1, pageSize: 25, status: 'draft' });
+    expect(explicitDraftQueue.cases.some((item) => item.id === draft.case.id)).toBe(true);
+  });
+
   it('prevents self-review and reviewer takeover while recording review start atomically', async () => {
     const service = createOnboardingReviewService(orm);
     await expect(
@@ -224,5 +243,78 @@ describe.sequential('onboarding review service', () => {
       action: 'onboarding_case.rejected',
       reason: 'The case does not meet the documented pilot requirements',
     });
+  });
+
+  it('lets only the assigned reviewer approve an in-review case from its exact version', async () => {
+    const approveApplicant = '00000000-0000-4000-8000-000000000821';
+    await orm.insert(schema.users).values({
+      id: approveApplicant,
+      name: 'Approve Applicant',
+      email: 'approve-applicant@sproutup.ph',
+    });
+    const cases = createOnboardingCaseService(orm);
+    const created = await cases.create({
+      applicantUserId: approveApplicant,
+      actorRoles: ['sme_borrower'],
+      caseType: 'borrower',
+      requestId: '00000000-0000-4000-8000-000000000822',
+    });
+    if (!created.ok) throw new Error('Expected case creation');
+    const approveCaseId = created.case.id;
+    await cases.submit({
+      applicantUserId: approveApplicant,
+      actorRoles: ['sme_borrower'],
+      allowedCaseTypes: ['borrower'],
+      caseId: approveCaseId,
+      expectedVersion: 1,
+      requestId: '00000000-0000-4000-8000-000000000823',
+    });
+
+    const service = createOnboardingReviewService(orm);
+    const started = await service.startReview({
+      reviewerUserId: reviewerId,
+      reviewerRoles: ['compliance_officer'],
+      caseId: approveCaseId,
+      expectedVersion: 2,
+      requestId: '00000000-0000-4000-8000-000000000824',
+    });
+    expect(started).toMatchObject({ ok: true, case: { status: 'in_review', version: 3 } });
+
+    await expect(service.approve({
+      reviewerUserId: otherReviewerId,
+      reviewerRoles: ['compliance_officer'],
+      caseId: approveCaseId,
+      expectedVersion: 3,
+      reason: 'Another reviewer cannot make this positive decision',
+      requestId: '00000000-0000-4000-8000-000000000825',
+    })).resolves.toEqual({ ok: false, reason: 'not_assigned_reviewer' });
+
+    const result = await service.approve({
+      reviewerUserId: reviewerId,
+      reviewerRoles: ['compliance_officer'],
+      caseId: approveCaseId,
+      expectedVersion: 3,
+      reason: 'The applicant meets the documented pilot onboarding requirements',
+      requestId: '00000000-0000-4000-8000-000000000826',
+    });
+    expect(result).toMatchObject({ ok: true, case: { status: 'approved', version: 4 } });
+    expect((result as { ok: true; case: { decidedAt: Date | null } }).case.decidedAt).toBeInstanceOf(Date);
+
+    const detail = await service.detail(approveCaseId);
+    expect(detail).toMatchObject({ status: 'approved', version: 4 });
+    expect(detail?.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        eventType: 'approved',
+        fromStatus: 'in_review',
+        toStatus: 'approved',
+        caseVersion: 4,
+        reason: 'The applicant meets the documented pilot onboarding requirements',
+      }),
+    ]));
+    const audits = await orm
+      .select({ action: schema.auditEvents.action })
+      .from(schema.auditEvents)
+      .where(eq(schema.auditEvents.resourceId, approveCaseId));
+    expect(audits).toContainEqual({ action: 'onboarding_case.approved' });
   });
 });
