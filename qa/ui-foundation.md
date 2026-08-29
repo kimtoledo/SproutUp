@@ -17,8 +17,12 @@ admin surfaces are unchanged in this slice (they migrate with their Phase 1 feat
 | Stepper model | `components/ui/stepper-model.test.ts` | done/current/upcoming split, 1-based numbering, index clamped both ends, progress fraction |
 | PWA rules | `lib/pwa.test.ts` | precache set, cross-origin → passthrough, non-GET → passthrough, HTML → network-first, build asset → cache-first, unknown → passthrough |
 
-Web suite: 12 files / 60 tests (was 6 / 29). Full `npm run check`: lint + typecheck + 204 tests +
-4 builds green; `npm audit --omit=dev --audit-level=high` → 0 vulnerabilities. No new dependencies.
+Web suite after S0.1: 12 files / 60 tests (was 6 / 29). After S0.1b (render tests): 18 files /
+83 tests. Full `npm run check`: lint + typecheck + 227 tests + 4 builds green;
+`npm audit --omit=dev --audit-level=high` → 0 vulnerabilities. S0.1b adds `jsdom@26.1.0`,
+`@testing-library/react@16.3.3`, `@testing-library/dom@10.4.1`, `@testing-library/jest-dom@7.0.1`
+as **web dev dependencies** (jsdom pinned to 26.x for Node 20 support; the 4 moderate esbuild
+dev-server advisories are dev-only and below the `--audit-level=high` CI gate).
 
 ## Manual / heuristic scenarios
 
@@ -58,8 +62,13 @@ Web suite: 12 files / 60 tests (was 6 / 29). Full `npm run check`: lint + typech
 2. **Real browser + device pass.** No browser automation in this environment. Responsive behaviour,
    the install flow, and offline navigation are verified by construction + build, not by a device.
    Run a Lighthouse PWA audit and a manual iOS/Android install once a preview deploy exists.
-3. **Render/a11y tests.** Component logic is unit-tested; DOM render + a11y assertions need
-   `jsdom` + `@testing-library/react`. Planned as the next slice (S0.1b) before the config primitive.
+3. **Render/a11y tests.** ✅ Done in slice S0.1b — added `jsdom` + `@testing-library/react` +
+   `@testing-library/jest-dom` as web dev dependencies and DOM render tests for `Button`,
+   `Field` (label association, `aria-describedby`, `toBeInvalid`), `RadioCards` (real radio group,
+   selection move), `Alert` (`alert` vs `status` role), and `Stepper` (`aria-current`,
+   accessible name). Render tests opt into jsdom with a `// @vitest-environment jsdom` docblock;
+   logic tests stay in the node env. `routeForSession` (`lib/auth-routing.ts`) now has a test too.
+   Web suite: 18 files / 83 tests.
 4. **Portal & admin migration.** `/portal`, `/admin/onboarding`, `/admin/role-approvals` still use
    `app/globals.css` legacy classes. They move onto the kit within their Phase 1 slices; dead CSS is
    removed as each route migrates. F-21 ("Tailwind unused / build warning") is resolved now — the

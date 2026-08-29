@@ -34,6 +34,52 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Component render/a11y test infrastructure (slice S0.1b)
+
+**Status:** Done
+
+### Updated
+
+- Added `jsdom@26.1.0`, `@testing-library/react@16.3.3`, `@testing-library/dom@10.4.1`, and
+  `@testing-library/jest-dom@7.0.1` as `apps/web` dev dependencies. `jsdom` is pinned to the 26.x
+  line because 27+ requires Node 20+ and 30 requires Node 22+/24.15+, while `.nvmrc` pins 20.19.4.
+- `apps/web/vitest.config.mts`: `globals: true`, `setupFiles: ['./vitest.setup.ts']`, and the
+  include glob now also matches `*.test.tsx`. `vitest.setup.ts` registers the jest-dom matchers.
+  Default environment stays `node`; render test files opt into jsdom with a
+  `// @vitest-environment jsdom` docblock, so the fast logic/client-lib tests keep running in node.
+- Added DOM render + a11y tests: `Button` (default `type="button"`, disabled suppresses onClick,
+  internal vs external link), `Field` (label↔control association, `aria-describedby` for
+  description and error, `toBeInvalid`, id-prefix collision safety), `RadioCards` (real
+  `role="group"` + `role="radio"`, checked state, selection moves on click), `Alert`
+  (`role="alert"` for danger/warning, `role="status"` for info/success), `Stepper`
+  (`aria-current="step"`, accessible list name "Step N of M: …").
+- Added `apps/web/lib/auth-routing.test.ts` for `routeForSession` — the previously untested
+  post-login redirect helper inherited in S0.1 (admin queue vs approvals routing, surface/role
+  mismatch fallback, dual staff+customer preference).
+- `npm run check` green: lint + typecheck (4 workspaces) + **227 tests** (api 98, web 83, db 18,
+  shared 28) + 4 builds. `npm audit --omit=dev --audit-level=high` → 0 vulnerabilities. The 4
+  moderate `esbuild` dev-server advisories pulled in transitively are dev-only and below the CI
+  `high` gate.
+- Docs: `qa/ui-foundation.md` (gap 3 closed; dependency + suite-count notes).
+
+### Decisions
+
+- Per-file `// @vitest-environment jsdom` rather than a second Vitest project — minimal config, and
+  it keeps the node-env logic suite (the majority) fast.
+- `jsdom` held at 26.x to respect the repo's Node 20 pin even though the sandbox runs Node 24.
+
+### Open items
+
+- Unchanged from the S0.1 entry below: raster PWA icons; real browser/device + Lighthouse pass;
+  `/portal` + `/admin/*` still on legacy `globals.css`.
+
+### Next
+
+- Slice **S0.2**: the effective-dated `rule_sets` / `rule_versions` configuration primitive in
+  `packages/db` + a `resolveRule(key, at)` service in `apps/api`, with migration/immutability
+  triggers and tests. It is the dependency for the KYC required-field/document matrices, tax
+  rates, investment limits, SLA thresholds, and scorecard weights in Phases 1–3.
+
 ## 2026-08-30 — UI/UX foundation, component kit, and installable PWA (slice S0.1)
 
 **Status:** Done
