@@ -34,6 +34,92 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — UI/UX foundation, component kit, and installable PWA (slice S0.1)
+
+**Status:** Done
+
+### Updated
+
+- **Program plan.** The user authorised a full MVP build and confirmed four decisions: open
+  business/compliance items proceed on documented, configurable, versioned `ASSUMED FOR PILOT`
+  defaults (stop only for irreversible items); pilot scope is broad (multiple borrower entity
+  types; individual + institutional investors; all external vendors stubbed behind adapters);
+  UI on Tailwind + a SproutUp component kit; commits go straight to `main`, one pushed commit per
+  slice. Per-slice protocol: implement across shared → db → api → web, add tests (success / denial
+  / validation / idempotency / concurrency / rollback), add a `qa/` scenario file, update the task
+  + MVP README + docs + this log, run `npm run check` + `npm audit`, commit + push.
+- **Design tokens.** `apps/web/tailwind.config.ts` now defines SproutUp semantic colour keys
+  (`primary`, `surface`, `border`, `danger`, `warning`, `success`, `ring`, …), `borderRadius`,
+  `boxShadow`, Inter `font-family`, and `max-w-content`. Values match the previous hand-rolled CSS
+  palette, so unmigrated screens are visually unchanged. Tailwind is now actually used — the
+  `next dev` "No utility classes were detected" warning is gone (**F-21 resolved**).
+- **Component kit** in `apps/web/components/ui/`: `Button`/`ButtonLink`, `Field` + `Input` /
+  `Textarea` / `Select`, `RadioCards` (real radio group), `Badge` / `StatusBadge` (status→tone
+  map), `Alert`, `Card` / `Panel`, `Spinner`, `Stepper`, `PageHeading`, `SiteHeader`, plus a `cn`
+  joiner and an `index.ts` barrel. Every class/variant recipe is a pure sibling `.ts` module
+  (`button-classes.ts`, `field-wiring.ts`, `badge-tone.ts`, `stepper-model.ts`) so it is unit-
+  tested in the `node` Vitest env without a DOM.
+- **Migrated surfaces.** The landing page (`components/surface-home.tsx`), the auth card
+  (`components/auth-card.tsx`), and the auth layout now use the kit — mobile-first, visible amber
+  focus ring, `<noscript>` notice via `Alert`. The landing page previously referenced `.surface-*`
+  CSS classes that existed in no stylesheet, so it was substantially unstyled before this change.
+  `/portal` and `/admin/*` still use `app/globals.css` and migrate with their Phase 1 feature work;
+  legacy CSS is trimmed as each route moves.
+- **Inherited uncommitted work also landed in this commit.** The working tree already contained an
+  uncommitted "multi-surface" landing refactor: `apps/web/app/page.tsx` (modified to resolve a
+  surface from the request host), plus new untracked `apps/web/components/surface-home.tsx`,
+  `apps/web/lib/portal-surface.ts` (surface content + `surfaceFromHost`/`portalUrl` for
+  `admin.`/`borrower.`/`investor.` subdomains), and `apps/web/lib/auth-routing.ts`
+  (`routeForSession` post-login redirect helper — **currently unused, untested scaffolding**).
+  `page.tsx` already depended on these, so the repo did not build in isolation without them; they
+  are committed here rather than stranded. `surface-home.tsx` was rewritten onto the kit as part of
+  this slice. A test for `routeForSession` is deferred to S0.1b.
+- **PWA.** `app/manifest.ts` → `/manifest.webmanifest` (`display: standalone`, theme `#287a4b`,
+  SVG icons). `public/sw.js` is a small hand-written service worker: HTML navigations network-first
+  (cached shell / `/offline` when offline), immutable build assets cache-first, everything else
+  passthrough — and it only ever touches **same-origin GET**, so the cross-origin API is never
+  cached. Its rules are specced + unit-tested in `apps/web/lib/pwa.ts`. `components/pwa-register.tsx`
+  registers the worker in production builds only. New routes: `/offline`. `app/layout.tsx` gained
+  `viewport` (theme colour, `viewport-fit: cover`), manifest + `appleWebApp` metadata, and a
+  `metadataBase`. `next.config.mjs` adds `worker-src`/`manifest-src` to the CSP and a `no-cache`
+  header for `/sw.js`. `app/icon.svg` + `app/apple-icon.svg` added.
+- **Tests.** +31 web unit tests (`cn`, button recipe, field wiring, badge tones incl. unknown-status
+  fallback, stepper model, PWA routing rules). Web suite 12 files / 60 tests. `npm run check` green:
+  lint + typecheck (4 workspaces) + **204 tests** (api 98, web 60, db 18, shared 28) + 4 builds.
+  `npm audit --omit=dev --audit-level=high` → 0 vulnerabilities. No new dependencies.
+- **Docs.** `docs/DEVELOPER.md` (new "User interface & PWA" section + route list), `qa/ui-foundation.md`
+  (new — automated coverage, manual/heuristic scenarios, a11y checklist, gaps), `qa/findings.md`
+  (F-21 → RESOLVED), `tasks/mvp1/21` + `tasks/mvp1/15` implementation progress, `tasks/mvp1/README.md`.
+
+### Decisions
+
+- Component style recipes live in `.ts` siblings, not inside the `.tsx`, purely so they are
+  unit-testable in the current `node` test env. Real DOM render + a11y assertions need
+  `jsdom` + `@testing-library/react`; that is the next slice (S0.1b) before the config primitive.
+- The service worker is hand-written and deliberately tiny rather than Workbox-generated. For a
+  financial app the key invariant is "never serve authenticated data from cache" — satisfied
+  structurally because the API is a separate origin and the SW filters to same-origin GET.
+- PWA icons are SVG (`sizes: "any"`), which satisfies Android/Chrome installability. Rasterised
+  PNGs (192/512 + a 180px apple-touch) for iOS home-screen / Lighthouse fidelity are a tracked
+  follow-up in `qa/ui-foundation.md`, not a blocker.
+- Landing/auth migrated now (low risk — landing was already unstyled); portal/admin deferred to
+  their feature slices to avoid building UI twice.
+
+### Open items
+
+- Raster PWA icons; a real browser/device pass (responsive, install flow, offline nav, Lighthouse
+  PWA) once a preview deploy exists — no browser automation in this environment.
+- `jsdom` + Testing Library render/a11y tests for the kit (slice S0.1b).
+- `/portal` + `/admin/onboarding` + `/admin/role-approvals` still on legacy `globals.css`.
+- All prior open items from the 2026-08-29 entry are unchanged.
+
+### Next
+
+- Slice **S0.1b**: add `jsdom` + `@testing-library/react` (+ `jest-dom`) as web dev dependencies,
+  a Vitest DOM project, and render/a11y tests for the kit. Then slice **S0.2**: the effective-dated
+  `rule_sets` / `rule_versions` config primitive (migration + resolver service + tests) that the
+  KYC field matrices, tax rates, limits, and SLA thresholds all depend on.
+
 ## 2026-08-29 — QA findings remediation (auth hardening, audit IP, onboarding approve, admin bootstrap)
 
 **Status:** Done

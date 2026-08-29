@@ -3,6 +3,10 @@
 **Status:** WIP  
 **Outcome:** Staff can operate and supervise the pilot through role-appropriate queues, dashboards, and exports.
 
+## Implementation progress
+
+- **2026-08-30 — Shared UI foundation (slice S0.1):** The SproutUp component kit (`apps/web/components/ui/`) and `SiteHeader`/`PageHeading` shells that the admin queues, dashboards, and detail views will be built on are in place, with design tokens and accessible primitives (tables, badges with a status-tone map, alerts, steppers). The existing `/admin/onboarding` and `/admin/role-approvals` workspaces still render on the legacy CSS and migrate onto the kit with their Phase 1 feature slices (20/22). No queue, dashboard, or report behaviour changed in this slice.
+
 ## Scope
 
 - Work queues for KYC, underwriting, campaigns, funding evidence, disbursement, repayments, withdrawals, and exceptions.

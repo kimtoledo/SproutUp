@@ -34,7 +34,7 @@ The web application is available at `http://localhost:3000`.
 
 `npm run dev:web`, `npm run dev:api`, `npm start` (api), and every `db:*` command load the monorepo root `.env` themselves (`--env-file-if-exists` for the API, an explicit `dotenv` path for `packages/db`, and a small loader in `next.config.mjs` for the web app), so a plain `cp .env.example .env` is enough — you no longer need to export the variables into your shell first. When the file is absent (for example in CI) the environment is used as-is. The web app also serves baseline security response headers (CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS) on every route.
 
-Web routes currently include the public landing page, `/register`, `/login`, and the client-rendered `/portal`. Registration asks for one primary borrower/investor journey and calls the API's Better Auth boundary using `NEXT_PUBLIC_API_URL`; sign-in uses the same cookie-bearing request boundary and continues to `/portal`.
+Web routes currently include the public landing page, `/register`, `/login`, `/offline`, and the client-rendered `/portal` and `/admin/*` workspaces. The landing and auth surfaces are built on the SproutUp component kit (see **User interface & PWA** below); `/portal` and `/admin/*` still use the legacy `app/globals.css` classes and migrate onto the kit with their feature work. Registration asks for one primary borrower/investor journey and calls the API's Better Auth boundary using `NEXT_PUBLIC_API_URL`; sign-in uses the same cookie-bearing request boundary and continues to `/portal`.
 
 The portal first resolves `/v1/session-context`, then loads `/v1/onboarding/cases`. A `401` removes authenticated content and offers sign-in; a dependency/contract failure renders a retry state without partial account data. Create, submit/resubmit, and reasoned withdrawal controls appear only when the returned permission keys and case states allow them, but the API re-authorizes every command. Commands send the exact displayed case version and reload authoritative state after completion or conflict.
 
@@ -45,6 +45,37 @@ The portal also loads `/v1/sessions` for every authenticated account and lists e
 Staff with `onboarding_cases.read` receive a link to `/admin/onboarding`. The workspace resolves session permissions before loading a page-size-25 queue and supports case-type, status, assigned-to-me, and page filters. `onboarding_cases.review` separately controls claim/resume, information-request, and rejection actions. A resubmitted case retains its reviewer, so only that reviewer sees “Resume review”; another reviewer sees assignment ownership but no action. Every command uses the displayed version and reloads the queue. Each queue row can lazily load its `/v1/admin/onboarding/cases/:caseId` detail, rendering the applicant identity and the ordered immutable event timeline already returned by the allowlisted staff detail contract; a `403` or missing case renders a bounded message without falling back to another endpoint.
 
 Staff with `roles.assign` (currently only `super_admin` under the initial role/permission map) receive a link to `/admin/role-approvals`. The workspace lists pending role-assignment and role-revocation proposals side by side, tagged by command type; the current user can approve or reject any proposal they did not make, or cancel one they did — the UI hides the self-review controls the API would reject anyway, since the server, not the client, is authoritative. A propose form searches the bounded user catalogue (`users.read`) by name/email, offers every role from the shared role catalogue, and requires a 10–500 character reason; `RESTRICTED_ROLE`, duplicate-pending, and self-target/self-approval responses map to bounded messages. A separate paginated, filterable history section reads `/v1/admin/role-approvals` and can expand any row's `/v1/admin/role-approvals/:approvalId` detail into its immutable action timeline, surfacing an explicit warning when the server reports `integrity: "invalid"` rather than hiding it.
+
+## User interface & PWA
+
+The web app uses Tailwind CSS with SproutUp design tokens defined in
+`apps/web/tailwind.config.ts` (semantic colour keys such as `primary`, `surface`, `border`,
+`danger`, `ring`; `borderRadius`, `boxShadow`, and the Inter `font-family`). Token values are
+deliberately matched to the palette the earlier hand-rolled CSS used, so screens that have not been
+migrated yet are visually unchanged.
+
+Reusable primitives live in `apps/web/components/ui/`:
+
+| Kind | Files |
+| --- | --- |
+| Style/logic (pure, unit-tested, `.ts`) | `cn.ts`, `button-classes.ts`, `field-wiring.ts`, `badge-tone.ts`, `stepper-model.ts` |
+| Components (`.tsx`) | `Button`/`ButtonLink`, `Field`/`Input`/`Textarea`/`Select`, `RadioCards`, `Badge`/`StatusBadge`, `Alert`, `Card`/`Panel`, `Spinner`, `Stepper`, `PageHeading`, `SiteHeader` |
+| Barrel | `index.ts` (`import { Button, Field, … } from '@/components/ui'`) |
+
+Rules when adding a component: keep the class/variant recipe in a sibling `.ts` module and unit-test
+it there (the web Vitest env is `node`, so `.test.ts` files must not render React); labelled
+controls go through `Field` so `htmlFor`/`aria-describedby`/`aria-invalid` are wired; never remove a
+focus outline — use `focus-visible:ring-2 focus-visible:ring-ring`. Layout is mobile-first: design
+at 375px, add `sm:`/`md:` for wider viewports, and keep the page body free of horizontal scroll.
+
+SproutUp is an installable PWA. `apps/web/app/manifest.ts` emits `/manifest.webmanifest`
+(`display: standalone`, theme `#287a4b`, SVG icons). `apps/web/public/sw.js` is a small service
+worker — HTML navigations are network-first, immutable build assets are cache-first, and it only
+ever touches **same-origin GET** requests, so authenticated API traffic (a different origin) is
+never cached. Its rules are specced and unit-tested in `apps/web/lib/pwa.ts`. `PwaRegister`
+registers the worker in production builds only; `npm run dev:web` never does. `/offline` is the
+offline fallback route. Raster PNG icons for iOS/Lighthouse are a tracked follow-up
+(`qa/ui-foundation.md`).
 
 In another terminal, start the API:
 

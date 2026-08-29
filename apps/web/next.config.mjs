@@ -38,6 +38,8 @@ const contentSecurityPolicy = [
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
   `connect-src ${connectSrc}`,
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
@@ -62,7 +64,17 @@ const nextConfig = {
   agentRules: false,
   transpilePackages: ['@sproutup/shared'],
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }];
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      {
+        // Let the worker control the whole origin, and never serve a stale copy.
+        source: '/sw.js',
+        headers: [
+          { key: 'Service-Worker-Allowed', value: '/' },
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+        ],
+      },
+    ];
   },
 };
 

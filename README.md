@@ -20,7 +20,7 @@ See [`docs/TECH_STACK.md`](./docs/TECH_STACK.md) for the authoritative reviewed 
 
 ## Current state
 
-The platform foundation is implemented with production builds, database migrations, authentication/RBAC/audit controls, dual-controlled role administration, owner-bound borrower/investor onboarding workflows, a compliance review/correction loop, and generated OpenAPI contracts. The controlled-pilot MVP remains in progress: regulated onboarding data, provider integrations, financial ledger/campaign/repayment domains, user interfaces, operations, and release readiness still follow the dependency-ordered task plan.
+The platform foundation is implemented with production builds, database migrations, authentication/RBAC/audit controls, dual-controlled role administration, owner-bound borrower/investor onboarding workflows, a compliance review/correction loop, generated OpenAPI contracts, and a Tailwind design system with an accessible component kit and an installable PWA shell (web app manifest, offline-capable service worker). The controlled-pilot MVP remains in progress: regulated onboarding data, provider integrations, financial ledger/campaign/repayment domains, the full portal/admin user interfaces, operations, and release readiness still follow the dependency-ordered task plan.
 
 Start with [`tasks/README.md`](./tasks/README.md) and the latest entry in [`tasks/LOGS.md`](./tasks/LOGS.md).
 
