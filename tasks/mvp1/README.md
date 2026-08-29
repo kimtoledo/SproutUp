@@ -6,7 +6,7 @@ MVP 1 is the smallest release that can complete one real SME loan from onboardin
 
 ## Task checklist
 
-- [ ] [01 — Platform Foundation](./01-platform-foundation.md) — monorepo, web/API health, shared contracts, database/CI, auth/audit, jobs, exact PHP money, balanced append-only ledger schema, posting, reversal, and exact internal account projection implemented; production infrastructure and remaining services remain
+- [ ] [01 — Platform Foundation](./01-platform-foundation.md) — monorepo, web/API health, shared contracts, database/CI, auth/audit, jobs, exact PHP money, balanced append-only ledger schema, posting, reversal, exact internal account projection, and the effective-dated `rule_sets`/`rule_versions` configuration primitive implemented; production infrastructure and remaining services remain
 - [ ] [02 — Authentication, RBAC & Audit](./02-auth-rbac-audit.md) — password/session boundary, registration/login UI, audited customer-intent bootstrap, access catalogue, own-session listing/revocation UI, canonical RBAC, immutable audit, dual-controlled role changes, and a role-approvals UI implemented; recovery/MFA and remaining controls remain
 - [ ] [03 — Borrower Onboarding & KYC](./03-borrower-onboarding-kyc.md) — protected case lifecycle, assigned-reviewer rejection, and own portal case actions implemented; Philippine profile, evidence, completeness, and approval remain
 - [ ] [04 — Investor Onboarding & KYC](./04-investor-onboarding-kyc.md) — protected case lifecycle, assigned-reviewer rejection, and own portal case actions implemented; classification, suitability, bank, completeness, approval, and eligibility controls remain

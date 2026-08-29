@@ -26,6 +26,8 @@ beforeAll(async () => {
     '0012_ledger-invariants.sql',
     '0013_robust_corsair.sql',
     '0014_consent-evidence-invariants.sql',
+    '0015_wise_lockjaw.sql',
+    '0016_config-rule-immutability.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
@@ -419,5 +421,92 @@ describe('initial authentication migration', () => {
       { actor_user_id: borrowerId, action: 'account.registered' },
       { actor_user_id: investorId, action: 'account.registered' },
     ]);
+  });
+});
+
+describe('effective-dated configuration migration', () => {
+  it('creates the rule catalogue and version relations', async () => {
+    const relations = await database.query<{ table_name: string }>(`
+      select table_name from information_schema.tables
+      where table_schema = 'public' and table_name in ('rule_sets', 'rule_versions')
+      order by table_name
+    `);
+    expect(relations.rows.map((r) => r.table_name)).toEqual(['rule_sets', 'rule_versions']);
+  });
+
+  it('rejects a non-object rule body and a non-positive version', async () => {
+    await database.query(
+      `insert into rule_sets (key, description) values ('test.bad_body', 'invariant test')`,
+    );
+    await expect(
+      database.query(
+        `insert into rule_versions (rule_key, version, effective_from, body)
+         values ('test.bad_body', 1, now(), '[1,2,3]'::jsonb)`,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      database.query(
+        `insert into rule_versions (rule_key, version, effective_from, body)
+         values ('test.bad_body', 0, now(), '{}'::jsonb)`,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it('keeps published rule versions immutable', async () => {
+    await database.query(
+      `insert into rule_sets (key, description) values ('test.immutable', 'invariant test')`,
+    );
+    const inserted = await database.query<{ id: string }>(
+      `insert into rule_versions (rule_key, version, effective_from, body)
+       values ('test.immutable', 1, now(), '{"rate":"0.12"}'::jsonb)
+       returning id::text`,
+    );
+    const versionId = inserted.rows[0]?.id;
+    await expect(
+      database.query(`update rule_versions set body = '{"rate":"0.99"}'::jsonb where id = $1`, [
+        versionId,
+      ]),
+    ).rejects.toThrow('rule_versions is append-only');
+    await expect(
+      database.query('delete from rule_versions where id = $1', [versionId]),
+    ).rejects.toThrow('rule_versions is append-only');
+    await expect(database.exec('truncate table rule_versions')).rejects.toThrow(
+      'rule_versions is append-only',
+    );
+  });
+
+  it('permits a rule_sets description edit but not key deletion', async () => {
+    await database.query(
+      `insert into rule_sets (key, description) values ('test.catalogue', 'first wording')`,
+    );
+    await database.query(
+      `update rule_sets set description = 'clearer wording' where key = 'test.catalogue'`,
+    );
+    const row = await database.query<{ description: string }>(
+      `select description from rule_sets where key = 'test.catalogue'`,
+    );
+    expect(row.rows[0]?.description).toBe('clearer wording');
+    await expect(
+      database.query(`delete from rule_sets where key = 'test.catalogue'`),
+    ).rejects.toThrow('rule_sets keys are permanent');
+    await expect(
+      database.query(`update rule_sets set key = 'test.renamed' where key = 'test.catalogue'`),
+    ).rejects.toThrow('immutable');
+  });
+
+  it('forbids two versions of one key at the same effective instant', async () => {
+    await database.query(
+      `insert into rule_sets (key, description) values ('test.effective', 'invariant test')`,
+    );
+    await database.query(
+      `insert into rule_versions (rule_key, version, effective_from, body)
+       values ('test.effective', 1, '2026-09-01T00:00:00Z', '{}'::jsonb)`,
+    );
+    await expect(
+      database.query(
+        `insert into rule_versions (rule_key, version, effective_from, body)
+         values ('test.effective', 2, '2026-09-01T00:00:00Z', '{}'::jsonb)`,
+      ),
+    ).rejects.toThrow();
   });
 });

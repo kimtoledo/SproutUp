@@ -53,7 +53,10 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 
 ## Fees, tax, referral, and accounting
 
-- `rule_sets`, `rule_versions` — rates, bases, thresholds, effective dates
+- `rule_sets`, `rule_versions` — **implemented (2026-08-30)**: effective-dated configuration
+  catalogue plus immutable, effective-dated `jsonb` bodies with monotonic per-key versioning,
+  append-only DB triggers, and a `resolve(key, at)` service. No rule bodies are seeded; each is
+  published by its owning task. See [`docs/CONFIG.md`](../../docs/CONFIG.md).
 - `fee_calculations`, `tax_calculations`, `tax_documents`
 - `referral_relationships`, `referral_commissions`, `referral_payouts`
 - `accounting_mappings`, `journal_batches`, `journal_lines`, `period_locks`

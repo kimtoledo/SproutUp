@@ -3,6 +3,16 @@
 **Status:** WIP  
 **Outcome:** Pilot transactions produce configurable, reviewable Philippine accounting and tax outputs.
 
+## Implementation progress
+
+- **2026-08-30 — Configuration mechanism ready (slice S0.2):** The effective-dated `rule_sets` /
+  `rule_versions` primitive and `resolve(key, at)` service that this task's fee/VAT/withholding/DST
+  rates and bases will be published to are implemented (immutable, monotonically versioned,
+  effective-dated `jsonb` bodies; `config_rule.published` audit). See
+  [`../../docs/CONFIG.md`](../../docs/CONFIG.md). No tax/fee bodies are seeded yet — they are
+  published here once Finance/BIR advice is available, and until then as `ASSUMED FOR PILOT`
+  placeholders with the rule version recorded on every posting.
+
 ## Scope
 
 - Versioned configuration for platform fees, VAT or percentage tax, investor-interest withholding, DST, and referral withholding placeholders.

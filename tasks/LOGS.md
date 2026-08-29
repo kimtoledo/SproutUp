@@ -34,6 +34,74 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Effective-dated configuration primitive (slice S0.2)
+
+**Status:** Done
+
+### Updated
+
+- **Schema.** New `packages/db/src/schema/config.ts`: `rule_sets` (key catalogue, key regex,
+  non-empty description) and `rule_versions` (immutable, effective-dated `jsonb` bodies). Generated
+  migration `0015_wise_lockjaw.sql`; hand-written invariant migration `0016_config-rule-immutability.sql`
+  — `rule_versions` is append-only (UPDATE/DELETE/TRUNCATE raise `rule_versions is append-only`),
+  `rule_sets` keys are permanent and `key`/`created_at` immutable (description may be corrected),
+  `(rule_key, version)` and `(rule_key, effective_from)` unique, `version > 0`,
+  `jsonb_typeof(body) = 'object'`. Journal entry idx 16 added by hand (matches the existing
+  custom-migration pattern; `0014` likewise has no snapshot).
+- **Service.** New `apps/api/src/config/rule-service.ts`: `createRuleService(db, clock?)` →
+  `registerRuleSet` (idempotent), `publish` (transaction-aware; next per-key version;
+  `unknown_rule_key` if the key is unregistered; `effective_from_conflict` on a same-instant clash,
+  pre-checked and race-guarded via `onConflictDoNothing`; writes a `config_rule.published` audit
+  event with key/version/effectiveFrom/note metadata but **never the body**), `resolve(key, at)`
+  (greatest `effective_from <= at`, or `null`), `listVersions` (newest first). Transaction-aware
+  `*InTransaction` forms exported for atomic domain+config commits, mirroring the ledger/consent
+  services. Zod validates the key format, an object body, the `{system}|{user,userId,roles}` actor,
+  and bounded description/note.
+- Startup readiness (`REQUIRED_DATABASE_RELATIONS`) now requires `rule_sets` + `rule_versions`.
+  Both hardcoded migration lists (`apps/api/test/database-fixture.ts`,
+  `packages/db/src/migrations.test.ts`) updated with 0015 + 0016.
+- **Tests.** +5 db migration tests (relations exist; non-object body and `version 0` rejected;
+  published version immutable; `rule_sets` description editable but key un-deletable/un-renamable;
+  same-instant second version rejected) and +10 api service tests (unknown-key refusal, idempotent
+  register, monotonic versions, point-in-time resolution incl. before-first-version `null`,
+  **historical reproducibility after a newer version exists**, same-instant conflict, non-object
+  body rejected at the boundary, audit row without the body, newest-first listing, caller-transaction
+  rollback). `npm run check` green: lint + typecheck + **242 tests** (api 108, web 83, db 23,
+  shared 28) + 4 builds. `npm audit --omit=dev --audit-level=high` → 0 vulnerabilities.
+- **Docs.** New `docs/CONFIG.md`; `docs/DEVELOPER.md` (Database workflow), `tasks/schema/04`
+  (rule_sets/rule_versions marked implemented), `tasks/mvp1/01` + `tasks/mvp1/13` implementation
+  progress, `tasks/mvp1/README.md`.
+
+### Decisions
+
+- **Fully immutable, insert-only supersession** rather than an `effective_to` range that would have
+  to be mutated on the previous row. "In force at T" = greatest `effective_from <= T`. This is the
+  same selection the consent service already uses and it keeps `resolve` reproducible for any past
+  date with zero writes to old rows.
+- `version` is a monotonic per-key counter for display/audit; `effective_from` is the authority for
+  resolution. `(rule_key, effective_from)` is unique so resolution is never ambiguous.
+- The audit event deliberately omits the rule body — it can be large and `assertSafeAuditMetadata`
+  would scan it for sensitive-looking keys. The body lives in the immutable `rule_versions` row.
+- No rule bodies seeded and no HTTP route in this slice. Publish authority per key is a maker/checker
+  matrix decision (task 22); until then rules are published `{ type: 'system' }` from seeds/migrations
+  in their owning slices.
+- `db:migrate` / `db:check` not run here (no local Postgres in the sandbox, consistent with prior
+  entries); verified against PGlite via the migration + service test suites.
+
+### Open items
+
+- Unchanged from the S0.1 entries. Plus: an admin publish/list HTTP surface for `rule_versions`
+  (deferred to task 22's approval matrix); seeding of the actual pilot rule bodies happens in
+  S1.2 (KYC matrices), S1.3 (investor limits), S1.7 (SLA), S2.2 (scorecard), S3.5–S3.7 (allocation,
+  penalties, tax) — each flagged `ASSUMED FOR PILOT`.
+
+### Next
+
+- Slice **S0.3**: private file storage adapter (`FileStorage` interface + local-filesystem dev
+  impl) and the `documents` / `document_versions` schema (owner, classification, sha-256, size,
+  mime, scan_state, retention) with authorised upload / short-lived signed download / list routes.
+  Serves tasks 03/04/05. Then Phase 1 (S1.1 onboarding state machine + eligibility spine).
+
 ## 2026-08-30 — Component render/a11y test infrastructure (slice S0.1b)
 
 **Status:** Done
