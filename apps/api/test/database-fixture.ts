@@ -21,6 +21,8 @@ export const migrationFiles = [
   '0016_config-rule-immutability.sql',
   '0017_salty_molten_man.sql',
   '0018_document-version-immutability.sql',
+  '0019_faithful_siren.sql',
+  '0020_portal-identity-isolation.sql',
 ] as const;
 
 export async function applyMigrations(database: PGlite): Promise<void> {

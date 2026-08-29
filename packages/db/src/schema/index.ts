@@ -7,5 +7,6 @@ export * from './documents.js';
 export * from './jobs.js';
 export * from './ledger.js';
 export * from './onboarding.js';
+export * from './portal-identities.js';
 export * from './rbac.js';
 export * from './users.js';

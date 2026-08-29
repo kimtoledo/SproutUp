@@ -177,6 +177,12 @@ npm run db:check
 
 `db:migrate` applies committed migrations and idempotently seeds the approved role/permission baseline. `db:check` verifies connectivity and every relation currently required by API startup, including approval workflow and durable-job relations. All `db:*` commands load the monorepo root `.env` themselves.
 
+Migrations `0019_faithful_siren.sql` and `0020_portal-identity-isolation.sql` add the separate admin,
+borrower, and investor account/auth namespaces and the protected global normalized-email registry.
+Read [IDENTITY.md](./IDENTITY.md) before changing authentication, account ownership, staff RBAC,
+or migration logic. These relations are an additive cutover foundation: the legacy unified auth
+routes remain active until credential/session data and every identity foreign key are reconciled.
+
 A fresh database has no staff accounts, and dual-controlled role administration needs at least two independent `roles.assign` holders before it can execute. After the target user has registered, run `npm run db:bootstrap-super-admin -- <email>` once per initial administrator. It promotes that one active account to `super_admin`, is idempotent, refuses unknown/inactive accounts, and writes an immutable `account.super_admin_bootstrapped` audit event. It bypasses maker/checker and is for controlled setup only — never wire it into a request path. See [SECURITY.md](./SECURITY.md#break-glass-administrator-bootstrap).
 
 Migration `0009_moaning_argent.sql` creates the provider-neutral `background_jobs` and `background_job_attempts` foundation; `0010_job-attempt-evidence.sql` protects completed attempt evidence and blocks delete/truncate. Read [JOBS.md](./JOBS.md) before adding a topic or worker. Transaction-aware enqueue, lease/retry/recovery controls, and the bounded graceful worker runtime are integration-tested. `createApplicationJobTopicRegistry()` intentionally registers no production topics, so no worker is active in the API server.

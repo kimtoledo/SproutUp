@@ -4,6 +4,14 @@
 
 Better Auth is mounted behind the Fastify API at `/v1/auth/*`. The web application does not read credentials, session tables, or role tables directly.
 
+The target authentication topology uses separate admin, borrower, and investor account,
+credential, session, verification, and rate-limit relations. Migrations `0019`/`0020` implement
+those relations plus a globally unique normalized-email registry, immutable account identity, and
+disable-instead-of-delete enforcement. The runtime still uses the legacy unified `/v1/auth/*`
+boundary during the controlled forward migration; separate route/cookie boundaries and foreign-key
+cutover are release blockers. Borrower and investor must not remain RBAC roles after cutover. See
+[IDENTITY.md](./IDENTITY.md).
+
 `GET /openapi.json` publishes route/contract metadata only. It declares the HTTP-only session-cookie security scheme but contains no cookie values, credentials, environment secrets, or internal database configuration; the generated document is covered by a secret-regression test.
 
 Liveness and readiness are explicitly public and return only service/dependency status. Every other application-owned operation declares session-cookie authentication. `GET /v1/session-context` requires an active account and schema-allowlists only server-resolved identity, canonical roles, and canonical permission keys.
@@ -51,7 +59,7 @@ The role-approvals workspace resolves session context and requires `roles.assign
 
 The API resolves roles and permissions from the authenticated user ID. Client-supplied role, permission, or ownership claims are never authoritative.
 
-The initial role catalogue is:
+The legacy compatibility role catalogue is currently:
 
 - Super Admin
 - Sales Officer
@@ -60,6 +68,9 @@ The initial role catalogue is:
 - Finance Officer
 - SME Borrower
 - Investor
+
+The target catalogue retains only the five staff roles. `sme_borrower` and `investor` are removed
+after their users and ownership foreign keys move to the separate portal account tables.
 
 Email signup requires a validated `registrationIntent` of `borrower` or `investor`. The auth boundary rejects any other value with the stable `400 VALIDATION_ERROR` envelope before the request reaches Better Auth. In the same PostgreSQL user-insert transaction, a database trigger grants exactly `sme_borrower` or `investor` and appends `account.registered` audit evidence. The enum cannot express staff or `super_admin`, and the API accepts no general role field at signup. This narrow customer bootstrap is the only exception to dual-controlled role administration; later or additional role changes use the approval workflow.
 

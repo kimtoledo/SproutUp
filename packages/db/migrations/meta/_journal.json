@@ -134,6 +134,20 @@
       "when": 1788026646971,
       "tag": "0018_document-version-immutability",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1788027607595,
+      "tag": "0019_faithful_siren",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1788027607596,
+      "tag": "0020_portal-identity-isolation",
+      "breakpoints": true
     }
   ]
 }

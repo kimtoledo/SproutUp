@@ -1,0 +1,54 @@
+# Portal Identity Isolation
+
+**Status:** Foundation implemented; runtime cutover in progress.
+
+SproutUp treats administrator, borrower, and investor as separate account classes. Borrower and
+investor are not target RBAC roles and a credential issued in one portal must never authenticate
+against another portal.
+
+## Database boundary
+
+Migration `0019_faithful_siren.sql` creates physically separate identity namespaces:
+
+| Portal | Account | Credentials | Sessions | Verification | Rate limits |
+| --- | --- | --- | --- | --- | --- |
+| Admin | `admin_accounts` | `admin_credentials` | `admin_sessions` | `admin_verifications` | `admin_rate_limits` |
+| Borrower | `borrower_accounts` | `borrower_credentials` | `borrower_sessions` | `borrower_verifications` | `borrower_rate_limits` |
+| Investor | `investor_accounts` | `investor_credentials` | `investor_sessions` | `investor_verifications` | `investor_rate_limits` |
+
+Migration `0020_portal-identity-isolation.sql` binds every account insert to
+`account_email_registry`. Normalized email is globally unique across all three account classes, so
+an investor email cannot later register as a borrower or administrator. Account IDs are also
+globally unique. Account ID and email are immutable, and account rows cannot be deleted or
+truncated; access is removed by changing status so attribution remains intact.
+
+## Authorization model
+
+- `admin_accounts` use staff RBAC: Super Admin, Sales Officer, Credit Analyst, Compliance Officer,
+  and Finance Officer.
+- `borrower_accounts` receive borrower-owned capabilities from their account boundary, not from an
+  `sme_borrower` role grant.
+- `investor_accounts` receive investor-owned capabilities from their account boundary, not from an
+  `investor` role grant.
+- API services still authorize ownership and operational capability on the server. A subdomain or
+  browser-selected account type is never authority.
+
+## Cutover sequence
+
+The new relations are additive in the foundation commit. The existing `users` / `accounts` /
+`sessions` boundary remains temporarily active so deployed data and all existing foreign keys can
+be migrated forward safely. Before release, the cutover must:
+
+1. classify each legacy `users` record into exactly one account class, with staff identity taking
+   precedence and ambiguous customer records rejected for operator review;
+2. copy credential/session evidence into the matching namespace without exposing password hashes;
+3. move staff RBAC foreign keys to `admin_accounts` and customer ownership to the matching borrower
+   or investor account;
+4. mount separate Better Auth boundaries and distinct cookie names for admin, borrower, and
+   investor;
+5. remove public customer-role selection and disable the legacy `/v1/auth/*` boundary; and
+6. reconcile counts, email ownership, active sessions, onboarding ownership, and audit attribution
+   before accepting traffic.
+
+Until that sequence is complete, portal identity isolation is a release blocker and the new tables
+must not be described as the active authentication source.

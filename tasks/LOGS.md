@@ -34,6 +34,54 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Separate portal identity schema foundation
+
+**Status:** Done
+
+### Updated
+
+- Added `packages/db/src/schema/portal-identities.ts` and generated migration
+  `0019_faithful_siren.sql`: physically separate `admin_accounts`, `borrower_accounts`, and
+  `investor_accounts`, each with its own Better Auth-compatible credential, session, verification,
+  and database-backed rate-limit relations.
+- Added custom migration `0020_portal-identity-isolation.sql`. Account inserts atomically claim the
+  normalized email and opaque account ID in `account_email_registry`; duplicate email across any
+  portal, duplicate account ID, and unnormalized email are rejected by PostgreSQL. Account ID/email
+  are immutable, account rows cannot be deleted/truncated, and status remains the disable boundary.
+- Exported the three adapter schema maps (`adminAuthSchema`, `borrowerAuthSchema`,
+  `investorAuthSchema`) for the next runtime cutover. API startup readiness now requires all new
+  identity relations.
+- Extended migration fixtures and database tests: relation readiness, three namespace registry
+  attribution, cross-portal email/ID denial, normalization, separate credential persistence,
+  allowed suspension, immutable identity, and delete/truncate denial. Database suite: 27 tests.
+- Added `docs/IDENTITY.md`; updated root/technology/security/developer/schema/task documentation to
+  record the new account-class model and the transitional release blocker.
+
+### Decisions
+
+- Admin, borrower, and investor are account classes, not peer RBAC roles. Staff RBAC remains only
+  inside the admin boundary.
+- A normalized email may belong to exactly one account class across the platform. This is the safe
+  default selected after the product owner identified cross-portal email reuse as an identity risk.
+- This commit is additive and deliberately does not silently reinterpret existing `users` rows.
+  The old unified auth remains active only until a reviewed classification/data/foreign-key/runtime
+  cutover is complete.
+
+### Open items
+
+- Build and dry-run the legacy-user classifier. Staff identity takes precedence; ambiguous/no-role
+  customer rows must become operator-visible exceptions rather than guessed migrations.
+- Move staff role/approval foreign keys to admin accounts and borrower/investor ownership to their
+  matching account tables; split auth routes/cookie names; reconcile counts and audit attribution;
+  then remove customer roles and disable `/v1/auth/*`.
+- `.claude/` and the untracked `packages/db/src/schema/borrower.ts` existed before this slice and
+  were intentionally not modified or included.
+
+### Next
+
+- Implement the identity classification/reconciliation report and forward data migration before
+  continuing borrower KYB on top of the old `users` ownership model.
+
 ## 2026-08-30 — Private document store: schema, storage port, service (slice S1.2a)
 
 **Status:** Done

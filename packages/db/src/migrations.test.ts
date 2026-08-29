@@ -30,6 +30,8 @@ beforeAll(async () => {
     '0016_config-rule-immutability.sql',
     '0017_salty_molten_man.sql',
     '0018_document-version-immutability.sql',
+    '0019_faithful_siren.sql',
+    '0020_portal-identity-isolation.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
@@ -52,16 +54,32 @@ describe('initial authentication migration', () => {
     expect(result.rows.map(({ table_name }) => table_name)).toEqual(
       expect.arrayContaining([
         'accounts',
+        'account_email_registry',
+        'admin_accounts',
+        'admin_credentials',
+        'admin_rate_limits',
+        'admin_sessions',
+        'admin_verifications',
         'approval_actions',
         'approval_requests',
         'audit_events',
         'background_job_attempts',
         'background_jobs',
+        'borrower_accounts',
+        'borrower_credentials',
+        'borrower_rate_limits',
+        'borrower_sessions',
+        'borrower_verifications',
         'consent_acceptances',
         'consent_documents',
         'ledger_accounts',
         'ledger_entries',
         'ledger_transactions',
+        'investor_accounts',
+        'investor_credentials',
+        'investor_rate_limits',
+        'investor_sessions',
+        'investor_verifications',
         'onboarding_case_events',
         'onboarding_cases',
         'permissions',
@@ -73,6 +91,96 @@ describe('initial authentication migration', () => {
         'users',
         'verifications',
       ]),
+    );
+  });
+
+  it('isolates portal credentials and enforces one immutable global email identity', async () => {
+    const adminId = '00000000-0000-4000-8000-00000000a101';
+    const borrowerId = '00000000-0000-4000-8000-00000000b101';
+    const investorId = '00000000-0000-4000-8000-00000000c101';
+    await database.query(
+      `insert into admin_accounts (id, name, email)
+       values ($1, 'Portal Admin', 'portal-admin@sproutup.ph')`,
+      [adminId],
+    );
+    await database.query(
+      `insert into borrower_accounts (id, name, email)
+       values ($1, 'Portal Borrower', 'portal-borrower@sproutup.ph')`,
+      [borrowerId],
+    );
+    await database.query(
+      `insert into investor_accounts (id, name, email)
+       values ($1, 'Portal Investor', 'portal-investor@sproutup.ph')`,
+      [investorId],
+    );
+
+    const registry = await database.query<{
+      email: string;
+      account_type: string;
+      account_id: string;
+    }>(
+      `select email, account_type, account_id::text
+       from account_email_registry
+       where account_id in ($1, $2, $3)
+       order by account_type`,
+      [adminId, borrowerId, investorId],
+    );
+    expect(registry.rows).toEqual([
+      { email: 'portal-admin@sproutup.ph', account_type: 'admin', account_id: adminId },
+      { email: 'portal-borrower@sproutup.ph', account_type: 'borrower', account_id: borrowerId },
+      { email: 'portal-investor@sproutup.ph', account_type: 'investor', account_id: investorId },
+    ]);
+
+    await expect(database.query(
+      `insert into borrower_accounts (name, email)
+       values ('Cross Portal Attempt', 'portal-admin@sproutup.ph')`,
+    )).rejects.toThrow();
+    await expect(database.query(
+      `insert into investor_accounts (id, name, email)
+       values ($1, 'Reused Identity', 'different-investor@sproutup.ph')`,
+      [adminId],
+    )).rejects.toThrow();
+    await expect(database.query(
+      `insert into investor_accounts (name, email)
+       values ('Unnormalized', 'UPPER@sproutup.ph')`,
+    )).rejects.toThrow();
+
+    await database.query(
+      `insert into admin_credentials
+        (provider_account_id, provider_id, admin_account_id, password)
+       values ('portal-admin@sproutup.ph', 'credential', $1, 'opaque-admin-hash')`,
+      [adminId],
+    );
+    await database.query(
+      `insert into borrower_credentials
+        (provider_account_id, provider_id, borrower_account_id, password)
+       values ('portal-borrower@sproutup.ph', 'credential', $1, 'opaque-borrower-hash')`,
+      [borrowerId],
+    );
+    const credentialCounts = await database.query<{ admins: number; borrowers: number }>(
+      `select
+        (select count(*)::int from admin_credentials) as admins,
+        (select count(*)::int from borrower_credentials) as borrowers`,
+    );
+    expect(credentialCounts.rows[0]).toEqual({ admins: 1, borrowers: 1 });
+
+    await database.query(
+      `update borrower_accounts set status = 'suspended' where id = $1`,
+      [borrowerId],
+    );
+    await expect(database.query(
+      `update borrower_accounts set email = 'changed@sproutup.ph' where id = $1`,
+      [borrowerId],
+    )).rejects.toThrow('borrower account id and email are immutable');
+    await expect(database.query(
+      'delete from investor_accounts where id = $1',
+      [investorId],
+    )).rejects.toThrow('investor accounts cannot be deleted');
+    await expect(database.exec('truncate table admin_accounts cascade')).rejects.toThrow(
+      'portal account tables cannot be truncated',
+    );
+    await expect(database.exec('truncate table account_email_registry')).rejects.toThrow(
+      'account_email_registry cannot be truncated',
     );
   });
 

@@ -4,17 +4,19 @@
 
 ## Implementation status
 
-The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19: `users`, `sessions`, `accounts`, `verifications`, `rate_limits`, `roles`, `permissions`, `user_roles`, `role_permissions`, append-only `audit_events`, `approval_requests`, append-only `approval_actions`, `onboarding_cases`, append-only `onboarding_case_events`, `background_jobs`, `background_job_attempts`, `ledger_accounts`, append-only `ledger_transactions`, and append-only `ledger_entries`. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
+The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19. On 2026-08-30, the additive portal-identity isolation foundation introduced separate admin, borrower, and investor account/auth relations plus a protected global email registry. The legacy unified `users` relations remain temporarily active until their foreign keys and runtime auth boundary are migrated forward. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
 
 This is a normalized domain outline for the Philippine revamp. It intentionally avoids copying legacy table names and duplicated summary tables.
 
 ## Identity and authorization
 
-- `users` — login identity and global status
-- `users.registration_intent` — implemented, nullable for controlled staff/bootstrap records and required by public email signup; only borrower/investor values
-- `staff_profiles`, `investor_profiles`, `borrower_profiles`
-- `roles`, `permissions`, `user_roles`, `role_permissions`
-- `sessions`, `mfa_methods`, `auth_attempts`
+- `account_email_registry` — implemented global normalized-email/account-id ownership across portals
+- `admin_accounts`, `borrower_accounts`, `investor_accounts` — implemented separate account classes
+- portal-specific credentials, sessions, verifications, and rate limits — implemented foundation;
+  runtime cutover remains
+- `admin_profiles`, `investor_profiles`, `borrower_profiles`
+- `roles`, `permissions`, admin role assignments, `role_permissions` — staff RBAC only after cutover
+- `mfa_methods`, `auth_attempts`
 - `audit_events` — append-only actor/action/resource/change metadata
 
 ## Parties, KYC, and documents

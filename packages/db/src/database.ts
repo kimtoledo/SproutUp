@@ -36,6 +36,22 @@ export const REQUIRED_DATABASE_RELATIONS = [
   'rule_versions',
   'documents',
   'document_versions',
+  'account_email_registry',
+  'admin_accounts',
+  'admin_sessions',
+  'admin_credentials',
+  'admin_verifications',
+  'admin_rate_limits',
+  'borrower_accounts',
+  'borrower_sessions',
+  'borrower_credentials',
+  'borrower_verifications',
+  'borrower_rate_limits',
+  'investor_accounts',
+  'investor_sessions',
+  'investor_credentials',
+  'investor_verifications',
+  'investor_rate_limits',
 ] as const;
 
 export function createDatabase(databaseUrl: string): DatabaseServices {

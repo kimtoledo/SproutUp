@@ -27,15 +27,19 @@ Use the scan as a starting map for locating existing behavior, not as proof that
 
 SproutUp is a debt-based crowdfunding lending platform that connects Philippine SMEs with investors through an admin-managed marketplace. SMEs apply for financing, approved campaigns are funded by investors, borrowers repay the platform, and the platform automatically allocates principal and returns to investors.
 
-### User roles
+### Account types and staff roles
+
+Admin, SME borrower, and investor are separate authentication/account classes. A normalized email
+belongs to exactly one class. Borrower and investor are not target RBAC roles; staff permissions
+remain role-based inside the admin account boundary.
+
+Staff roles:
 
 - Super Admin
 - Sales Officer
 - Credit Analyst
 - Compliance Officer
 - Finance Officer
-- SME Borrower
-- Investor
 
 ### Main workflow
 

@@ -23,12 +23,21 @@
 - Added responsive `/register` and `/login` web pages over the Better Auth boundary. Registration captures only borrower/investor intent, both flows include cookie credentials, sign-in errors do not enumerate accounts, and client validation never replaces server enforcement.
 - **2026-08-20 — Role approvals UI:** Added `/admin/role-approvals`, a `roles.assign`-gated workspace over the existing dual-controlled role-assignment/revocation, reject/cancel, and history/detail APIs: a pending-request list with maker-aware approve/reject/cancel, a propose form with bounded user search (`users.read`) and a full role picker, and filterable/paginated history with an expandable action timeline and an explicit integrity-invalid warning. Linked from `/portal` for permitted staff.
 - **2026-08-20 — Active-sessions device UI:** Added an "Active sessions" section to `/portal`, available to every authenticated account, listing each session's IP, user agent, created/expiry time, and current-device flag from `GET /v1/sessions`, with a per-session revoke control wired to `DELETE /v1/sessions/:sessionId`. The current session has no revoke control there; it relies on the existing "Sign out" action instead.
+- **2026-08-30 — Portal identity-isolation foundation:** Added separate `admin_accounts`,
+  `borrower_accounts`, and `investor_accounts` plus separate credential/session/verification/rate-limit
+  relations. `account_email_registry` and database triggers enforce one normalized email and one
+  account ID across all portals, immutable account identity, and disable-instead-of-delete history.
+  Borrower/investor are now the target account classes rather than RBAC roles. This slice is
+  additive: migration of legacy `users` foreign keys, separate Better Auth route/cookie boundaries,
+  and removal of customer roles remain required before release. See
+  [`../../docs/IDENTITY.md`](../../docs/IDENTITY.md).
 - Password-reset/email-verification delivery, MFA/OTP, audit integration into each privileged workflow, final grants, and emergency access remain; this task stays **WIP**.
 
 ## Scope
 
 - Email/password authentication, password reset, session/device management, and OTP step-up.
-- Roles: Super Admin, Sales Officer, Credit Analyst, Compliance Officer, Finance Officer, SME Borrower, and Investor.
+- Separate account classes: Admin, SME Borrower, and Investor. Staff roles inside Admin: Super
+  Admin, Sales Officer, Credit Analyst, Compliance Officer, and Finance Officer.
 - Permission matrix for viewing, creating, approving, rejecting, disbursing, correcting, and exporting data.
 - Rate limiting, lockout, session revocation, and immutable business audit events.
 
