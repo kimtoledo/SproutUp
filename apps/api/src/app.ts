@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import type { HealthResponse } from '@sproutup/shared';
 import type { ApiConfig } from './config.js';
 import type { AuthServices } from './auth/types.js';
-import { registerAuthRoutes } from './routes/auth.js';
+import { registerAdminAuthRoutes, registerAuthRoutes } from './routes/auth.js';
 import { registerSessionRoutes } from './routes/sessions.js';
 import type { SessionService } from './auth/sessions-service.js';
 import type { RoleAssignmentService } from './auth/role-assignments-service.js';
@@ -29,10 +29,12 @@ import { healthResponseSchema } from './openapi/system-schemas.js';
 import { apiVersionHeaders, currentApiVersionPolicy } from './openapi/api-version.js';
 
 export interface AppDependencies {
-  config: Pick<ApiConfig, 'appOrigin' | 'environment'> & Partial<Pick<ApiConfig, 'trustProxy'>>;
+  config: Pick<ApiConfig, 'appOrigin' | 'environment'>
+    & Partial<Pick<ApiConfig, 'appOrigins' | 'trustProxy'>>;
   checkDatabase(): Promise<void>;
   auth?: {
     service: AuthServices;
+    adminService?: AuthServices;
     baseUrl: string;
     sessions?: SessionService;
     roleAssignments?: RoleAssignmentService;
@@ -103,7 +105,8 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
   await app.register(rateLimit, { max: 120, timeWindow: '1 minute' });
   await app.register(cors, {
     origin(origin, callback) {
-      callback(null, !origin || origin === dependencies.config.appOrigin);
+      const allowedOrigins = dependencies.config.appOrigins ?? [dependencies.config.appOrigin];
+      callback(null, !origin || allowedOrigins.includes(origin));
     },
     credentials: true,
   });
@@ -208,6 +211,13 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
   );
 
   if (dependencies.auth) {
+    const staffAuth = dependencies.auth.adminService ?? dependencies.auth.service;
+    if (dependencies.auth.adminService) {
+      await registerAdminAuthRoutes(app, {
+        auth: dependencies.auth.adminService,
+        authBaseUrl: dependencies.auth.baseUrl,
+      });
+    }
     await registerAuthRoutes(app, {
       auth: dependencies.auth.service,
       authBaseUrl: dependencies.auth.baseUrl,
@@ -220,31 +230,31 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
     }
     if (dependencies.auth.roleAssignments) {
       await registerRoleAssignmentRoutes(app, {
-        auth: dependencies.auth.service,
+        auth: staffAuth,
         roleAssignments: dependencies.auth.roleAssignments,
       });
     }
     if (dependencies.auth.catalogue) {
       await registerAccessCatalogueRoutes(app, {
-        auth: dependencies.auth.service,
+        auth: staffAuth,
         catalogue: dependencies.auth.catalogue,
       });
     }
     if (dependencies.auth.roleRevocations) {
       await registerRoleRevocationRoutes(app, {
-        auth: dependencies.auth.service,
+        auth: staffAuth,
         roleRevocations: dependencies.auth.roleRevocations,
       });
     }
     if (dependencies.auth.approvalLifecycle) {
       await registerApprovalLifecycleRoutes(app, {
-        auth: dependencies.auth.service,
+        auth: staffAuth,
         lifecycle: dependencies.auth.approvalLifecycle,
       });
     }
     if (dependencies.auth.approvalHistory) {
       await registerApprovalHistoryRoutes(app, {
-        auth: dependencies.auth.service,
+        auth: staffAuth,
         history: dependencies.auth.approvalHistory,
       });
     }
@@ -257,7 +267,7 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
     });
     if (dependencies.onboarding.review) {
       await registerOnboardingReviewRoutes(app, {
-        auth: dependencies.auth.service,
+        auth: dependencies.auth.adminService ?? dependencies.auth.service,
         review: dependencies.onboarding.review,
       });
     }

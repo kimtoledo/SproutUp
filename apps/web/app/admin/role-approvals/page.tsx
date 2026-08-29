@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, RefreshCw, ShieldCheck, Sprout, UserCog } from 'lucide-react';
 import { roleDefinitions, type RoleKey } from '@sproutup/shared';
+import { signOutAdmin } from '@/lib/auth-client';
 import {
   approveRoleAssignment,
   approveRoleRevocation,
@@ -52,6 +54,7 @@ function shortId(id: string | null | undefined): string {
 }
 
 export default function AdminRoleApprovalsPage() {
+  const router = useRouter();
   const [workspace, setWorkspace] = useState<RoleApprovalsWorkspaceResult | null>(null);
   const [historyFilters, setHistoryFilters] = useState<HistoryFilters>({ page: 1, pageSize: 25 });
   const [history, setHistory] = useState<ApprovalHistoryResult | null>(null);
@@ -186,7 +189,7 @@ export default function AdminRoleApprovalsPage() {
         : 'Role approvals are temporarily unavailable.';
     return (
       <AdminState title={title} detail="No approval data was displayed.">
-        <Link href={workspace.reason === 'unauthenticated' ? '/login' : '/portal'} className="primary-action">
+        <Link href={workspace.reason === 'unauthenticated' ? '/login' : '/'} className="primary-action">
           Continue safely
         </Link>
       </AdminState>
@@ -207,7 +210,9 @@ export default function AdminRoleApprovalsPage() {
           {workspace.session.permissions.includes('onboarding_cases.read') ? (
             <Link className="quiet-link" href="/admin/onboarding">Onboarding queue</Link>
           ) : null}
-          <Link className="quiet-link" href="/portal">Customer portal</Link>
+          <button className="quiet-button" type="button" onClick={() => void signOutAdmin().then(() => router.push('/login'))}>
+            Sign out
+          </button>
         </div>
       </header>
 

@@ -12,6 +12,8 @@ describe('loadConfig', () => {
       host: '0.0.0.0',
       port: 3001,
       appOrigin: 'http://localhost:3000',
+      appOrigins: ['http://localhost:3000'],
+      authCookieDomain: undefined,
       authBaseUrl: 'http://localhost:3001',
       authSecret: 'test-secret-that-is-at-least-32-characters',
       databaseUrl: 'postgresql://sproutup:sproutup@localhost:5432/sproutup',
@@ -53,5 +55,22 @@ describe('loadConfig', () => {
         APP_ORIGIN: 'not-a-url',
       }),
     ).toThrow();
+  });
+
+  it('accepts and deduplicates portal origins for subdomain CORS and trusted origins', () => {
+    const config = loadConfig({
+      DATABASE_URL: 'postgresql://sproutup:sproutup@localhost:5432/sproutup',
+      BETTER_AUTH_SECRET: 'test-secret-that-is-at-least-32-characters',
+      APP_ORIGIN: 'http://admin.lvh.me:3000',
+      APP_ORIGINS: 'http://admin.lvh.me:3000,http://borrower.lvh.me:3000,http://investor.lvh.me:3000',
+      AUTH_COOKIE_DOMAIN: '.lvh.me',
+    });
+
+    expect(config.appOrigins).toEqual([
+      'http://admin.lvh.me:3000',
+      'http://borrower.lvh.me:3000',
+      'http://investor.lvh.me:3000',
+    ]);
+    expect(config.authCookieDomain).toBe('.lvh.me');
   });
 });

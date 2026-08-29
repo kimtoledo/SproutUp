@@ -78,3 +78,30 @@ export async function signInWithEmail(
     password: input.password,
   }, fetcher);
 }
+
+export async function signInAdminWithEmail(
+  input: { email: string; password: string },
+  fetcher: FetchLike = fetch,
+): Promise<AuthClientResult> {
+  const email = input.email.trim().toLowerCase();
+  if (!validEmail(email) || input.password.length === 0) {
+    return { ok: false, message: 'Enter your staff email and password.' };
+  }
+  return sendAuthRequest('/v1/auth/admin/sign-in/email', {
+    email,
+    password: input.password,
+  }, fetcher);
+}
+
+export async function signOutAdmin(fetcher: FetchLike = fetch): Promise<void> {
+  try {
+    await fetcher(`${apiBaseUrl()}/v1/auth/admin/sign-out`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+    });
+  } catch {
+    // The next protected read remains authoritative if the request did not arrive.
+  }
+}

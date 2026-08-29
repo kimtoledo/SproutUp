@@ -38,6 +38,14 @@
   portal namespace, reconciles exact counts, invalidates unattributable verification/rate-limit
   state, and writes an immutable summary audit event. Runtime routes/cookies and domain foreign keys
   remain on the next cutover step.
+- **2026-08-30 — Isolated administrator runtime boundary:** Mounted
+  `/v1/auth/admin/*` over the backfilled admin-only Better Auth relations with a distinct
+  `sproutup_admin` cookie and 12-hour staff sessions. Public admin signup is denied; admin context
+  resolves only active `admin_accounts` and staff-category roles. All current staff route groups
+  and web workspaces now use `/v1/admin/session-context`, and customer credentials fail against the
+  admin sign-in namespace. `APP_ORIGINS` and `AUTH_COOKIE_DOMAIN` support the three exact portal
+  origins. Staff RBAC still uses same-ID legacy joins until the next FK migration; borrower and
+  investor runtime boundaries remain.
 - Password-reset/email-verification delivery, MFA/OTP, audit integration into each privileged workflow, final grants, and emergency access remain; this task stays **WIP**.
 
 ## Scope

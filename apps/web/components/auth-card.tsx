@@ -7,13 +7,18 @@ import { ArrowRight, Building2, TrendingUp } from 'lucide-react';
 import { Alert, Button, Field, Input, RadioCards } from '@/components/ui';
 import {
   registerWithEmail,
+  signInAdminWithEmail,
   signInWithEmail,
   type RegistrationIntent,
 } from '@/lib/auth-client';
+import { resolveAuthenticatedRoute } from '@/lib/auth-routing';
+import { portalSurfaces, portalUrl, type PortalSurface } from '@/lib/portal-surface';
 
-export function AuthCard({ mode }: { mode: 'login' | 'register' }) {
+export function AuthCard({ mode, surface }: { mode: 'login' | 'register'; surface: PortalSurface }) {
   const router = useRouter();
   const registering = mode === 'register';
+  const content = portalSurfaces[surface];
+  const fixedIntent = content.registrationIntent;
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [intent, setIntent] = useState<RegistrationIntent>('borrower');
@@ -35,12 +40,24 @@ export function AuthCard({ mode }: { mode: 'login' | 'register' }) {
           registrationIntent:
             submittedIntent === 'borrower' || submittedIntent === 'investor'
               ? submittedIntent
-              : intent,
+              : fixedIntent ?? intent,
         })
-      : await signInWithEmail({ email, password });
+      : surface === 'admin'
+        ? await signInAdminWithEmail({ email, password })
+        : await signInWithEmail({ email, password });
     if (result.ok) {
-      router.push('/portal');
-      router.refresh();
+      const route = await resolveAuthenticatedRoute(surface);
+      if (!route) {
+        setMessage('Signed in, but your workspace access could not be resolved. Please try again.');
+        setPending(false);
+        return;
+      }
+      if (route.surface === surface) {
+        router.push(route.path);
+        router.refresh();
+      } else {
+        window.location.assign(portalUrl(route.surface, route.path));
+      }
       return;
     }
     setMessage(result.message ?? 'The request could not be completed.');
@@ -51,20 +68,18 @@ export function AuthCard({ mode }: { mode: 'login' | 'register' }) {
     <div className="w-full max-w-xl rounded-2xl border border-border bg-surface p-7 shadow-panel sm:p-12">
       <div className="grid gap-3">
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-          {registering ? 'Join the controlled pilot' : 'Welcome back'}
+          {registering ? content.eyebrow : surface === 'admin' ? 'Authorized staff access' : 'Welcome back'}
         </p>
         <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-          {registering ? 'Create your SproutUp account.' : 'Sign in to SproutUp.'}
+          {registering ? content.registerTitle : content.loginTitle}
         </h1>
         <p className="text-muted-foreground">
-          {registering
-            ? 'Choose your primary journey. Your role is verified by the server and can be changed later only through controlled access.'
-            : 'Continue to your secure borrower or investor journey.'}
+          {registering ? content.registerDescription : content.loginDescription}
         </p>
       </div>
 
       <form className="mt-8 grid gap-5" onSubmit={submit} noValidate>
-        {registering ? (
+        {registering && !fixedIntent ? (
           <RadioCards
             name="registrationIntent"
             legend="I am joining as"
@@ -85,6 +100,17 @@ export function AuthCard({ mode }: { mode: 'login' | 'register' }) {
               },
             ]}
           />
+        ) : registering && fixedIntent ? (
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-surface-muted p-4">
+            {fixedIntent === 'borrower'
+              ? <Building2 aria-hidden="true" size={20} className="text-primary" />
+              : <TrendingUp aria-hidden="true" size={20} className="text-primary" />}
+            <span className="grid gap-0.5">
+              <strong>{fixedIntent === 'borrower' ? 'SME borrower account' : 'Investor account'}</strong>
+              <small className="text-muted-foreground">This portal creates only this account type.</small>
+            </span>
+            <input type="hidden" name="registrationIntent" value={fixedIntent} />
+          </div>
         ) : null}
 
         {registering ? (
@@ -135,7 +161,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'register' }) {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-muted-foreground">
+      {surface !== 'admin' ? <p className="mt-6 text-center text-muted-foreground">
         {registering ? 'Already have an account?' : 'New to SproutUp?'}{' '}
         <Link
           href={registering ? '/login' : '/register'}
@@ -143,7 +169,11 @@ export function AuthCard({ mode }: { mode: 'login' | 'register' }) {
         >
           {registering ? 'Sign in' : 'Create an account'}
         </Link>
-      </p>
+      </p> : (
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Staff accounts are provisioned by controlled operations. Public registration is disabled.
+        </p>
+      )}
     </div>
   );
 }

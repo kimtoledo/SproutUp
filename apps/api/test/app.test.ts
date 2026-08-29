@@ -27,7 +27,11 @@ describe('health routes', () => {
 
   it('allows credentialed browser requests only from the configured origin', async () => {
     const app = await buildApp({
-      config: { appOrigin: 'https://app.sproutup.ph', environment: 'test' },
+      config: {
+        appOrigin: 'https://app.sproutup.ph',
+        appOrigins: ['https://app.sproutup.ph', 'https://admin.sproutup.ph'],
+        environment: 'test',
+      },
       checkDatabase: async () => undefined,
     });
     apps.push(app);
@@ -42,9 +46,15 @@ describe('health routes', () => {
       url: '/health',
       headers: { origin: 'https://example.invalid' },
     });
+    const allowedAdmin = await app.inject({
+      method: 'GET',
+      url: '/health',
+      headers: { origin: 'https://admin.sproutup.ph' },
+    });
 
     expect(allowed.headers['access-control-allow-origin']).toBe('https://app.sproutup.ph');
     expect(allowed.headers['access-control-allow-credentials']).toBe('true');
+    expect(allowedAdmin.headers['access-control-allow-origin']).toBe('https://admin.sproutup.ph');
     expect(denied.headers['access-control-allow-origin']).toBeUndefined();
   });
 

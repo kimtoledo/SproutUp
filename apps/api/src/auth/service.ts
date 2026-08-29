@@ -3,7 +3,10 @@ import { betterAuth } from 'better-auth';
 import type { Database } from '@sproutup/db';
 import { schema } from '@sproutup/db';
 import type { ApiConfig } from '../config.js';
-import { createAuthorizationResolver } from './authorization.js';
+import {
+  createAdminAuthorizationResolver,
+  createAuthorizationResolver,
+} from './authorization.js';
 import type { AuthServices, BetterAuthSession } from './types.js';
 
 export function createAuthServices(config: ApiConfig, database: Database): AuthServices {
@@ -12,7 +15,7 @@ export function createAuthServices(config: ApiConfig, database: Database): AuthS
     secret: config.authSecret,
     baseURL: config.authBaseUrl,
     basePath: '/v1/auth',
-    trustedOrigins: [config.appOrigin],
+    trustedOrigins: config.appOrigins,
     database: drizzleAdapter(database, {
       provider: 'pg',
       schema,
@@ -74,5 +77,60 @@ export function createAuthServices(config: ApiConfig, database: Database): AuthS
     getSession: async (headers) =>
       (await auth.api.getSession({ headers })) as BetterAuthSession | null,
     resolveAuthorization: createAuthorizationResolver(database),
+  };
+}
+
+export function createAdminAuthServices(config: ApiConfig, database: Database): AuthServices {
+  const auth = betterAuth({
+    appName: 'SproutUp Admin',
+    secret: config.authSecret,
+    baseURL: config.authBaseUrl,
+    basePath: '/v1/auth/admin',
+    trustedOrigins: config.appOrigins,
+    database: drizzleAdapter(database, {
+      provider: 'pg',
+      schema: schema.adminAuthSchema,
+    }),
+    emailAndPassword: {
+      enabled: true,
+      minPasswordLength: 12,
+      maxPasswordLength: 128,
+    },
+    session: {
+      expiresIn: 60 * 60 * 12,
+      updateAge: 60 * 60,
+    },
+    verification: { storeIdentifier: 'hashed' },
+    rateLimit: {
+      enabled: true,
+      storage: 'database',
+      window: 60,
+      max: 60,
+      customRules: {
+        '/sign-in/email': { window: 60, max: 5 },
+        '/request-password-reset': { window: 300, max: 3 },
+      },
+    },
+    advanced: {
+      database: { generateId: 'uuid' },
+      cookiePrefix: 'sproutup_admin',
+      useSecureCookies: config.environment === 'production',
+      defaultCookieAttributes: {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: config.environment === 'production',
+      },
+      ...(config.authCookieDomain
+        ? { crossSubDomainCookies: { enabled: true, domain: config.authCookieDomain } }
+        : {}),
+      ipAddress: { ipAddressHeaders: ['x-sproutup-client-ip'] },
+    },
+  });
+
+  return {
+    handler: auth.handler,
+    getSession: async (headers) =>
+      (await auth.api.getSession({ headers })) as BetterAuthSession | null,
+    resolveAuthorization: createAdminAuthorizationResolver(database),
   };
 }

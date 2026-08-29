@@ -63,6 +63,11 @@ describe('admin role approvals client', () => {
       ],
     });
     expect(fetcher).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3001/v1/admin/session-context',
+      expect.objectContaining({ method: 'GET', credentials: 'include' }),
+    );
+    expect(fetcher).toHaveBeenNthCalledWith(
       2,
       'http://localhost:3001/v1/admin/role-assignments',
       expect.objectContaining({ method: 'GET', credentials: 'include' }),

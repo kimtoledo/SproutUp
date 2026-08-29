@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, ClipboardCheck, RefreshCw, Sprout } from 'lucide-react';
 import {
@@ -16,6 +17,7 @@ import {
   type AdminWorkspaceResult,
 } from '@/lib/admin-onboarding-client';
 import type { CaseStatus, CaseType } from '@/lib/portal-client';
+import { signOutAdmin } from '@/lib/auth-client';
 import { product } from '@/lib/product';
 
 const statuses: CaseStatus[] = [
@@ -36,6 +38,7 @@ const eventLabels: Record<string, string> = {
 };
 
 export default function AdminOnboardingPage() {
+  const router = useRouter();
   const [filters, setFilters] = useState<AdminQueueFilters>({ page: 1, pageSize: 25 });
   const [state, setState] = useState<AdminWorkspaceResult | null>(null);
   const [pending, setPending] = useState<string | null>(null);
@@ -113,7 +116,7 @@ export default function AdminOnboardingPage() {
         : 'The queue is temporarily unavailable.';
     return (
       <AdminState title={title} detail="No compliance case data was displayed.">
-        <Link href={state.reason === 'unauthenticated' ? '/login' : '/portal'} className="primary-action">
+        <Link href={state.reason === 'unauthenticated' ? '/login' : '/'} className="primary-action">
           Continue safely
         </Link>
       </AdminState>
@@ -129,7 +132,9 @@ export default function AdminOnboardingPage() {
           <span className="brand-mark" aria-hidden="true"><Sprout size={18} /></span>
           {product.name} <small>Operations</small>
         </Link>
-        <Link className="quiet-link" href="/portal">Customer portal</Link>
+        <button className="quiet-button" type="button" onClick={() => void signOutAdmin().then(() => router.push('/login'))}>
+          Sign out
+        </button>
       </header>
 
       <section className="admin-intro">

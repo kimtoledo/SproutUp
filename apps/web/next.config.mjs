@@ -59,6 +59,7 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  allowedDevOrigins: ['*.lvh.me'],
   // The repo maintains its own root AGENTS.md; do not let Next generate a
   // competing apps/web/AGENTS.md and CLAUDE.md.
   agentRules: false,

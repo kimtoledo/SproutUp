@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { routeForSession } from './auth-routing';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { resolveAuthenticatedRoute, routeForSession } from './auth-routing';
+
+afterEach(() => vi.unstubAllEnvs());
 
 const staffQueue = { roles: ['compliance_officer'], permissions: ['onboarding_cases.read'] };
 const staffApprovals = { roles: ['super_admin'], permissions: ['roles.assign'] };
@@ -43,5 +45,22 @@ describe('routeForSession', () => {
     };
     expect(routeForSession('investor', dual)).toEqual({ surface: 'investor', path: '/portal' });
     expect(routeForSession('main', dual)).toEqual({ surface: 'admin', path: '/admin/onboarding' });
+  });
+
+  it('resolves admin sessions through the isolated admin context endpoint', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://api.sproutup.test');
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true, data: staffQueue }),
+    });
+    await expect(resolveAuthenticatedRoute('admin', fetcher)).resolves.toEqual({
+      surface: 'admin',
+      path: '/admin/onboarding',
+    });
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://api.sproutup.test/v1/admin/session-context',
+      expect.objectContaining({ credentials: 'include' }),
+    );
   });
 });

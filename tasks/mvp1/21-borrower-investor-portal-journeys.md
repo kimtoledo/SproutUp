@@ -18,6 +18,12 @@
 - Staff accounts with the server-granted queue or role-approval capability can navigate from the portal to the matching admin workspace; customer accounts are not shown those entry points.
 - **2026-08-20 — Active sessions:** Every authenticated portal account (borrower, investor, or staff) can now see and revoke their own active sessions from `/portal`, with the current device excluded from the revoke control.
 - **2026-08-30 — UI foundation & PWA (slice S0.1):** Activated Tailwind with a SproutUp design-token layer (`apps/web/tailwind.config.ts`) and a reusable accessible component kit in `apps/web/components/ui/` (`Button`, `Field`/`Input`/`Textarea`/`Select`, `RadioCards`, `Badge`/`StatusBadge`, `Alert`, `Card`/`Panel`, `Spinner`, `Stepper`, `PageHeading`, `SiteHeader`); each class recipe is a unit-tested pure module. Migrated the landing page and the register/sign-in surfaces onto the kit (mobile-first, visible focus ring, real radio group for the intent picker, `<noscript>` notice). Made the app an installable PWA: web manifest (`display: standalone`), a same-origin-only service worker (HTML network-first, assets cache-first, **API origin never cached**), a `/offline` fallback route, and iOS/Android install metadata. `/portal` still renders on the legacy CSS and migrates onto the kit with its profile/evidence screens (slice S1.2+). Resolves F-21.
+- **2026-08-30 — Independent portal marketing/auth surfaces:** Host-aware Admin, Borrower, and
+  Investor landing and auth pages now carry distinct positioning, headlines, highlights, and
+  fixed account journeys. Borrower/investor subdomains no longer show a cross-account role picker;
+  the admin subdomain has no registration path and uses its isolated auth/context/sign-out APIs.
+  Recommended local URLs are `admin.lvh.me:3000`, `borrower.lvh.me:3000`, and
+  `investor.lvh.me:3000`.
 
 ## Scope
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { registerWithEmail, signInWithEmail } from './auth-client';
+import { registerWithEmail, signInAdminWithEmail, signInWithEmail, signOutAdmin } from './auth-client';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -60,5 +60,33 @@ describe('web authentication client', () => {
         ok: false,
         message: 'SproutUp is temporarily unavailable. Please try again.',
       });
+  });
+
+  it('uses the isolated administrator sign-in namespace', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://api.sproutup.test');
+    const fetcher = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    await expect(signInAdminWithEmail({
+      email: '  ADMIN@SPROUTUP.PH ',
+      password: 'correct horse battery staple',
+    }, fetcher)).resolves.toEqual({ ok: true });
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://api.sproutup.test/v1/auth/admin/sign-in/email',
+      expect.objectContaining({
+        credentials: 'include',
+        body: JSON.stringify({
+          email: 'admin@sproutup.ph',
+          password: 'correct horse battery staple',
+        }),
+      }),
+    );
+  });
+
+  it('signs out only through the administrator namespace', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    await signOutAdmin(fetcher);
+    expect(fetcher).toHaveBeenCalledWith(
+      'http://localhost:3001/v1/auth/admin/sign-out',
+      expect.objectContaining({ method: 'POST', credentials: 'include' }),
+    );
   });
 });

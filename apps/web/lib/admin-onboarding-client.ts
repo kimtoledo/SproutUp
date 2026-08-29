@@ -79,7 +79,7 @@ export async function loadAdminOnboardingWorkspace(
   fetcher: FetchLike = fetch,
 ): Promise<AdminWorkspaceResult> {
   try {
-    const sessionResponse = await fetcher(`${apiBaseUrl()}/v1/session-context`, init('GET'));
+    const sessionResponse = await fetcher(`${apiBaseUrl()}/v1/admin/session-context`, init('GET'));
     if (sessionResponse.status === 401) return { ok: false, reason: 'unauthenticated' };
     if (!sessionResponse.ok) return { ok: false, reason: 'unavailable' };
     const session = await envelope<PortalSession>(sessionResponse);

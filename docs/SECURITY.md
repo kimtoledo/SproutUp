@@ -2,20 +2,22 @@
 
 ## Authentication boundary
 
-Better Auth is mounted behind the Fastify API at `/v1/auth/*`. The web application does not read credentials, session tables, or role tables directly.
+Better Auth is mounted behind the Fastify API. Customer compatibility endpoints remain at `/v1/auth/*`; the active administrator boundary is `/v1/auth/admin/*`. The web application does not read credentials, session tables, or role tables directly.
 
 The target authentication topology uses separate admin, borrower, and investor account,
 credential, session, verification, and rate-limit relations. Migrations `0019`/`0020` implement
 those relations plus a globally unique normalized-email registry, immutable account identity, and
 disable-instead-of-delete enforcement. Migration `0021` performs a fail-closed, exactly reconciled
-legacy account/credential/session backfill; ambiguous identities abort before copy. The runtime still uses the legacy unified `/v1/auth/*`
-boundary during the controlled forward migration; separate route/cookie boundaries and foreign-key
+legacy account/credential/session backfill; ambiguous identities abort before copy. Administrator
+sign-in now uses `admin_accounts`/`admin_credentials`, `admin_sessions`, the `sproutup_admin` cookie,
+and `/v1/admin/session-context`; public administrator signup is always denied. Staff route groups
+use this isolated resolver. Borrower/investor route/cookie boundaries and all remaining foreign-key
 cutover are release blockers. Borrower and investor must not remain RBAC roles after cutover. See
 [IDENTITY.md](./IDENTITY.md).
 
 `GET /openapi.json` publishes route/contract metadata only. It declares the HTTP-only session-cookie security scheme but contains no cookie values, credentials, environment secrets, or internal database configuration; the generated document is covered by a secret-regression test.
 
-Liveness and readiness are explicitly public and return only service/dependency status. Every other application-owned operation declares session-cookie authentication. `GET /v1/session-context` requires an active account and schema-allowlists only server-resolved identity, canonical roles, and canonical permission keys.
+Liveness and readiness are explicitly public and return only service/dependency status. Every other application-owned operation declares session-cookie authentication. `GET /v1/session-context` is the temporary customer compatibility context; `GET /v1/admin/session-context` requires an active administrator account and schema-allowlists only server-resolved staff identity, roles, and permissions.
 
 Every contracted onboarding, own-session, access-catalogue, and role-approval operation declares its authenticated actor boundary and required capability set in the generated contract. These declarations are documentation checked by CI; runtime authorization remains the server-resolved permission check in each handler/service and is independently covered by denial tests.
 

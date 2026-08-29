@@ -13,6 +13,7 @@ const config: ApiConfig = {
   host: '127.0.0.1',
   port: 3001,
   appOrigin: 'http://localhost:3000',
+  appOrigins: ['http://localhost:3000'],
   authBaseUrl: 'http://localhost:3001',
   authSecret: 'registration-test-secret-at-least-32-characters',
   databaseUrl: 'postgresql://unused:unused@localhost:5432/unused',

@@ -53,7 +53,10 @@ export async function resolveAuthenticatedRoute(
   fetcher: FetchLike = fetch,
 ): Promise<AuthRoute | null> {
   try {
-    const response = await fetcher(`${apiBaseUrl()}/v1/session-context`, {
+    const contextPath = requestedSurface === 'admin'
+      ? '/v1/admin/session-context'
+      : '/v1/session-context';
+    const response = await fetcher(`${apiBaseUrl()}${contextPath}`, {
       method: 'GET',
       credentials: 'include',
     });

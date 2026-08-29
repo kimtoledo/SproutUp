@@ -34,6 +34,54 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Isolated administrator auth and independent portal entry
+
+**Status:** Done
+
+### Updated
+
+- Activated Better Auth over `admin_accounts`, `admin_credentials`, `admin_sessions`,
+  `admin_verifications`, and `admin_rate_limits` at `/v1/auth/admin/*`. The boundary uses a
+  distinct `sproutup_admin` HTTP-only cookie and rejects public admin signup.
+- Added `/v1/admin/session-context`; it resolves active admin records plus staff-category RBAC
+  grants only. Role/access approval and onboarding-review routes now authenticate with this admin
+  service. Same-ID legacy RBAC joins remain explicitly transitional until the next FK migration.
+- Added exact multi-origin CORS/trusted-origin configuration (`APP_ORIGINS`) and optional parent
+  cookie domain (`AUTH_COOKIE_DOMAIN`) for local/deployed subdomains.
+- Made Admin, Borrower, and Investor landing/auth experiences host-aware and independently
+  positioned. Borrower/investor registration is fixed to the host's journey; admin is login-only.
+  Admin workspaces use the isolated context and sign-out APIs.
+- Added integration/regression coverage for blocked admin signup, admin cookie isolation, staff
+  context, customer-on-admin denial, origin allowlisting, portal-specific auth endpoints, and
+  host-aware routing.
+- Full repository gate passed: API 133, web 86, database 30, shared 28 tests (277 total), plus all
+  lint, typecheck, API build, and Next production build checks. Live local verification passed:
+  admin and borrower demo login/context `200`, borrower credential on admin `401`, three distinct
+  login pages `200`, and admin registration redirects to login.
+
+### Decisions
+
+- The recommended local URLs use `lvh.me` (`admin`, `borrower`, `investor`, and `api`) because it
+  resolves to loopback while providing a valid shared parent cookie domain. `localhost:3000`
+  remains the neutral chooser.
+- Portal host and UI selection are presentation/routing inputs only. Admin authority comes solely
+  from the isolated admin session plus server-resolved staff permissions.
+- Customer compatibility auth stays active temporarily; this slice does not claim borrower or
+  investor runtime cutover is complete.
+
+### Open items
+
+- Move staff RBAC, approval actors, audit attribution, and reviewer foreign keys from legacy
+  `users` to `admin_accounts`, with exact reconciliation and a fresh-environment provisioning path.
+- Activate isolated borrower/investor auth services and cookies only after ownership foreign keys
+  and onboarding/document/consent services use their matching account tables.
+- Existing `.claude/` and `packages/db/src/schema/borrower.ts` remain untouched/uncommitted.
+
+### Next
+
+- Implement the forward-only staff RBAC/approval/reviewer FK cutover to `admin_accounts`, then
+  remove the transitional same-ID join before activating borrower/investor runtime boundaries.
+
 ## 2026-08-30 — Portal identity preflight and exact legacy backfill
 
 **Status:** Done

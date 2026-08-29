@@ -41,6 +41,11 @@ describe('admin onboarding client', () => {
       assignedToMe: true,
     }, fetcher)).resolves.toEqual({ ok: true, session, queue });
     expect(fetcher).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3001/v1/admin/session-context',
+      expect.objectContaining({ method: 'GET', credentials: 'include' }),
+    );
+    expect(fetcher).toHaveBeenNthCalledWith(
       2,
       'http://localhost:3001/v1/admin/onboarding/cases?page=2&pageSize=25&caseType=borrower&status=submitted&assignedToMe=true',
       expect.objectContaining({ method: 'GET', credentials: 'include' }),

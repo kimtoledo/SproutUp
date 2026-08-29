@@ -1,6 +1,6 @@
 # Portal Identity Isolation
 
-**Status:** Foundation and legacy data backfill implemented; runtime/foreign-key cutover in progress.
+**Status:** Foundation, legacy backfill, and administrator runtime boundary implemented; customer runtime/foreign-key cutover in progress.
 
 SproutUp treats administrator, borrower, and investor as separate account classes. Borrower and
 investor are not target RBAC roles and a credential issued in one portal must never authenticate
@@ -44,6 +44,19 @@ material.
 - API services still authorize ownership and operational capability on the server. A subdomain or
   browser-selected account type is never authority.
 
+## Active portal boundary
+
+The administrator portal now signs in only through `/v1/auth/admin/*`, stores sessions only in
+`admin_sessions`, and uses the distinct HTTP-only `sproutup_admin` cookie namespace. Public admin
+signup is rejected by the Fastify boundary; staff provisioning remains a controlled operation.
+`GET /v1/admin/session-context` resolves an active `admin_accounts` row and staff roles only, and
+all current staff operations use that resolver. The admin, borrower, and investor web hosts have
+independent marketing and auth presentation; host selection never grants authority.
+
+Borrower and investor login/registration temporarily continue through the legacy compatibility
+boundary while their ownership foreign keys are migrated. Their separate target tables are already
+backfilled, but they must not be called the active customer auth source yet.
+
 ## Cutover sequence
 
 The new relations are additive in the foundation commit. The existing `users` / `accounts` /
@@ -56,8 +69,8 @@ be migrated forward safely. Before release, the cutover must:
    hashes, with exact count reconciliation;
 3. move staff RBAC foreign keys to `admin_accounts` and customer ownership to the matching borrower
    or investor account;
-4. mount separate Better Auth boundaries and distinct cookie names for admin, borrower, and
-   investor;
+4. **Admin done:** mount separate Better Auth boundaries and distinct cookie names for admin,
+   borrower, and investor; borrower/investor remain;
 5. remove public customer-role selection and disable the legacy `/v1/auth/*` boundary; and
 6. reconcile counts, email ownership, active sessions, onboarding ownership, and audit attribution
    before accepting traffic.

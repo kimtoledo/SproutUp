@@ -30,11 +30,20 @@ Start the web application:
 npm run dev:web
 ```
 
-The web application is available at `http://localhost:3000`.
+The web application listens on port 3000. Recommended local portal URLs use `lvh.me`, which
+resolves to loopback and supports a shared parent cookie domain:
+
+- Admin: `http://admin.lvh.me:3000`
+- Borrower: `http://borrower.lvh.me:3000`
+- Investor: `http://investor.lvh.me:3000`
+
+`http://localhost:3000` remains the neutral portal chooser. Keep `APP_ORIGINS`,
+`AUTH_COOKIE_DOMAIN`, `NEXT_PUBLIC_API_URL`, and the `NEXT_PUBLIC_PORTAL_*` values aligned with the
+actual local or deployed parent domain.
 
 `npm run dev:web`, `npm run dev:api`, `npm start` (api), and every `db:*` command load the monorepo root `.env` themselves (`--env-file-if-exists` for the API, an explicit `dotenv` path for `packages/db`, and a small loader in `next.config.mjs` for the web app), so a plain `cp .env.example .env` is enough — you no longer need to export the variables into your shell first. When the file is absent (for example in CI) the environment is used as-is. The web app also serves baseline security response headers (CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS) on every route.
 
-Web routes currently include the public landing page, `/register`, `/login`, `/offline`, and the client-rendered `/portal` and `/admin/*` workspaces. The landing and auth surfaces are built on the SproutUp component kit (see **User interface & PWA** below); `/portal` and `/admin/*` still use the legacy `app/globals.css` classes and migrate onto the kit with their feature work. Registration asks for one primary borrower/investor journey and calls the API's Better Auth boundary using `NEXT_PUBLIC_API_URL`; sign-in uses the same cookie-bearing request boundary and continues to `/portal`.
+Web routes currently include the public landing page, `/register`, `/login`, `/offline`, and the client-rendered `/portal` and `/admin/*` workspaces. The host selects independent Admin, Borrower, or Investor marketing/auth copy and layout. Borrower/investor registration is fixed to that host's account type; admin registration redirects to login because public staff provisioning is disabled. Admin sign-in/context/sign-out use only the isolated admin API namespace. `/portal` and `/admin/*` still use portions of the legacy `app/globals.css` styling and migrate onto the kit with their feature work.
 
 The portal first resolves `/v1/session-context`, then loads `/v1/onboarding/cases`. A `401` removes authenticated content and offers sign-in; a dependency/contract failure renders a retry state without partial account data. Create, submit/resubmit, and reasoned withdrawal controls appear only when the returned permission keys and case states allow them, but the API re-authorizes every command. Commands send the exact displayed case version and reload authoritative state after completion or conflict.
 
@@ -83,7 +92,7 @@ In another terminal, start the API:
 npm run dev:api
 ```
 
-The API starts at `http://localhost:3001` only after it can connect to PostgreSQL.
+The API starts at `http://api.lvh.me:3001` (also reachable as `http://localhost:3001`) only after it can connect to PostgreSQL.
 
 | Endpoint | Purpose |
 | --- | --- |
@@ -91,7 +100,9 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `GET /v1/health` | Readiness; returns `503` when PostgreSQL or required schema relations are unavailable |
 | `GET /openapi.json` | Generated OpenAPI 3.1 contract; hidden from its own path list |
 | `/v1/auth/*` | Better Auth email/password and session endpoints |
+| `/v1/auth/admin/*` | Isolated administrator sign-in/session endpoints; public sign-up is denied |
 | `GET /v1/session-context` | Server-resolved current user, roles, and permissions; returns `401` without an active authorized account |
+| `GET /v1/admin/session-context` | Server-resolved active administrator and staff-only roles/permissions |
 | `GET /v1/sessions` | List the authenticated user's sessions without exposing tokens |
 | `DELETE /v1/sessions/:sessionId` | Revoke an owned session and append immutable audit evidence |
 | `GET /v1/admin/role-assignments` | List unexpired pending role-assignment proposals; requires `roles.assign` |
@@ -180,8 +191,10 @@ npm run db:check
 Migrations `0019_faithful_siren.sql` and `0020_portal-identity-isolation.sql` add the separate admin,
 borrower, and investor account/auth namespaces and the protected global normalized-email registry.
 Read [IDENTITY.md](./IDENTITY.md) before changing authentication, account ownership, staff RBAC,
-or migration logic. These relations are an additive cutover foundation: the legacy unified auth
-routes remain active until credential/session data and every identity foreign key are reconciled.
+or migration logic. The administrator runtime now reads these relations through
+`/v1/auth/admin/*`, a distinct `sproutup_admin` cookie, and `/v1/admin/session-context`. Customer
+compatibility routes remain active until borrower/investor boundaries and every identity foreign
+key are reconciled.
 
 Run `npm run db:report-identity-cutover` before migration `0021_backfill-portal-identities.sql`.
 The report uses opaque user IDs and roles, never emails or credential values. Migration `0021`

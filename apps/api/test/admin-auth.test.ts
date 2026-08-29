@@ -1,0 +1,172 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { PGlite } from '@electric-sql/pglite';
+import { drizzle } from 'drizzle-orm/pglite';
+import { eq } from 'drizzle-orm';
+import { schema, type Database } from '@sproutup/db';
+import { buildApp } from '../src/app.js';
+import { createAdminAuthServices, createAuthServices } from '../src/auth/service.js';
+import type { ApiConfig } from '../src/config.js';
+import { applyMigrations } from './database-fixture.js';
+
+const pglite = new PGlite();
+const orm = drizzle(pglite, { schema }) as unknown as Database;
+const config: ApiConfig = {
+  host: '127.0.0.1',
+  port: 3001,
+  appOrigin: 'http://admin.lvh.me:3000',
+  appOrigins: [
+    'http://admin.lvh.me:3000',
+    'http://borrower.lvh.me:3000',
+  ],
+  authCookieDomain: '.lvh.me',
+  authBaseUrl: 'http://api.lvh.me:3001',
+  authSecret: 'admin-boundary-test-secret-at-least-32-characters',
+  databaseUrl: 'postgresql://unused:unused@localhost:5432/unused',
+  environment: 'test',
+  trustProxy: false,
+};
+
+const adminAuth = createAdminAuthServices(config, orm);
+const customerAuth = createAuthServices(config, orm);
+
+function authRequest(path: string, body: Record<string, unknown>, origin = config.appOrigin) {
+  return new Request(`${config.authBaseUrl}${path}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', origin },
+    body: JSON.stringify(body),
+  });
+}
+
+beforeAll(async () => {
+  await applyMigrations(pglite);
+  await orm.insert(schema.roles).values([
+    { key: 'super_admin', name: 'Super Admin', category: 'staff' },
+    { key: 'sme_borrower', name: 'SME Borrower', category: 'customer' },
+  ]);
+  await orm.insert(schema.permissions).values({
+    key: 'users.read',
+    description: 'Read users',
+  });
+  await orm.insert(schema.rolePermissions).values({
+    roleKey: 'super_admin',
+    permissionKey: 'users.read',
+  });
+
+  const signup = await adminAuth.handler(authRequest('/v1/auth/admin/sign-up/email', {
+    name: 'Controlled Admin',
+    email: 'controlled-admin@sproutup.ph',
+    password: 'correct-horse-battery-staple',
+  }));
+  expect(signup.status).toBe(200);
+
+  const [admin] = await orm
+    .select({ id: schema.adminAccounts.id })
+    .from(schema.adminAccounts)
+    .where(eq(schema.adminAccounts.email, 'controlled-admin@sproutup.ph'));
+  if (!admin) throw new Error('Admin setup failed');
+
+  // Transitional RBAC compatibility: migrated staff IDs exist in both account
+  // stores until the dedicated admin-role FK migration lands.
+  await orm.insert(schema.users).values({
+    id: admin.id,
+    name: 'Controlled Admin',
+    email: 'controlled-admin@sproutup.ph',
+    emailVerified: true,
+  });
+  await orm.insert(schema.userRoles).values({ userId: admin.id, roleKey: 'super_admin' });
+
+  const customerSignup = await customerAuth.handler(authRequest('/v1/auth/sign-up/email', {
+    name: 'Borrower Only',
+    email: 'borrower-only@sproutup.ph',
+    password: 'correct-horse-battery-staple',
+    registrationIntent: 'borrower',
+  }, 'http://borrower.lvh.me:3000'));
+  expect(customerSignup.status).toBe(200);
+});
+
+afterAll(async () => {
+  await pglite.close();
+});
+
+describe('isolated administrator authentication', () => {
+  it('blocks public admin signup at the HTTP boundary', async () => {
+    const app = await buildApp({
+      config,
+      checkDatabase: async () => undefined,
+      auth: { service: customerAuth, adminService: adminAuth, baseUrl: config.authBaseUrl },
+    });
+    try {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/admin/sign-up/email',
+        headers: { origin: config.appOrigin },
+        payload: {
+          name: 'Public Admin',
+          email: 'public-admin@sproutup.ph',
+          password: 'correct-horse-battery-staple',
+        },
+      });
+      expect(response.statusCode).toBe(403);
+      expect(response.json()).toMatchObject({ error: { code: 'ADMIN_SIGNUP_DISABLED' } });
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('uses an admin-specific cookie and resolves only staff authorization', async () => {
+    const app = await buildApp({
+      config,
+      checkDatabase: async () => undefined,
+      auth: { service: customerAuth, adminService: adminAuth, baseUrl: config.authBaseUrl },
+    });
+    try {
+      const signIn = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/admin/sign-in/email',
+        headers: { origin: config.appOrigin },
+        payload: {
+          email: 'controlled-admin@sproutup.ph',
+          password: 'correct-horse-battery-staple',
+        },
+      });
+      expect(signIn.statusCode).toBe(200);
+      const setCookie = String(signIn.headers['set-cookie']);
+      expect(setCookie).toContain('sproutup_admin.session_token');
+      expect(setCookie).toContain('Domain=.lvh.me');
+
+      const context = await app.inject({
+        method: 'GET',
+        url: '/v1/admin/session-context',
+        headers: { cookie: setCookie.split(';', 1)[0] },
+      });
+      expect(context.statusCode).toBe(200);
+      expect(context.json()).toMatchObject({
+        data: { roles: ['super_admin'], permissions: ['users.read'] },
+      });
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('does not accept a borrower credential on the admin sign-in endpoint', async () => {
+    const app = await buildApp({
+      config,
+      checkDatabase: async () => undefined,
+      auth: { service: customerAuth, adminService: adminAuth, baseUrl: config.authBaseUrl },
+    });
+    try {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/admin/sign-in/email',
+        headers: { origin: config.appOrigin },
+        payload: {
+          email: 'borrower-only@sproutup.ph',
+          password: 'correct-horse-battery-staple',
+        },
+      });
+      expect(response.statusCode).toBe(401);
+    } finally {
+      await app.close();
+    }
+  });
+});
