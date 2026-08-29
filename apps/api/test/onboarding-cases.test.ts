@@ -29,6 +29,13 @@ function caseService(overrides: Partial<OnboardingCaseService> = {}): Onboarding
     create: async () => ({ ok: false, reason: 'duplicate_open_case' }),
     submit: async () => ({ ok: false, reason: 'not_found' }),
     withdraw: async () => ({ ok: false, reason: 'not_found' }),
+    reopen: async () => ({ ok: false, reason: 'not_found' }),
+    eligibility: async (_userId, journey) => ({
+      journey,
+      status: 'none',
+      caseId: null,
+      decidedAt: null,
+    }),
     ...overrides,
   };
 }
@@ -165,6 +172,80 @@ describe('own onboarding case routes', () => {
         expectedVersion: 2,
         reason: 'Applicant changed the requested onboarding journey',
       }));
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('passes owner scope and version into reopen and maps already-approved on create', async () => {
+    const reopen = vi.fn<OnboardingCaseService['reopen']>().mockResolvedValue({
+      ok: true,
+      case: {
+        id: caseId,
+        caseType: 'borrower',
+        status: 'draft',
+        version: 5,
+        assignedReviewerUserId: null,
+        submittedAt: null,
+        decidedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+    const app = await buildApp({
+      config: { appOrigin: 'http://localhost:3000', environment: 'test' },
+      checkDatabase: async () => undefined,
+      auth: {
+        service: authWithPermissions(['borrower_onboarding.manage_own']),
+        baseUrl: 'http://localhost:3001',
+      },
+      onboarding: {
+        cases: caseService({
+          reopen,
+          create: async () => ({ ok: false, reason: 'already_approved' }),
+        }),
+      },
+    });
+    try {
+      const reopened = await app.inject({
+        method: 'POST',
+        url: `/v1/onboarding/cases/${caseId}/reopen`,
+        payload: { version: 4 },
+      });
+      expect(reopened.statusCode).toBe(200);
+      expect(reopen).toHaveBeenCalledWith(
+        expect.objectContaining({ applicantUserId: applicantId, caseId, expectedVersion: 4 }),
+      );
+
+      const blocked = await app.inject({
+        method: 'POST',
+        url: '/v1/onboarding/cases',
+        payload: { caseType: 'borrower' },
+      });
+      expect(blocked.statusCode).toBe(409);
+      expect(blocked.json()).toMatchObject({ error: { code: 'CASE_ALREADY_APPROVED' } });
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('rejects reopen without the manage capability', async () => {
+    const app = await buildApp({
+      config: { appOrigin: 'http://localhost:3000', environment: 'test' },
+      checkDatabase: async () => undefined,
+      auth: {
+        service: authWithPermissions(['borrower_onboarding.read_own']),
+        baseUrl: 'http://localhost:3001',
+      },
+      onboarding: { cases: caseService() },
+    });
+    try {
+      const response = await app.inject({
+        method: 'POST',
+        url: `/v1/onboarding/cases/${caseId}/reopen`,
+        payload: { version: 1 },
+      });
+      expect(response.statusCode).toBe(403);
     } finally {
       await app.close();
     }

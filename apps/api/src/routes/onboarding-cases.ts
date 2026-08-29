@@ -68,6 +68,7 @@ function forbidden(reply: FastifyReply) {
 function failure(reply: FastifyReply, reason: string) {
   const failures: Record<string, { status: number; code: string; message: string }> = {
     duplicate_open_case: { status: 409, code: 'OPEN_CASE_EXISTS', message: 'An open case already exists for this journey' },
+    already_approved: { status: 409, code: 'CASE_ALREADY_APPROVED', message: 'This journey is already approved; a new case cannot be opened' },
     not_found: { status: 404, code: 'CASE_NOT_FOUND', message: 'Onboarding case not found' },
     stale_version: { status: 409, code: 'STALE_CASE_VERSION', message: 'The onboarding case changed; reload before retrying' },
     invalid_transition: { status: 409, code: 'INVALID_CASE_TRANSITION', message: 'The onboarding case cannot make that transition from its current state' },
@@ -233,6 +234,55 @@ export async function registerOnboardingCaseRoutes(app: FastifyInstance, options
     const permitted = allowedTypes(identity.authorization, 'submit');
     if (permitted.length === 0) return forbidden(reply);
     const result = await options.cases.submit({
+      applicantUserId: identity.authorization.user.id,
+      actorRoles: identity.authorization.roles,
+      allowedCaseTypes: permitted,
+      caseId: parameters.data.caseId,
+      expectedVersion: body.data.version,
+      requestId: request.id,
+      ipAddressHash: hashIpAddress(request.ip),
+    });
+    if (!result.ok) return failure(reply, result.reason);
+    return reply.send({ success: true, data: result.case });
+  });
+
+  app.post('/v1/onboarding/cases/:caseId/reopen', {
+    schema: operation({
+      operationId: 'reopenOwnOnboardingCase',
+      summary: 'Reopen an owned rejected or expired case to a fresh draft',
+      tags: ['onboarding'],
+      metadata: {
+        actor: 'authenticated_customer',
+        permissions: ['borrower_onboarding.manage_own', 'investor_onboarding.manage_own'],
+        permissionMode: 'any',
+        retryModel: 'optimistic_version',
+        sideEffects: ['transition onboarding case', 'append case event', 'append audit event'],
+        auditEvent: 'onboarding_case.reopened',
+      },
+      http: {
+        params: caseIdParameters,
+        body: versionBody,
+        response: {
+          200: successResponse(caseSummarySchema),
+          400: commonErrors[400],
+          401: commonErrors[401],
+          403: commonErrors[403],
+          404: commonErrors[404],
+          409: commonErrors[409],
+        },
+      },
+    }),
+  }, async (request, reply) => {
+    const identity = await resolveAuthenticatedRequest(request, options.auth);
+    if (!identity) return unauthenticated(reply);
+    const parameters = parametersSchema.safeParse(request.params);
+    const body = submitSchema.safeParse(request.body);
+    if (!parameters.success || !body.success) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'A valid case ID and positive version are required' } });
+    }
+    const permitted = allowedTypes(identity.authorization, 'manage');
+    if (permitted.length === 0) return forbidden(reply);
+    const result = await options.cases.reopen({
       applicantUserId: identity.authorization.user.id,
       actorRoles: identity.authorization.roles,
       allowedCaseTypes: permitted,

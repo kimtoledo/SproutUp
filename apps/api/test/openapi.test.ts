@@ -42,6 +42,13 @@ const dependencies: AppDependencies = {
       create: async () => ({ ok: false as const, reason: 'duplicate_open_case' as const }),
       submit: async () => ({ ok: false as const, reason: 'not_found' as const }),
       withdraw: async () => ({ ok: false as const, reason: 'not_found' as const }),
+      reopen: async () => ({ ok: false as const, reason: 'not_found' as const }),
+      eligibility: async (_userId: string, journey: 'borrower' | 'investor') => ({
+        journey,
+        status: 'none' as const,
+        caseId: null,
+        decidedAt: null,
+      }),
     },
     review: {
       list: async ({ page, pageSize }) => ({ cases: [], page, pageSize, total: 0 }),
@@ -135,6 +142,7 @@ describe('OpenAPI contract generation', () => {
         ['/v1/onboarding/cases', 'post', 'createOwnOnboardingCase'],
         ['/v1/onboarding/cases/{caseId}/submit', 'post', 'submitOwnOnboardingCase'],
         ['/v1/onboarding/cases/{caseId}/withdraw', 'post', 'withdrawOwnOnboardingCase'],
+        ['/v1/onboarding/cases/{caseId}/reopen', 'post', 'reopenOwnOnboardingCase'],
         ['/v1/admin/onboarding/cases', 'get', 'listOnboardingReviewQueue'],
         ['/v1/admin/onboarding/cases/{caseId}', 'get', 'getOnboardingReviewCase'],
         ['/v1/admin/onboarding/cases/{caseId}/start-review', 'post', 'startOnboardingReview'],

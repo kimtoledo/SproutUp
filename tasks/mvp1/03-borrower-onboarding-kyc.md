@@ -18,6 +18,7 @@
 - Borrowers can expand an owned case to view its ordered immutable state/version timeline and reasons for information requests, withdrawal, or terminal decisions.
 - Compliance staff now have a responsive permission-driven queue UI for borrower filtering, claim/resume, reasoned information requests, and rejection over the existing protected APIs.
 - No borrower profile, KYB evidence, completeness rules, or approval command is implemented yet; this task stays **WIP** pending the Philippine entity/document matrix and screening/escalation policy.
+- **2026-08-30 — Lifecycle completion + eligibility spine (slice S1.1):** Added the owner-bound `POST /v1/onboarding/cases/:caseId/reopen` (`rejected|expired → draft`, `reopened` event, reviewer/decision cleared, version bump, audit), so a rejected applicant corrects and reapplies on the same account without a dead end (acceptance criterion "corrected without creating duplicate accounts"). `create` now refuses `409 CASE_ALREADY_APPROVED` while an approved borrower case still stands; an expired one does not block. Added the internal `eligibility(userId, journey)` projection (`none|pending|approved|expired`) that credit/campaign/commitment gating will consume. Regulated profile/evidence completeness and the policy-gated approve still layer on in later slices.
 
 ## Scope
 

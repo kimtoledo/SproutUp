@@ -17,6 +17,7 @@
 - Investors can expand an owned case to view its ordered immutable state/version timeline and reasons for information requests, withdrawal, or terminal decisions.
 - Compliance staff now have the same responsive permission-driven queue UI for investor filtering, claim/resume, reasoned information requests, and rejection over the existing protected APIs.
 - Investor subject classification, profile/evidence fields, suitability questionnaire versions, eligibility restrictions, bank verification, and approval remain unimplemented because the individual/institutional pilot scope and approved rules are still open; this task stays **WIP**.
+- **2026-08-30 — Lifecycle completion + eligibility spine (slice S1.1):** The owner-bound `reopen` transition (`rejected|expired → draft`) and the `create` `CASE_ALREADY_APPROVED` guard apply to the investor journey too. The internal `eligibility(userId, 'investor')` projection (`none|pending|approved|expired`) is the read that commitment/withdrawal gating will enforce against (task acceptance: "unapproved, expired, or suspended investors cannot commit funds or withdraw"); `suspended` and bank-verification state layer on in slice S1.3.
 
 ## Scope
 

@@ -111,6 +111,7 @@ The API starts at `http://localhost:3001` only after it can connect to PostgreSQ
 | `POST /v1/onboarding/cases` | Open one permitted borrower/investor draft journey |
 | `POST /v1/onboarding/cases/:caseId/submit` | Submit an owned draft/information response using its exact current version |
 | `POST /v1/onboarding/cases/:caseId/withdraw` | Withdraw an owned eligible case using its exact version and a 10–1000 character reason |
+| `POST /v1/onboarding/cases/:caseId/reopen` | Reopen an owned `rejected` or `expired` case to a fresh `draft` using its exact version |
 | `GET /v1/admin/onboarding/cases` | List the bounded compliance queue; requires `onboarding_cases.read` |
 | `GET /v1/admin/onboarding/cases/:caseId` | Read applicant context and the complete immutable case timeline |
 | `POST /v1/admin/onboarding/cases/:caseId/start-review` | Claim a submitted case and begin review; requires `onboarding_cases.review` |
@@ -205,6 +206,8 @@ Information requests require `{ "version": <positive integer>, "reason": "10–1
 Rejection and approval use the same assigned-reviewer, exact-version, and bounded-reason controls from `in_review`. Each stamps `decidedAt` and commits the decided state, an immutable case event (`rejected` / `approved`), and audit evidence atomically. Approval is currently a bare `in_review → approved` transition added to unblock end-to-end pilot exercise: regulated profile/evidence completeness, screening, escalation, decision authority, and downstream eligibility effects remain open decisions under tasks 03–05, and an approved case does not yet block a fresh onboarding for the same applicant/journey.
 
 The compliance queue hides `draft` (never submitted) and `withdrawn` cases by default; pass an explicit `status` filter to see them.
+
+An applicant may `reopen` an owned `rejected` or `expired` case: the shared state machine allows `rejected → draft` and `expired → draft` (event `reopened`), the reviewer assignment and `decidedAt` are cleared, the version increments, and immutable event + `onboarding_case.reopened` audit evidence is written. Reopen is refused when another case for the same journey is already open (`OPEN_CASE_EXISTS`) or the case is not terminal (`INVALID_CASE_TRANSITION`). Creating a new case is refused with `409 CASE_ALREADY_APPROVED` while an `approved` case still stands for that applicant/journey; an `expired` one does not block a fresh start. `OnboardingCaseService.eligibility(userId, journey)` is the internal projection downstream domains gate on — `none` (no case, or last was withdrawn/rejected), `pending` (a case is open), `approved`, or `expired`; it has no HTTP route yet.
 
 Separation-of-duties denials in the review workflow (applicant self-review, acting on another reviewer's assigned case) are written as `onboarding_case.review_denied` audit events with `outcome: denied`. Privileged/compliance/onboarding/session/role-approval audit writes carry a one-way SHA-256 of the resolved client IP.
 

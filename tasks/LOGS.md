@@ -34,6 +34,71 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Onboarding lifecycle completion + party-eligibility spine (slice S1.1)
+
+**Status:** Done
+
+### Updated
+
+- **Reopen transition.** New owner-bound `POST /v1/onboarding/cases/:caseId/reopen`
+  (`reopenOwnOnboardingCase`, `borrower|investor_onboarding.manage_own`, optimistic version).
+  `OnboardingCaseService.reopen` transitions a `rejected` or `expired` case back to `draft` (the
+  shared state machine already permitted this), emits a `reopened` case event, clears
+  `assignedReviewerUserId` and `decidedAt`, bumps the version, and writes an
+  `onboarding_case.reopened` audit event. It refuses when another case for the same journey is
+  already open (`OPEN_CASE_EXISTS`, pre-checked and backed by the `one_open_journey` index) or the
+  case is not terminal (`INVALID_CASE_TRANSITION`). This ends the "rejected applicant is a
+  permanent dead end" half of F-04 / F-16 — a rejected applicant corrects and reapplies on the
+  same account.
+- **Re-onboarding guard.** `OnboardingCaseService.create` now returns `already_approved` →
+  `409 CASE_ALREADY_APPROVED` while an `approved` case stands for that applicant/journey. An
+  `expired` approval does not block a fresh start.
+- **Party-eligibility projection.** New internal `OnboardingCaseService.eligibility(userId, journey)`
+  → `{ journey, status: none | pending | approved | expired, caseId, decidedAt }`, derived from the
+  most recent case (`withdrawn`/`rejected` → `none`, any open status → `pending`). This is the read
+  every downstream domain (credit, campaigns, commitments, disbursement, withdrawal) will gate on
+  rather than reading case rows directly. No HTTP route yet.
+- **Tests.** +7 api service tests (`onboarding-reopen-eligibility.test.ts`: eligibility for every
+  status, reopen happy path with event+audit, non-terminal refusal, stale-version + non-owner
+  refusal, `already_approved` create block, expired-clears-block, reopen blocked by another open
+  case) and +2 route tests (reopen owner/version passthrough + `CASE_ALREADY_APPROVED` mapping;
+  capability denial). `openapi.test.ts` contracted-operations list gains `reopenOwnOnboardingCase`.
+  `npm run check` green: lint + typecheck + **251 tests** (api 117, web 83, db 23, shared 28) +
+  4 builds. `npm audit --omit=dev --audit-level=high` → 0 vulnerabilities.
+- **Docs.** `docs/DEVELOPER.md` (endpoint table + reopen/eligibility semantics), `tasks/mvp1/03` +
+  `04` implementation progress, `tasks/mvp1/21`, `tasks/mvp1/README.md`, `qa/findings.md`
+  (F-04 / F-16 sub-gaps).
+
+### Decisions
+
+- `reopen` is owner-initiated (a `manage_own` capability), not a staff action — it is the
+  applicant choosing to try again, distinct from any staff-side "reconsider a decision" path
+  (which is not in scope and would need its own authority rule).
+- Reopen clears the reviewer assignment and `decidedAt`: a reopened case is a genuinely fresh
+  draft, not a case still "attached" to the reviewer who rejected it. History (events/audit)
+  is retained.
+- `eligibility` stays a pure server-side projection for now. A portal-facing read and the
+  campaign/commitment enforcement points are wired in their own slices so this one stays small.
+- The `expired` branch of `reopen` is implemented but only lightly exercised until the approval-
+  expiry job exists — that is slice **S1.1c** (a `rule_versions` `onboarding.approval_validity`
+  key + a job topic + an `expireApprovedCases` service method; first activation of the durable-job
+  runtime, task 19).
+
+### Open items
+
+- Portal "start a new application" button should call `reopen` (F-16 UI half) — lands with the
+  portal kit migration in S1.2.
+- Approval-expiry job (S1.1c). Policy-gated approve (completeness + screening) still layers on in
+  S1.2 / S1.4. `suspended` eligibility state arrives with investor controls in S1.3.
+- Everything from the earlier 2026-08-30 / 2026-08-29 entries is unchanged.
+
+### Next
+
+- Slice **S0.3 folded into S1.2**: private file storage adapter + `documents`/`document_versions`
+  schema, then the borrower KYB model (`organizations`, `organization_members`,
+  `beneficial_owners`, `borrower_profiles`), a rule-versioned per-entity-type required-field /
+  document matrix, completeness computation, and the portal multi-step form on the component kit.
+
 ## 2026-08-30 — Effective-dated configuration primitive (slice S0.2)
 
 **Status:** Done

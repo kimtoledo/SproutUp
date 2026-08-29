@@ -40,6 +40,13 @@ const ownCases = {
   create: async () => ({ ok: false as const, reason: 'duplicate_open_case' as const }),
   submit: async () => ({ ok: false as const, reason: 'not_found' as const }),
   withdraw: async () => ({ ok: false as const, reason: 'not_found' as const }),
+  reopen: async () => ({ ok: false as const, reason: 'not_found' as const }),
+  eligibility: async (_userId: string, journey: 'borrower' | 'investor') => ({
+    journey,
+    status: 'none' as const,
+    caseId: null,
+    decidedAt: null,
+  }),
 };
 
 describe('onboarding review routes', () => {
