@@ -120,6 +120,20 @@
       "when": 1788025768761,
       "tag": "0016_config-rule-immutability",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1788026646970,
+      "tag": "0017_salty_molten_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1788026646971,
+      "tag": "0018_document-version-immutability",
+      "breakpoints": true
     }
   ]
 }

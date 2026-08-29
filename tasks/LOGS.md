@@ -34,6 +34,72 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Private document store: schema, storage port, service (slice S1.2a)
+
+**Status:** Done
+
+### Updated
+
+- **Schema.** New `packages/db/src/schema/documents.ts`: `documents` (owner, `classification`
+  enum, `purpose` tag) and `document_versions` (monotonic `version`, opaque `storage_key`,
+  `content_sha256`, `byte_size`, `content_type`, `original_filename`, `scan_state` enum,
+  `scanned_at`, `uploaded_by_user_id`, `retention_until`). Generated migration
+  `0017_salty_molten_man.sql`; hand-written `0018_document-version-immutability.sql` — a version's
+  identity/content/provenance columns are immutable, versions cannot be `DELETE`d or `TRUNCATE`d,
+  `documents` cannot be deleted/truncated, and the only mutable version fields are `scan_state`,
+  `scanned_at`, `retention_until`. `(document_id, version)` + `storage_key` unique; `byte_size > 0`;
+  hash is 64 hex; a resolved `scan_state` requires `scanned_at`. Journal entries idx 17/18 by hand.
+- **Byte storage.** New `apps/api/src/storage/`: `FileStorage` port (`put` rejects an existing key,
+  `get` → `null` if unknown, `delete` idempotent) with `assertStorageKey` (our generated ids only —
+  no separators, no `..`); `createInMemoryFileStorage` (tests) and `createLocalFileStorage(dir)`
+  (dev, one flat file per key, `wx` write). S3-compatible adapter deferred to infra approval.
+- **Service.** New `apps/api/src/documents/document-service.ts` — `create` / `addVersion`
+  (generate key → hash → `storage.put` → atomic metadata + `document.created` /
+  `document.version_added` audit; orphaned object deleted if the metadata write throws),
+  `markScanResult` (`pending →` outcome once, else `already_resolved`, audited
+  `document.scan_recorded`), `getForDownload` (owner-or-staff authz, then a hard
+  `scan_state = 'clean'` gate, then bytes), `listOwn` (latest version per document). Content type
+  allowlisted to PDF/JPEG/PNG; `maxBytes` default 20 MiB. Download is API-mediated — no public or
+  signed object URL.
+- Startup readiness now requires `documents` + `document_versions`. Both migration lists updated.
+- **Tests.** +3 db migration tests (relations; evidence-immutability + scan-once + append-only;
+  zero-size and unscanned-resolved rejection) and +11 api tests (`file-storage.test.ts`:
+  key validation incl. traversal, round-trip, no-overwrite, copy-not-alias, local-fs flat file +
+  outside-root refusal; `document-service.test.ts`: create+audit, second immutable version,
+  empty/oversize rejection, download scan+ownership gate, scan-once, list latest-per-doc, orphaned
+  bytes deleted on a failed metadata write). `npm run check` green: lint + typecheck + **266
+  tests** (api 129, web 83, db 26, shared 28) + 4 builds. `npm audit --omit=dev --audit-level=high`
+  → 0 vulnerabilities. No new dependencies.
+- **Docs.** New `docs/DOCUMENTS.md`; `docs/DEVELOPER.md`, `tasks/schema/04`,
+  `tasks/mvp1/05` implementation progress, `tasks/mvp1/README.md`.
+
+### Decisions
+
+- This is the private-file enabler previously sketched as slice "S0.3" — done now (renamed S1.2a)
+  because the borrower KYB form (next) is its first consumer.
+- **No HTTP routes and no `documents.*` RBAC keys in this slice.** Multipart upload plumbing
+  (`@fastify/multipart`), signed/streamed download, and the staff document-review capability land
+  with the KYB form slice, matching how the consent and ledger schemas landed before their routes.
+- Malware scanning is a manual compliance step for the pilot (a `ScanProvider` adapter later); a
+  version stays download-blocked at `scan_state = 'pending'`.
+- Byte storage keys are server-generated UUIDs. The `original_filename` is retained for display
+  only and never used to build a path.
+
+### Open items
+
+- Multipart upload / streamed download routes + `documents.read_own` / `documents.review`
+  capabilities (S1.2c, with the KYB form).
+- A retention-sweep job and the approved retention periods (task 05 open decision).
+- `signature_envelopes` / e-signature adapter (task 05).
+- Everything from the earlier 2026-08-30 entries is unchanged.
+
+### Next
+
+- Slice **S1.2b**: the borrower KYB model — `organizations`, `organization_members`,
+  `beneficial_owners`, `borrower_profiles`; a versioned draft-profile envelope on the case; a
+  rule-versioned per-entity-type required-field / document matrix (published as `ASSUMED FOR
+  PILOT`); completeness computation the submit path enforces.
+
 ## 2026-08-30 — Onboarding lifecycle completion + party-eligibility spine (slice S1.1)
 
 **Status:** Done

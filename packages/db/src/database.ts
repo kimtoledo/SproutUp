@@ -34,6 +34,8 @@ export const REQUIRED_DATABASE_RELATIONS = [
   'consent_acceptances',
   'rule_sets',
   'rule_versions',
+  'documents',
+  'document_versions',
 ] as const;
 
 export function createDatabase(databaseUrl: string): DatabaseServices {

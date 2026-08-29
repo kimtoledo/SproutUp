@@ -28,6 +28,8 @@ beforeAll(async () => {
     '0014_consent-evidence-invariants.sql',
     '0015_wise_lockjaw.sql',
     '0016_config-rule-immutability.sql',
+    '0017_salty_molten_man.sql',
+    '0018_document-version-immutability.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
@@ -506,6 +508,86 @@ describe('effective-dated configuration migration', () => {
       database.query(
         `insert into rule_versions (rule_key, version, effective_from, body)
          values ('test.effective', 2, '2026-09-01T00:00:00Z', '{}'::jsonb)`,
+      ),
+    ).rejects.toThrow();
+  });
+});
+
+describe('private document store migration', () => {
+  const owner = '00000000-0000-4000-8000-0000000b0001';
+
+  it('creates the document relations', async () => {
+    await database.query(
+      `insert into users (id, name, email) values ($1, 'Doc Owner', 'doc-migration@sproutup.ph')`,
+      [owner],
+    );
+    const relations = await database.query<{ table_name: string }>(`
+      select table_name from information_schema.tables
+      where table_schema = 'public' and table_name in ('documents', 'document_versions')
+      order by table_name
+    `);
+    expect(relations.rows.map((r) => r.table_name)).toEqual(['document_versions', 'documents']);
+  });
+
+  it('protects version evidence but allows the scan outcome to be recorded once', async () => {
+    const doc = await database.query<{ id: string }>(
+      `insert into documents (owner_user_id, classification, purpose)
+       values ($1, 'kyc_business', 'borrower.sec_registration') returning id::text`,
+      [owner],
+    );
+    const documentId = doc.rows[0].id;
+    const version = await database.query<{ id: string }>(
+      `insert into document_versions
+        (document_id, version, storage_key, content_sha256, byte_size, content_type, original_filename, uploaded_by_user_id)
+       values ($1, 1, 'key-001', repeat('a', 64), 12, 'application/pdf', 'sec.pdf', $2)
+       returning id::text`,
+      [documentId, owner],
+    );
+    const versionId = version.rows[0].id;
+
+    await expect(
+      database.query(`update document_versions set storage_key = 'moved' where id = $1`, [versionId]),
+    ).rejects.toThrow(/immutable/);
+    await expect(
+      database.query(`delete from document_versions where id = $1`, [versionId]),
+    ).rejects.toThrow(/cannot be deleted/);
+    await expect(database.exec('truncate table document_versions')).rejects.toThrow(
+      'document_versions is append-only',
+    );
+
+    // The scan outcome and its timestamp may be set.
+    await database.query(
+      `update document_versions set scan_state = 'clean', scanned_at = now() where id = $1`,
+      [versionId],
+    );
+    const row = await database.query<{ scan_state: string }>(
+      `select scan_state from document_versions where id = $1`,
+      [versionId],
+    );
+    expect(row.rows[0].scan_state).toBe('clean');
+  });
+
+  it('rejects a zero byte size and a resolved scan state with no timestamp', async () => {
+    const doc = await database.query<{ id: string }>(
+      `insert into documents (owner_user_id, classification, purpose)
+       values ($1, 'financial', 'borrower.financials') returning id::text`,
+      [owner],
+    );
+    const documentId = doc.rows[0].id;
+    await expect(
+      database.query(
+        `insert into document_versions
+          (document_id, version, storage_key, content_sha256, byte_size, content_type, original_filename, uploaded_by_user_id)
+         values ($1, 1, 'key-002', repeat('a', 64), 0, 'application/pdf', 'x.pdf', $2)`,
+        [documentId, owner],
+      ),
+    ).rejects.toThrow();
+    await expect(
+      database.query(
+        `insert into document_versions
+          (document_id, version, storage_key, content_sha256, byte_size, content_type, original_filename, uploaded_by_user_id, scan_state)
+         values ($1, 1, 'key-003', repeat('a', 64), 5, 'application/pdf', 'x.pdf', $2, 'clean')`,
+        [documentId, owner],
       ),
     ).rejects.toThrow();
   });

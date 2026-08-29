@@ -19,6 +19,8 @@ export const migrationFiles = [
   '0014_consent-evidence-invariants.sql',
   '0015_wise_lockjaw.sql',
   '0016_config-rule-immutability.sql',
+  '0017_salty_molten_man.sql',
+  '0018_document-version-immutability.sql',
 ] as const;
 
 export async function applyMigrations(database: PGlite): Promise<void> {

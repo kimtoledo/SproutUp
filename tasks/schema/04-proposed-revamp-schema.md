@@ -23,7 +23,12 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 - `onboarding_cases`, `onboarding_case_events` — implemented workflow spine shared by borrower and investor journeys
 - `kyc_cases`, `kyc_requirements`, `kyc_submissions`, `kyc_decisions`
 - `screening_checks`, `risk_assessments`, `beneficial_owners`
-- `documents`, `document_versions`, `consents`, `signature_envelopes`
+- `documents`, `document_versions` — **implemented (2026-08-30)**: private file store with an
+  owner, coarse classification, and a `purpose` tag; append-only versions whose identity/content
+  columns are immutable and whose only mutable field is the malware-scan outcome. Byte storage is
+  a swappable `FileStorage` port (in-memory / local-fs / future S3). See
+  [`docs/DOCUMENTS.md`](../../docs/DOCUMENTS.md). `consents` — implemented earlier;
+  `signature_envelopes` still proposed.
 - `bank_accounts`, `bank_account_verifications`
 
 ## Credit, campaigns, and contracts
