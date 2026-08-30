@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { schema, type Database } from '@sproutup/db';
 import { buildApp } from '../src/app.js';
 import { createAdminAuthServices, createAuthServices } from '../src/auth/service.js';
+import { provisionInitialAdmin } from '../src/auth/provision-initial-admin.js';
 import type { ApiConfig } from '../src/config.js';
 import { applyMigrations } from './database-fixture.js';
 
@@ -65,15 +66,10 @@ beforeAll(async () => {
     .where(eq(schema.adminAccounts.email, 'controlled-admin@sproutup.ph'));
   if (!admin) throw new Error('Admin setup failed');
 
-  // Transitional RBAC compatibility: migrated staff IDs exist in both account
-  // stores until the dedicated admin-role FK migration lands.
-  await orm.insert(schema.users).values({
-    id: admin.id,
-    name: 'Controlled Admin',
-    email: 'controlled-admin@sproutup.ph',
-    emailVerified: true,
+  await orm.insert(schema.adminRoleGrants).values({
+    adminAccountId: admin.id,
+    roleKey: 'super_admin',
   });
-  await orm.insert(schema.userRoles).values({ userId: admin.id, roleKey: 'super_admin' });
 
   const customerSignup = await customerAuth.handler(authRequest('/v1/auth/sign-up/email', {
     name: 'Borrower Only',
@@ -89,6 +85,40 @@ afterAll(async () => {
 });
 
 describe('isolated administrator authentication', () => {
+  it('provisions the initial Super Admin without creating legacy auth material', async () => {
+    const input = {
+      name: 'Initial Operator',
+      email: 'initial-operator@sproutup.ph',
+      password: 'correct-horse-battery-staple',
+    };
+    await expect(provisionInitialAdmin(config, orm, input)).resolves.toMatchObject({
+      accountStatus: 'created',
+      roleStatus: 'granted',
+    });
+    await expect(provisionInitialAdmin(config, orm, input)).resolves.toMatchObject({
+      accountStatus: 'existing',
+      roleStatus: 'already_super_admin',
+    });
+    const [admin] = await orm
+      .select({ id: schema.adminAccounts.id })
+      .from(schema.adminAccounts)
+      .where(eq(schema.adminAccounts.email, input.email));
+    const legacyCredentials = admin
+      ? await orm
+          .select({ id: schema.accounts.id })
+          .from(schema.accounts)
+          .where(eq(schema.accounts.userId, admin.id))
+      : [];
+    const grants = admin
+      ? await orm
+          .select({ roleKey: schema.adminRoleGrants.roleKey })
+          .from(schema.adminRoleGrants)
+          .where(eq(schema.adminRoleGrants.adminAccountId, admin.id))
+      : [];
+    expect(legacyCredentials).toHaveLength(0);
+    expect(grants).toContainEqual({ roleKey: 'super_admin' });
+  });
+
   it('blocks public admin signup at the HTTP boundary', async () => {
     const app = await buildApp({
       config,

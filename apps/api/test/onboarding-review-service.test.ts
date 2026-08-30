@@ -12,12 +12,18 @@ const orm = drizzle(pglite, { schema }) as unknown as Database;
 const applicantId = '00000000-0000-4000-8000-000000000801';
 const reviewerId = '00000000-0000-4000-8000-000000000802';
 const otherReviewerId = '00000000-0000-4000-8000-000000000803';
+const draftApplicantId = '00000000-0000-4000-8000-000000000809';
 let caseId = '';
 
 beforeAll(async () => {
   await applyMigrations(pglite);
   await orm.insert(schema.users).values([
     { id: applicantId, name: 'Applicant', email: 'review-applicant@sproutup.ph' },
+    { id: draftApplicantId, name: 'Draft Applicant', email: 'review-draft@sproutup.ph' },
+    { id: reviewerId, name: 'Reviewer Shadow', email: 'review-owner@sproutup.ph' },
+    { id: otherReviewerId, name: 'Other Reviewer Shadow', email: 'review-other@sproutup.ph' },
+  ]);
+  await orm.insert(schema.adminAccounts).values([
     { id: reviewerId, name: 'Reviewer', email: 'review-owner@sproutup.ph' },
     { id: otherReviewerId, name: 'Other Reviewer', email: 'review-other@sproutup.ph' },
   ]);
@@ -63,7 +69,7 @@ describe.sequential('onboarding review service', () => {
   it('hides never-submitted draft cases from the default queue', async () => {
     const cases = createOnboardingCaseService(orm);
     const draft = await cases.create({
-      applicantUserId: otherReviewerId,
+      applicantUserId: draftApplicantId,
       actorRoles: ['sme_borrower'],
       caseType: 'borrower',
       requestId: '00000000-0000-4000-8000-000000000806',

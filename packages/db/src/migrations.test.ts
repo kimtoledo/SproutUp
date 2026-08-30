@@ -33,6 +33,7 @@ beforeAll(async () => {
     '0019_faithful_siren.sql',
     '0020_portal-identity-isolation.sql',
     '0021_backfill-portal-identities.sql',
+    '0022_mean_toad_men.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
@@ -59,6 +60,7 @@ describe('initial authentication migration', () => {
         'admin_accounts',
         'admin_credentials',
         'admin_rate_limits',
+        'admin_role_grants',
         'admin_sessions',
         'admin_verifications',
         'approval_actions',
@@ -433,7 +435,8 @@ describe('initial authentication migration', () => {
     const requestId = '00000000-0000-4000-8000-000000000003';
     const actionId = '00000000-0000-4000-8000-000000000004';
     await database.query(
-      `insert into users (id, name, email) values ($1, 'Maker', 'maker-migration@sproutup.ph')`,
+      `insert into admin_accounts (id, name, email)
+       values ($1, 'Maker', 'maker-migration@sproutup.ph')`,
       [userId],
     );
     await database.query(

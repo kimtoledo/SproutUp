@@ -108,26 +108,37 @@ export function createRoleAssignmentService(
 
       return database.transaction(async (transaction) => {
         const [target] = await transaction
-          .select({ id: schema.users.id })
-          .from(schema.users)
-          .where(and(eq(schema.users.id, input.targetUserId), eq(schema.users.status, 'active')))
+          .select({ id: schema.adminAccounts.id })
+          .from(schema.adminAccounts)
+          .where(
+            and(
+              eq(schema.adminAccounts.id, input.targetUserId),
+              eq(schema.adminAccounts.status, 'active'),
+            ),
+          )
           .limit(1);
         if (!target) return { ok: false as const, reason: 'target_not_found' as const };
 
         const [role] = await transaction
           .select({ key: schema.roles.key })
           .from(schema.roles)
-          .where(and(eq(schema.roles.key, input.roleKey), eq(schema.roles.isActive, true)))
+          .where(
+            and(
+              eq(schema.roles.key, input.roleKey),
+              eq(schema.roles.isActive, true),
+              eq(schema.roles.category, 'staff'),
+            ),
+          )
           .limit(1);
         if (!role) return { ok: false as const, reason: 'role_not_found' as const };
 
         const [existing] = await transaction
-          .select({ userId: schema.userRoles.userId })
-          .from(schema.userRoles)
+          .select({ userId: schema.adminRoleGrants.adminAccountId })
+          .from(schema.adminRoleGrants)
           .where(
             and(
-              eq(schema.userRoles.userId, input.targetUserId),
-              eq(schema.userRoles.roleKey, input.roleKey),
+              eq(schema.adminRoleGrants.adminAccountId, input.targetUserId),
+              eq(schema.adminRoleGrants.roleKey, input.roleKey),
             ),
           )
           .limit(1);
@@ -263,28 +274,39 @@ export function createRoleAssignmentService(
         }
 
         const [target] = await transaction
-          .select({ id: schema.users.id })
-          .from(schema.users)
-          .where(and(eq(schema.users.id, payload.targetUserId), eq(schema.users.status, 'active')))
+          .select({ id: schema.adminAccounts.id })
+          .from(schema.adminAccounts)
+          .where(
+            and(
+              eq(schema.adminAccounts.id, payload.targetUserId),
+              eq(schema.adminAccounts.status, 'active'),
+            ),
+          )
           .limit(1);
         if (!target) return { ok: false as const, reason: 'target_not_found' as const };
 
         const [role] = await transaction
           .select({ key: schema.roles.key })
           .from(schema.roles)
-          .where(and(eq(schema.roles.key, payload.roleKey), eq(schema.roles.isActive, true)))
+          .where(
+            and(
+              eq(schema.roles.key, payload.roleKey),
+              eq(schema.roles.isActive, true),
+              eq(schema.roles.category, 'staff'),
+            ),
+          )
           .limit(1);
         if (!role) return { ok: false as const, reason: 'role_not_found' as const };
 
         const [grant] = await transaction
-          .insert(schema.userRoles)
+          .insert(schema.adminRoleGrants)
           .values({
-            userId: payload.targetUserId,
+            adminAccountId: payload.targetUserId,
             roleKey: payload.roleKey,
             grantedBy: input.checkerUserId,
           })
           .onConflictDoNothing()
-          .returning({ userId: schema.userRoles.userId });
+          .returning({ userId: schema.adminRoleGrants.adminAccountId });
         if (!grant) return { ok: false as const, reason: 'already_assigned' as const };
 
         await transaction

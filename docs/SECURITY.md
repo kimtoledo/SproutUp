@@ -10,8 +10,10 @@ those relations plus a globally unique normalized-email registry, immutable acco
 disable-instead-of-delete enforcement. Migration `0021` performs a fail-closed, exactly reconciled
 legacy account/credential/session backfill; ambiguous identities abort before copy. Administrator
 sign-in now uses `admin_accounts`/`admin_credentials`, `admin_sessions`, the `sproutup_admin` cookie,
-and `/v1/admin/session-context`; public administrator signup is always denied. Staff route groups
-use this isolated resolver. Borrower/investor route/cookie boundaries and all remaining foreign-key
+and `/v1/admin/session-context`; public administrator signup is always denied. Staff authorization
+uses `admin_role_grants`, and approval actors plus assigned reviewers have `admin_accounts` foreign
+keys. Migration `0022` deletes legacy admin credentials/sessions/role grants and database triggers
+prevent their return. Borrower/investor route/cookie boundaries and all remaining customer foreign-key
 cutover are release blockers. Borrower and investor must not remain RBAC roles after cutover. See
 [IDENTITY.md](./IDENTITY.md).
 
@@ -62,24 +64,23 @@ The role-approvals workspace resolves session context and requires `roles.assign
 
 The API resolves roles and permissions from the authenticated user ID. Client-supplied role, permission, or ownership claims are never authoritative.
 
-The legacy compatibility role catalogue is currently:
+The active administrator role catalogue is:
 
 - Super Admin
 - Sales Officer
 - Credit Analyst
 - Compliance Officer
 - Finance Officer
-- SME Borrower
-- Investor
 
-The target catalogue retains only the five staff roles. `sme_borrower` and `investor` are removed
-after their users and ownership foreign keys move to the separate portal account tables.
+`sme_borrower` and `investor` exist only in the temporary customer compatibility boundary. The
+database rejects them from `admin_role_grants`, and the admin catalogue/role-change workflow does
+not return or accept them.
 
-Email signup requires a validated `registrationIntent` of `borrower` or `investor`. The auth boundary rejects any other value with the stable `400 VALIDATION_ERROR` envelope before the request reaches Better Auth. In the same PostgreSQL user-insert transaction, a database trigger grants exactly `sme_borrower` or `investor` and appends `account.registered` audit evidence. The enum cannot express staff or `super_admin`, and the API accepts no general role field at signup. This narrow customer bootstrap is the only exception to dual-controlled role administration; later or additional role changes use the approval workflow.
+Customer compatibility signup requires a validated `registrationIntent` of `borrower` or `investor`. The auth boundary rejects any other value with the stable `400 VALIDATION_ERROR` envelope before the request reaches Better Auth. In the same PostgreSQL user-insert transaction, a database trigger grants exactly `sme_borrower` or `investor` and appends `account.registered` audit evidence. The enum cannot express staff or `super_admin`, and the API accepts no general role field at signup. The staff approval workflow now targets admin accounts and staff roles only; customer roles cannot be added through it.
 
 ### Break-glass administrator bootstrap
 
-A fresh environment has no staff accounts, and the dual-controlled role workflow needs at least two independent `roles.assign` holders before it can execute anything. `npm run db:bootstrap-super-admin -- <email>` promotes one existing, active account to `super_admin` so the maker/checker workflow has its first actors. It is idempotent, refuses unknown or non-active accounts, and records an immutable `account.super_admin_bootstrapped` audit event. It intentionally bypasses maker/checker and is a controlled operational action for initial setup only; it must not be wired into any runtime request path.
+A fresh environment has no staff accounts, and the dual-controlled role workflow needs at least two independent `roles.assign` holders before it can execute anything. Set `PROVISION_ADMIN_NAME`, `PROVISION_ADMIN_EMAIL`, and `PROVISION_ADMIN_PASSWORD` through the environment secret mechanism, then run `npm run auth:provision-initial-admin`. The command invokes the admin auth service internally (the public signup route remains blocked), creates only admin-namespace credentials, and grants `super_admin` in `admin_role_grants`. It is idempotent for an existing admin email, prints no credential/session material, and records immutable bootstrap audit evidence. It intentionally bypasses maker/checker and is a controlled initial/recovery operation only; it must never be wired into a runtime request path. `npm run db:bootstrap-super-admin -- <email>` remains the narrower role-only recovery command for an existing active admin account.
 
 Authorization is capability-based and deny-by-default. The initial permissions cover only users, roles, sessions, and audit access. Each later domain task must add explicit capability keys and reviewed grants; no role receives a domain permission merely because it is a staff role.
 

@@ -7,6 +7,7 @@
     "dev": "tsx watch --env-file-if-exists=../../.env src/server.ts",
     "build": "tsup --config tsup.config.ts",
     "start": "node --env-file-if-exists=../../.env dist/server.js",
+    "provision:initial-admin": "tsx --env-file-if-exists=../../.env src/auth/provision-initial-admin.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

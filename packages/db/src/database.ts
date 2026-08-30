@@ -42,6 +42,7 @@ export const REQUIRED_DATABASE_RELATIONS = [
   'admin_credentials',
   'admin_verifications',
   'admin_rate_limits',
+  'admin_role_grants',
   'borrower_accounts',
   'borrower_sessions',
   'borrower_credentials',

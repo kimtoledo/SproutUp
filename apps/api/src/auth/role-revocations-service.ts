@@ -108,23 +108,23 @@ export function createRoleRevocationService(
 
       return database.transaction(async (transaction) => {
         const [target] = await transaction
-          .select({ id: schema.users.id, status: schema.users.status })
-          .from(schema.users)
-          .where(eq(schema.users.id, input.targetUserId))
+          .select({ id: schema.adminAccounts.id, status: schema.adminAccounts.status })
+          .from(schema.adminAccounts)
+          .where(eq(schema.adminAccounts.id, input.targetUserId))
           .limit(1);
         if (!target) return { ok: false as const, reason: 'target_not_found' as const };
 
         const [role] = await transaction
           .select({ key: schema.roles.key })
           .from(schema.roles)
-          .where(eq(schema.roles.key, input.roleKey))
+          .where(and(eq(schema.roles.key, input.roleKey), eq(schema.roles.category, 'staff')))
           .limit(1);
         if (!role) return { ok: false as const, reason: 'role_not_found' as const };
 
         const assignedRoles = await transaction
-          .select({ roleKey: schema.userRoles.roleKey })
-          .from(schema.userRoles)
-          .where(eq(schema.userRoles.userId, input.targetUserId));
+          .select({ roleKey: schema.adminRoleGrants.roleKey })
+          .from(schema.adminRoleGrants)
+          .where(eq(schema.adminRoleGrants.adminAccountId, input.targetUserId));
         if (!assignedRoles.some(({ roleKey }) => roleKey === input.roleKey)) {
           return { ok: false as const, reason: 'not_assigned' as const };
         }
@@ -256,22 +256,22 @@ export function createRoleRevocationService(
         }
 
         const [target] = await transaction
-          .select({ id: schema.users.id, status: schema.users.status })
-          .from(schema.users)
-          .where(eq(schema.users.id, payload.targetUserId))
+          .select({ id: schema.adminAccounts.id, status: schema.adminAccounts.status })
+          .from(schema.adminAccounts)
+          .where(eq(schema.adminAccounts.id, payload.targetUserId))
           .limit(1);
         if (!target) return { ok: false as const, reason: 'target_not_found' as const };
         const [role] = await transaction
           .select({ key: schema.roles.key })
           .from(schema.roles)
-          .where(eq(schema.roles.key, payload.roleKey))
+          .where(and(eq(schema.roles.key, payload.roleKey), eq(schema.roles.category, 'staff')))
           .limit(1);
         if (!role) return { ok: false as const, reason: 'role_not_found' as const };
 
         const assignedRoles = await transaction
-          .select({ roleKey: schema.userRoles.roleKey })
-          .from(schema.userRoles)
-          .where(eq(schema.userRoles.userId, payload.targetUserId))
+          .select({ roleKey: schema.adminRoleGrants.roleKey })
+          .from(schema.adminRoleGrants)
+          .where(eq(schema.adminRoleGrants.adminAccountId, payload.targetUserId))
           .for('update');
         if (!assignedRoles.some(({ roleKey }) => roleKey === payload.roleKey)) {
           return { ok: false as const, reason: 'not_assigned' as const };
@@ -281,14 +281,14 @@ export function createRoleRevocationService(
         }
 
         const [revoked] = await transaction
-          .delete(schema.userRoles)
+          .delete(schema.adminRoleGrants)
           .where(
             and(
-              eq(schema.userRoles.userId, payload.targetUserId),
-              eq(schema.userRoles.roleKey, payload.roleKey),
+              eq(schema.adminRoleGrants.adminAccountId, payload.targetUserId),
+              eq(schema.adminRoleGrants.roleKey, payload.roleKey),
             ),
           )
-          .returning({ userId: schema.userRoles.userId });
+          .returning({ userId: schema.adminRoleGrants.adminAccountId });
         if (!revoked) return { ok: false as const, reason: 'not_assigned' as const };
 
         await transaction

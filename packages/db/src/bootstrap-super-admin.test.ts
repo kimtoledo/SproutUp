@@ -28,12 +28,20 @@ beforeAll(async () => {
     '0012_ledger-invariants.sql',
     '0013_robust_corsair.sql',
     '0014_consent-evidence-invariants.sql',
+    '0015_wise_lockjaw.sql',
+    '0016_config-rule-immutability.sql',
+    '0017_salty_molten_man.sql',
+    '0018_document-version-immutability.sql',
+    '0019_faithful_siren.sql',
+    '0020_portal-identity-isolation.sql',
+    '0021_backfill-portal-identities.sql',
+    '0022_mean_toad_men.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await pglite.exec(sql.replaceAll('--> statement-breakpoint', ''));
   }
   await seedAuthorization(db);
-  await db.insert(schema.users).values([
+  await db.insert(schema.adminAccounts).values([
     { id: '00000000-0000-4000-8000-0000000009a1', name: 'Ops Lead', email: 'ops-lead@sproutup.ph' },
     {
       id: '00000000-0000-4000-8000-0000000009a2',
@@ -59,9 +67,14 @@ describe('bootstrapSuperAdmin', () => {
     });
 
     const roles = await db
-      .select({ roleKey: schema.userRoles.roleKey })
-      .from(schema.userRoles)
-      .where(eq(schema.userRoles.userId, '00000000-0000-4000-8000-0000000009a1'));
+      .select({ roleKey: schema.adminRoleGrants.roleKey })
+      .from(schema.adminRoleGrants)
+      .where(
+        eq(
+          schema.adminRoleGrants.adminAccountId,
+          '00000000-0000-4000-8000-0000000009a1',
+        ),
+      );
     expect(roles).toContainEqual({ roleKey: 'super_admin' });
 
     const audits = await db

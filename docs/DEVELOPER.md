@@ -203,7 +203,23 @@ requires exact source/target counts, and records an immutable summary audit even
 verification and rate-limit records are invalidated rather than copied because they have no
 trustworthy account foreign key.
 
-A fresh database has no staff accounts, and dual-controlled role administration needs at least two independent `roles.assign` holders before it can execute. After the target user has registered, run `npm run db:bootstrap-super-admin -- <email>` once per initial administrator. It promotes that one active account to `super_admin`, is idempotent, refuses unknown/inactive accounts, and writes an immutable `account.super_admin_bootstrapped` audit event. It bypasses maker/checker and is for controlled setup only — never wire it into a request path. See [SECURITY.md](./SECURITY.md#break-glass-administrator-bootstrap).
+Migration `0022_mean_toad_men.sql` fails closed if any approval actor, permission grantor, or
+assigned reviewer is not a backfilled admin account. It copies staff grants into
+`admin_role_grants`, reconciles the count, repoints staff foreign keys, deletes legacy admin
+credentials/sessions/role grants, installs namespace-enforcement triggers, and appends
+`identity.admin_rbac_cutover_completed` audit evidence. After applying it, reconcile that every
+admin has the intended staff grants and that legacy admin auth counts are zero before accepting
+traffic.
+
+A fresh database has no staff accounts. Supply `PROVISION_ADMIN_NAME`, `PROVISION_ADMIN_EMAIL`, and
+`PROVISION_ADMIN_PASSWORD` through local environment configuration or the deployment secret
+mechanism, then run `npm run auth:provision-initial-admin`. It creates credentials only in the
+admin namespace and idempotently grants `super_admin`; public admin signup stays disabled and the
+command prints no password/session material. Repeat under controlled setup for the independent
+initial actors required by maker/checker. `npm run db:bootstrap-super-admin -- <email>` is the
+role-only recovery command for an existing active admin. Both bypass maker/checker, write immutable
+bootstrap evidence, and must never be exposed through a runtime route. See
+[SECURITY.md](./SECURITY.md#break-glass-administrator-bootstrap).
 
 Migration `0009_moaning_argent.sql` creates the provider-neutral `background_jobs` and `background_job_attempts` foundation; `0010_job-attempt-evidence.sql` protects completed attempt evidence and blocks delete/truncate. Read [JOBS.md](./JOBS.md) before adding a topic or worker. Transaction-aware enqueue, lease/retry/recovery controls, and the bounded graceful worker runtime are integration-tested. `createApplicationJobTopicRegistry()` intentionally registers no production topics, so no worker is active in the API server.
 

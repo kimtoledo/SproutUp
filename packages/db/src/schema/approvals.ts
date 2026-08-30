@@ -12,7 +12,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { id, timestamps } from './helpers.js';
-import { users } from './users.js';
+import { adminAccounts } from './portal-identities.js';
 
 export const approvalStatusEnum = pgEnum('approval_status', [
   'pending',
@@ -44,8 +44,8 @@ export const approvalRequests = pgTable(
     version: integer('version').notNull().default(1),
     makerUserId: uuid('maker_user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'restrict' }),
-    checkerUserId: uuid('checker_user_id').references(() => users.id, { onDelete: 'restrict' }),
+      .references(() => adminAccounts.id, { onDelete: 'restrict' }),
+    checkerUserId: uuid('checker_user_id').references(() => adminAccounts.id, { onDelete: 'restrict' }),
     reason: text('reason').notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     executedAt: timestamp('executed_at', { withTimezone: true }),
@@ -71,7 +71,7 @@ export const approvalActions = pgTable(
     action: approvalActionEnum('action').notNull(),
     actorUserId: uuid('actor_user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'restrict' }),
+      .references(() => adminAccounts.id, { onDelete: 'restrict' }),
     payloadHash: varchar('payload_hash', { length: 64 }).notNull(),
     reason: text('reason'),
     occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),

@@ -2,6 +2,7 @@ import { boolean, index, pgEnum, pgTable, primaryKey, text, timestamp, uuid, var
 import type { PermissionKey, RoleKey } from '@sproutup/shared';
 import { timestamps } from './helpers.js';
 import { users } from './users.js';
+import { adminAccounts } from './portal-identities.js';
 
 export const roleCategoryEnum = pgEnum('role_category', ['staff', 'customer']);
 
@@ -32,7 +33,7 @@ export const rolePermissions = pgTable(
       .notNull()
       .references(() => permissions.key, { onDelete: 'cascade' }),
     grantedAt: timestamp('granted_at', { withTimezone: true }).notNull().defaultNow(),
-    grantedBy: uuid('granted_by').references(() => users.id, { onDelete: 'set null' }),
+    grantedBy: uuid('granted_by').references(() => adminAccounts.id, { onDelete: 'set null' }),
   },
   (table) => [
     primaryKey({ columns: [table.roleKey, table.permissionKey] }),
@@ -56,5 +57,25 @@ export const userRoles = pgTable(
   (table) => [
     primaryKey({ columns: [table.userId, table.roleKey] }),
     index('user_roles_role_idx').on(table.roleKey),
+  ],
+);
+
+/** Staff-only RBAC grants. Borrower and investor remain account classes. */
+export const adminRoleGrants = pgTable(
+  'admin_role_grants',
+  {
+    adminAccountId: uuid('admin_account_id')
+      .notNull()
+      .references(() => adminAccounts.id, { onDelete: 'cascade' }),
+    roleKey: varchar('role_key', { length: 80 })
+      .$type<RoleKey>()
+      .notNull()
+      .references(() => roles.key, { onDelete: 'restrict' }),
+    grantedAt: timestamp('granted_at', { withTimezone: true }).notNull().defaultNow(),
+    grantedBy: uuid('granted_by').references(() => adminAccounts.id, { onDelete: 'set null' }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.adminAccountId, table.roleKey] }),
+    index('admin_role_grants_role_idx').on(table.roleKey),
   ],
 );

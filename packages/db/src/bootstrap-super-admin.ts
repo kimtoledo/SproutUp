@@ -2,11 +2,9 @@ import { fileURLToPath } from 'node:url';
 import { config as loadEnv } from 'dotenv';
 import { and, eq } from 'drizzle-orm';
 import { createDatabase, type Database } from './database.js';
-import { users } from './schema/users.js';
-import { userRoles } from './schema/rbac.js';
+import { adminAccounts } from './schema/portal-identities.js';
+import { adminRoleGrants } from './schema/rbac.js';
 import { writeAudit } from './write-audit.js';
-
-loadEnv({ path: fileURLToPath(new URL('../../../.env', import.meta.url)) });
 
 export type BootstrapResult =
   | { ok: true; status: 'granted' | 'already_super_admin'; userId: string; email: string }
@@ -27,18 +25,23 @@ export async function bootstrapSuperAdmin(
 
   return database.transaction(async (transaction) => {
     const [account] = await transaction
-      .select({ id: users.id, email: users.email, status: users.status })
-      .from(users)
-      .where(eq(users.email, normalizedEmail))
+      .select({ id: adminAccounts.id, email: adminAccounts.email, status: adminAccounts.status })
+      .from(adminAccounts)
+      .where(eq(adminAccounts.email, normalizedEmail))
       .limit(1);
 
     if (!account) return { ok: false as const, reason: 'user_not_found' as const };
     if (account.status !== 'active') return { ok: false as const, reason: 'user_not_active' as const };
 
     const [existing] = await transaction
-      .select({ roleKey: userRoles.roleKey })
-      .from(userRoles)
-      .where(and(eq(userRoles.userId, account.id), eq(userRoles.roleKey, 'super_admin')))
+      .select({ roleKey: adminRoleGrants.roleKey })
+      .from(adminRoleGrants)
+      .where(
+        and(
+          eq(adminRoleGrants.adminAccountId, account.id),
+          eq(adminRoleGrants.roleKey, 'super_admin'),
+        ),
+      )
       .limit(1);
 
     if (existing) {
@@ -50,13 +53,15 @@ export async function bootstrapSuperAdmin(
       };
     }
 
-    await transaction.insert(userRoles).values({ userId: account.id, roleKey: 'super_admin' });
+    await transaction
+      .insert(adminRoleGrants)
+      .values({ adminAccountId: account.id, roleKey: 'super_admin' });
     await writeAudit(transaction, {
       actorType: 'system',
       actorRoles: ['super_admin'],
       action: 'account.super_admin_bootstrapped',
       outcome: 'succeeded',
-      resourceType: 'user',
+      resourceType: 'admin_account',
       resourceId: account.id,
       reason: 'Break-glass initial administrator bootstrap',
       metadata: { email: account.email, viaMakerChecker: false },
@@ -102,5 +107,6 @@ async function main(): Promise<void> {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
+  loadEnv({ path: fileURLToPath(new URL('../../../.env', import.meta.url)) });
   await main();
 }

@@ -46,6 +46,13 @@
   admin sign-in namespace. `APP_ORIGINS` and `AUTH_COOKIE_DOMAIN` support the three exact portal
   origins. Staff RBAC still uses same-ID legacy joins until the next FK migration; borrower and
   investor runtime boundaries remain.
+- **2026-08-30 — Administrator RBAC/FK cutover:** Migration `0022` copies reconciled staff grants
+  into `admin_role_grants`, repoints approval maker/checker/action, permission-grant, and assigned
+  reviewer foreign keys to `admin_accounts`, and removes legacy admin roles, credentials, and
+  sessions. Database triggers enforce staff-only admin grants, customer-only legacy grants, and no
+  legacy auth material for admin IDs. Admin catalogue/assignment/revocation services now operate
+  on admin accounts and cannot accept borrower/investor roles. Added idempotent controlled
+  `auth:provision-initial-admin`; customer ownership/runtime cutover remains.
 - Password-reset/email-verification delivery, MFA/OTP, audit integration into each privileged workflow, final grants, and emergency access remain; this task stays **WIP**.
 
 ## Scope

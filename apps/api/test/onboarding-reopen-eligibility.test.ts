@@ -16,8 +16,13 @@ beforeAll(async () => {
   await applyMigrations(pglite);
   await database.insert(schema.users).values([
     { id: applicantId, name: 'Reopen Applicant', email: 'reopen@sproutup.ph' },
-    { id: reviewerId, name: 'Reviewer', email: 'reopen-reviewer@sproutup.ph' },
+    { id: reviewerId, name: 'Reviewer Shadow', email: 'reopen-reviewer@sproutup.ph' },
   ]);
+  await database.insert(schema.adminAccounts).values({
+    id: reviewerId,
+    name: 'Reviewer',
+    email: 'reopen-reviewer@sproutup.ph',
+  });
 });
 
 afterAll(async () => {

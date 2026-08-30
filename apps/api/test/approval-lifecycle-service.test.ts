@@ -16,8 +16,12 @@ const now = () => new Date('2026-08-19T00:00:00Z');
 
 beforeAll(async () => {
   await applyMigrations(pglite);
-  await orm.insert(schema.roles).values({ key: 'investor', name: 'Investor', category: 'customer' });
-  await orm.insert(schema.users).values([
+  await orm.insert(schema.roles).values({
+    key: 'compliance_officer',
+    name: 'Compliance Officer',
+    category: 'staff',
+  });
+  await orm.insert(schema.adminAccounts).values([
     { id: makerId, name: 'Maker', email: 'lifecycle-maker@sproutup.ph' },
     { id: checkerId, name: 'Checker', email: 'lifecycle-checker@sproutup.ph' },
     { id: targetId, name: 'Target', email: 'lifecycle-target@sproutup.ph' },
@@ -33,7 +37,7 @@ async function propose(requestId: string) {
     makerUserId: makerId,
     makerRoles: ['super_admin'],
     targetUserId: targetId,
-    roleKey: 'investor',
+    roleKey: 'compliance_officer',
     reason: 'Pilot access request for review',
     requestId,
   });

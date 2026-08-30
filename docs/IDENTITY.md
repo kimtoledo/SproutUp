@@ -1,6 +1,6 @@
 # Portal Identity Isolation
 
-**Status:** Foundation, legacy backfill, and administrator runtime boundary implemented; customer runtime/foreign-key cutover in progress.
+**Status:** Foundation, legacy backfill, administrator runtime/RBAC cutover implemented; customer runtime/foreign-key cutover in progress.
 
 SproutUp treats administrator, borrower, and investor as separate account classes. Borrower and
 investor are not target RBAC roles and a credential issued in one portal must never authenticate
@@ -49,13 +49,21 @@ material.
 The administrator portal now signs in only through `/v1/auth/admin/*`, stores sessions only in
 `admin_sessions`, and uses the distinct HTTP-only `sproutup_admin` cookie namespace. Public admin
 signup is rejected by the Fastify boundary; staff provisioning remains a controlled operation.
-`GET /v1/admin/session-context` resolves an active `admin_accounts` row and staff roles only, and
-all current staff operations use that resolver. The admin, borrower, and investor web hosts have
+`GET /v1/admin/session-context` resolves an active `admin_accounts` row and `admin_role_grants`
+only, and all current staff operations use that resolver. The admin, borrower, and investor web hosts have
 independent marketing and auth presentation; host selection never grants authority.
 
 Borrower and investor login/registration temporarily continue through the legacy compatibility
 boundary while their ownership foreign keys are migrated. Their separate target tables are already
 backfilled, but they must not be called the active customer auth source yet.
+
+Migration `0022_mean_toad_men.sql` moves staff grants into `admin_role_grants`, repoints approval
+maker/checker/action, permission-grant attribution, and assigned-reviewer foreign keys to
+`admin_accounts`, and reconciles the copy before cleanup. It revokes legacy admin credentials and
+sessions and removes every legacy role grant for admin IDs. Database triggers permit staff roles
+only in `admin_role_grants`, customer compatibility roles only in `user_roles`, and reject any new
+legacy account/session material for an admin ID. Staff onboarding event actors retain same-ID
+legacy identity shadows until the polymorphic customer/admin event-attribution cutover.
 
 ## Cutover sequence
 
@@ -67,8 +75,8 @@ be migrated forward safely. Before release, the cutover must:
    taking precedence and ambiguous customer records rejected for operator review;
 2. **Done:** copy credential/session evidence into the matching namespace without exposing password
    hashes, with exact count reconciliation;
-3. move staff RBAC foreign keys to `admin_accounts` and customer ownership to the matching borrower
-   or investor account;
+3. **Staff done:** move staff RBAC/approval/reviewer foreign keys to `admin_accounts`; customer
+   ownership still needs to move to the matching borrower or investor account;
 4. **Admin done:** mount separate Better Auth boundaries and distinct cookie names for admin,
    borrower, and investor; borrower/investor remain;
 5. remove public customer-role selection and disable the legacy `/v1/auth/*` boundary; and

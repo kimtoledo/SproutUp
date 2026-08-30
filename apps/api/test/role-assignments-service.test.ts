@@ -16,12 +16,13 @@ beforeAll(async () => {
   await applyMigrations(pglite);
   await orm.insert(schema.roles).values([
     { key: 'super_admin', name: 'Super Admin', category: 'staff' },
+    { key: 'compliance_officer', name: 'Compliance Officer', category: 'staff' },
     { key: 'investor', name: 'Investor', category: 'customer' },
   ]);
-  await orm.insert(schema.users).values([
+  await orm.insert(schema.adminAccounts).values([
     { id: makerId, name: 'Maker', email: 'maker-service@sproutup.ph' },
     { id: checkerId, name: 'Checker', email: 'checker-service@sproutup.ph' },
-    { id: targetId, name: 'Investor', email: 'investor-service@sproutup.ph' },
+    { id: targetId, name: 'Compliance Hire', email: 'compliance-service@sproutup.ph' },
   ]);
 });
 
@@ -36,8 +37,8 @@ describe('role assignment approval service', () => {
       makerUserId: makerId,
       makerRoles: ['super_admin'],
       targetUserId: targetId,
-      roleKey: 'investor',
-      reason: 'Investor onboarding passed review',
+      roleKey: 'compliance_officer',
+      reason: 'Compliance hire access request',
       requestId: '00000000-0000-4000-8000-000000000204',
     });
     expect(proposal.ok).toBe(true);
@@ -65,8 +66,13 @@ describe('role assignment approval service', () => {
 
     const grants = await orm
       .select()
-      .from(schema.userRoles)
-      .where(and(eq(schema.userRoles.userId, targetId), eq(schema.userRoles.roleKey, 'investor')));
+      .from(schema.adminRoleGrants)
+      .where(
+        and(
+          eq(schema.adminRoleGrants.adminAccountId, targetId),
+          eq(schema.adminRoleGrants.roleKey, 'compliance_officer'),
+        ),
+      );
     const actions = await orm
       .select({ action: schema.approvalActions.action })
       .from(schema.approvalActions)
@@ -89,7 +95,7 @@ describe('role assignment approval service', () => {
         makerUserId: makerId,
         makerRoles: ['super_admin'],
         targetUserId: makerId,
-        roleKey: 'investor',
+        roleKey: 'compliance_officer',
         reason: 'Self-targeted role request',
         requestId: '00000000-0000-4000-8000-000000000207',
       }),
@@ -104,5 +110,15 @@ describe('role assignment approval service', () => {
         requestId: '00000000-0000-4000-8000-000000000208',
       }),
     ).resolves.toEqual({ ok: false, reason: 'restricted_role' });
+    await expect(
+      service.propose({
+        makerUserId: makerId,
+        makerRoles: ['super_admin'],
+        targetUserId: targetId,
+        roleKey: 'investor',
+        reason: 'Customer roles are not admin grants',
+        requestId: '00000000-0000-4000-8000-000000000209',
+      }),
+    ).resolves.toEqual({ ok: false, reason: 'role_not_found' });
   });
 });

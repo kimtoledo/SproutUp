@@ -61,12 +61,12 @@ export function createAdminAuthorizationResolver(database: Database) {
     if (!user) return null;
 
     const roleRows = await database
-      .select({ roleKey: schema.userRoles.roleKey })
-      .from(schema.userRoles)
-      .innerJoin(schema.roles, eq(schema.userRoles.roleKey, schema.roles.key))
+      .select({ roleKey: schema.adminRoleGrants.roleKey })
+      .from(schema.adminRoleGrants)
+      .innerJoin(schema.roles, eq(schema.adminRoleGrants.roleKey, schema.roles.key))
       .where(
         and(
-          eq(schema.userRoles.userId, user.id),
+          eq(schema.adminRoleGrants.adminAccountId, user.id),
           eq(schema.roles.isActive, true),
           eq(schema.roles.category, 'staff'),
         ),

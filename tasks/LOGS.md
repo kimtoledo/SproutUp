@@ -34,6 +34,58 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Administrator RBAC, actor FK, and legacy-auth cutover
+
+**Status:** Done
+
+### Updated
+
+- Added `admin_role_grants` and migration `0022_mean_toad_men.sql`. It fails closed when approval,
+  permission-grant, or reviewer actors are not backfilled admin accounts; copies and exactly
+  reconciles staff grants; then repoints approval maker/checker/action, role-permission grantor,
+  and onboarding reviewer foreign keys to `admin_accounts`.
+- The migration removes every legacy role grant, credential, and session for admin IDs. Database
+  triggers now enforce staff-only `admin_role_grants`, customer-only compatibility `user_roles`,
+  and reject legacy account/session material for admin IDs.
+- Admin authorization, access catalogue, role assignment, and role revocation now read/write only
+  admin accounts and staff grants. Customer roles are excluded from the admin catalogue and cannot
+  be proposed even if a caller supplies their canonical key.
+- Added `npm run auth:provision-initial-admin`, an environment-secret-driven, idempotent controlled
+  command that creates credentials only through the internal admin auth service and grants
+  `super_admin` without exposing password/session material. The role-only existing-admin recovery
+  command now uses `admin_role_grants`.
+- Updated migration/service tests to model staff and customers as different account classes and
+  added coverage for exact grant copy, legacy auth cleanup, namespace trigger denials, customer-role
+  denial, and initial provisioning/idempotency.
+- Applied and reconciled locally: 6 admin accounts, 6 admin grants, 0 legacy admin grants,
+  credentials, or sessions, and 1 immutable cutover audit event. Live admin login/context remained
+  `200` with `super_admin`; the same credential on legacy auth became `401`; borrower login remained
+  `200`.
+- Full repository gate passed: API 134, web 86, database 30, shared 28 tests (278 total), all lint,
+  typecheck, API/Next builds, database readiness, and production audit (0 vulnerabilities).
+
+### Decisions
+
+- Staff RBAC is physically attached to `admin_accounts`; borrower and investor cannot be RBAC
+  grants in the administrator namespace.
+- Revoking legacy admin credentials and sessions is required for cutover, not optional cleanup;
+  otherwise a copied staff credential could continue authenticating through customer auth.
+- Same-ID legacy user shadows remain only where mixed customer/admin event attribution still has a
+  legacy FK. They carry no staff role or admin authentication material.
+
+### Open items
+
+- Split onboarding applicant and event actor attribution, documents, consents, and remaining
+  customer-owned foreign keys between borrower and investor accounts.
+- Mount borrower/investor auth and cookie namespaces, migrate/reconcile their sessions, then disable
+  the legacy `/v1/auth/*` and customer-role bootstrap.
+- Existing `.claude/` and `packages/db/src/schema/borrower.ts` remain untouched/uncommitted.
+
+### Next
+
+- Implement borrower/investor ownership foreign-key cutover and isolated auth services together so
+  new customer registrations never create records in legacy `users` or `user_roles`.
+
 ## 2026-08-30 — Isolated administrator auth and independent portal entry
 
 **Status:** Done

@@ -16,8 +16,12 @@ let approvalId = '';
 
 beforeAll(async () => {
   await applyMigrations(pglite);
-  await orm.insert(schema.roles).values({ key: 'investor', name: 'Investor', category: 'customer' });
-  await orm.insert(schema.users).values([
+  await orm.insert(schema.roles).values({
+    key: 'compliance_officer',
+    name: 'Compliance Officer',
+    category: 'staff',
+  });
+  await orm.insert(schema.adminAccounts).values([
     { id: makerId, name: 'Maker', email: 'history-maker@sproutup.ph' },
     { id: checkerId, name: 'Checker', email: 'history-checker@sproutup.ph' },
     { id: targetId, name: 'Target', email: 'history-target@sproutup.ph' },
@@ -26,7 +30,7 @@ beforeAll(async () => {
     makerUserId: makerId,
     makerRoles: ['super_admin'],
     targetUserId: targetId,
-    roleKey: 'investor',
+    roleKey: 'compliance_officer',
     reason: 'History visibility request',
     requestId: '00000000-0000-4000-8000-000000000604',
   });

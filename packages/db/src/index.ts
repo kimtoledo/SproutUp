@@ -18,4 +18,8 @@ export {
   type IdentityCutoverReport,
   type TargetAccountType,
 } from './identity-cutover-report.js';
+export {
+  bootstrapSuperAdmin,
+  type BootstrapResult,
+} from './bootstrap-super-admin.js';
 export * as schema from './schema/index.js';

@@ -17,6 +17,7 @@ import type {
 } from '@sproutup/shared';
 import { id, timestamps } from './helpers.js';
 import { users } from './users.js';
+import { adminAccounts } from './portal-identities.js';
 
 export const onboardingCaseTypeEnum = pgEnum('onboarding_case_type', ['borrower', 'investor']);
 export const onboardingCaseStatusEnum = pgEnum('onboarding_case_status', [
@@ -52,7 +53,7 @@ export const onboardingCases = pgTable(
     applicantUserId: uuid('applicant_user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
-    assignedReviewerUserId: uuid('assigned_reviewer_user_id').references(() => users.id, {
+    assignedReviewerUserId: uuid('assigned_reviewer_user_id').references(() => adminAccounts.id, {
       onDelete: 'restrict',
     }),
     submittedAt: timestamp('submitted_at', { withTimezone: true }),

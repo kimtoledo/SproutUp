@@ -149,6 +149,45 @@ describe('portal identity backfill migration', () => {
         `select metadata from audit_events where action = 'identity.portal_backfill_completed'`,
       );
       expect(audit.rows.at(-1)?.metadata).toMatchObject({ users: 3, credentials: 3, sessions: 3 });
+
+      await applyMigration(pglite, '0022_mean_toad_men.sql');
+      const staffCutover = await pglite.query<{
+        admin_grants: number;
+        legacy_admin_roles: number;
+        legacy_admin_credentials: number;
+        legacy_admin_sessions: number;
+        legacy_customer_roles: number;
+      }>(`select
+        (select count(*)::int from admin_role_grants where admin_account_id = $1) admin_grants,
+        (select count(*)::int from user_roles where user_id = $1) legacy_admin_roles,
+        (select count(*)::int from accounts where user_id = $1) legacy_admin_credentials,
+        (select count(*)::int from sessions where user_id = $1) legacy_admin_sessions,
+        (select count(*)::int from user_roles where user_id in ($2, $3)) legacy_customer_roles`,
+        [adminId, borrowerId, investorId],
+      );
+      expect(staffCutover.rows[0]).toEqual({
+        admin_grants: 1,
+        legacy_admin_roles: 0,
+        legacy_admin_credentials: 0,
+        legacy_admin_sessions: 0,
+        legacy_customer_roles: 2,
+      });
+      await expect(
+        pglite.query(
+          `insert into user_roles (user_id, role_key) values ($1, 'super_admin')`,
+          [adminId],
+        ),
+      ).rejects.toThrow('admin accounts cannot receive legacy role grants');
+      await expect(
+        pglite.query(
+          `insert into admin_role_grants (admin_account_id, role_key) values ($1, 'investor')`,
+          [adminId],
+        ),
+      ).rejects.toThrow('admin role grants accept staff roles only');
+      const staffAudit = await pglite.query<{ action: string }>(
+        `select action from audit_events where action = 'identity.admin_rbac_cutover_completed'`,
+      );
+      expect(staffAudit.rows).toEqual([{ action: 'identity.admin_rbac_cutover_completed' }]);
     } finally {
       await pglite.close();
     }

@@ -4,7 +4,7 @@
 
 ## Implementation status
 
-The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19. On 2026-08-30, the additive portal-identity isolation foundation introduced separate admin, borrower, and investor account/auth relations plus a protected global email registry. The legacy unified `users` relations remain temporarily active until their foreign keys and runtime auth boundary are migrated forward. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
+The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19. On 2026-08-30, the portal-identity isolation work introduced separate admin, borrower, and investor account/auth relations, a protected global email registry, and active `admin_role_grants` plus admin approval/reviewer foreign keys. The legacy unified `users` relations remain temporarily active for customer compatibility and mixed onboarding event attribution until borrower/investor ownership and runtime auth are migrated forward. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
 
 This is a normalized domain outline for the Philippine revamp. It intentionally avoids copying legacy table names and duplicated summary tables.
 
@@ -15,7 +15,8 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 - portal-specific credentials, sessions, verifications, and rate limits — implemented foundation;
   runtime cutover remains
 - `admin_profiles`, `investor_profiles`, `borrower_profiles`
-- `roles`, `permissions`, admin role assignments, `role_permissions` — staff RBAC only after cutover
+- `roles`, `permissions`, `admin_role_grants`, `role_permissions` — staff RBAC implemented on the
+  admin account boundary; customer compatibility roles remain only until customer cutover
 - `mfa_methods`, `auth_attempts`
 - `audit_events` — append-only actor/action/resource/change metadata
 

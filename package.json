@@ -25,7 +25,8 @@
     "db:check": "npm run check --workspace @sproutup/db",
     "db:studio": "npm run studio --workspace @sproutup/db",
     "db:bootstrap-super-admin": "npm run bootstrap:super-admin --workspace @sproutup/db",
-    "db:report-identity-cutover": "npm run report:identity-cutover --workspace @sproutup/db"
+    "db:report-identity-cutover": "npm run report:identity-cutover --workspace @sproutup/db",
+    "auth:provision-initial-admin": "npm run provision:initial-admin --workspace @sproutup/api"
   },
   "devDependencies": {
     "eslint": "9.39.5",

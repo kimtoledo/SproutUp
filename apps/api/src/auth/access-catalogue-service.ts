@@ -44,6 +44,7 @@ export function createAccessCatalogueService(database: Database): AccessCatalogu
             isActive: schema.roles.isActive,
           })
           .from(schema.roles)
+          .where(eq(schema.roles.category, 'staff'))
           .orderBy(asc(schema.roles.name)),
         database
           .select({
@@ -68,30 +69,33 @@ export function createAccessCatalogueService(database: Database): AccessCatalogu
 
     async listUsers(input) {
       const filters: SQL[] = [];
-      if (input.status) filters.push(eq(schema.users.status, input.status));
+      if (input.status) filters.push(eq(schema.adminAccounts.status, input.status));
       if (input.query) {
         const escapedQuery = input.query.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
         const search = `%${escapedQuery}%`;
-        const textFilter = or(ilike(schema.users.name, search), ilike(schema.users.email, search));
+        const textFilter = or(
+          ilike(schema.adminAccounts.name, search),
+          ilike(schema.adminAccounts.email, search),
+        );
         if (textFilter) filters.push(textFilter);
       }
       const where = filters.length > 0 ? and(...filters) : undefined;
 
       return database.transaction(async (transaction) => {
         const [[totalRow], users] = await Promise.all([
-          transaction.select({ value: count() }).from(schema.users).where(where),
+          transaction.select({ value: count() }).from(schema.adminAccounts).where(where),
           transaction
             .select({
-              id: schema.users.id,
-              name: schema.users.name,
-              email: schema.users.email,
-              emailVerified: schema.users.emailVerified,
-              status: schema.users.status,
-              createdAt: schema.users.createdAt,
+              id: schema.adminAccounts.id,
+              name: schema.adminAccounts.name,
+              email: schema.adminAccounts.email,
+              emailVerified: schema.adminAccounts.emailVerified,
+              status: schema.adminAccounts.status,
+              createdAt: schema.adminAccounts.createdAt,
             })
-            .from(schema.users)
+            .from(schema.adminAccounts)
             .where(where)
-            .orderBy(asc(schema.users.createdAt), asc(schema.users.id))
+            .orderBy(asc(schema.adminAccounts.createdAt), asc(schema.adminAccounts.id))
             .limit(input.pageSize)
             .offset((input.page - 1) * input.pageSize),
         ]);
@@ -101,10 +105,13 @@ export function createAccessCatalogueService(database: Database): AccessCatalogu
         }
 
         const grants = await transaction
-          .select({ userId: schema.userRoles.userId, roleKey: schema.userRoles.roleKey })
-          .from(schema.userRoles)
-          .where(inArray(schema.userRoles.userId, users.map(({ id }) => id)))
-          .orderBy(asc(schema.userRoles.roleKey));
+          .select({
+            userId: schema.adminRoleGrants.adminAccountId,
+            roleKey: schema.adminRoleGrants.roleKey,
+          })
+          .from(schema.adminRoleGrants)
+          .where(inArray(schema.adminRoleGrants.adminAccountId, users.map(({ id }) => id)))
+          .orderBy(asc(schema.adminRoleGrants.roleKey));
         const rolesByUser = new Map<string, RoleKey[]>();
         for (const grant of grants) {
           const roles = rolesByUser.get(grant.userId) ?? [];

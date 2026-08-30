@@ -16,17 +16,17 @@ beforeAll(async () => {
   await applyMigrations(pglite);
   await orm.insert(schema.roles).values([
     { key: 'super_admin', name: 'Super Admin', category: 'staff' },
-    { key: 'sme_borrower', name: 'SME Borrower', category: 'customer' },
-    { key: 'investor', name: 'Investor', category: 'customer' },
+    { key: 'sales_officer', name: 'Sales Officer', category: 'staff' },
+    { key: 'credit_analyst', name: 'Credit Analyst', category: 'staff' },
   ]);
-  await orm.insert(schema.users).values([
+  await orm.insert(schema.adminAccounts).values([
     { id: makerId, name: 'Maker', email: 'revoke-maker@sproutup.ph' },
     { id: checkerId, name: 'Checker', email: 'revoke-checker@sproutup.ph' },
-    { id: targetId, name: 'Dual Customer', email: 'revoke-target@sproutup.ph' },
+    { id: targetId, name: 'Dual Staff', email: 'revoke-target@sproutup.ph' },
   ]);
-  await orm.insert(schema.userRoles).values([
-    { userId: targetId, roleKey: 'sme_borrower', grantedBy: makerId },
-    { userId: targetId, roleKey: 'investor', grantedBy: makerId },
+  await orm.insert(schema.adminRoleGrants).values([
+    { adminAccountId: targetId, roleKey: 'sales_officer', grantedBy: makerId },
+    { adminAccountId: targetId, roleKey: 'credit_analyst', grantedBy: makerId },
   ]);
 });
 
@@ -41,8 +41,8 @@ describe('role revocation approval service', () => {
       makerUserId: makerId,
       makerRoles: ['super_admin'],
       targetUserId: targetId,
-      roleKey: 'investor',
-      reason: 'Remove duplicate customer access',
+      roleKey: 'credit_analyst',
+      reason: 'Remove obsolete analyst access',
       requestId: '00000000-0000-4000-8000-000000000414',
     });
     expect(proposal.ok).toBe(true);
@@ -67,15 +67,15 @@ describe('role revocation approval service', () => {
     ).resolves.toEqual({ ok: true });
 
     const remaining = await orm
-      .select({ roleKey: schema.userRoles.roleKey })
-      .from(schema.userRoles)
-      .where(eq(schema.userRoles.userId, targetId));
+      .select({ roleKey: schema.adminRoleGrants.roleKey })
+      .from(schema.adminRoleGrants)
+      .where(eq(schema.adminRoleGrants.adminAccountId, targetId));
     const actions = await orm
       .select({ action: schema.approvalActions.action })
       .from(schema.approvalActions)
       .where(eq(schema.approvalActions.requestId, proposal.request.id));
 
-    expect(remaining).toEqual([{ roleKey: 'sme_borrower' }]);
+    expect(remaining).toEqual([{ roleKey: 'sales_officer' }]);
     expect(actions.map(({ action }) => action)).toEqual(['proposed', 'approved', 'executed']);
   });
 
@@ -86,8 +86,8 @@ describe('role revocation approval service', () => {
         makerUserId: makerId,
         makerRoles: ['super_admin'],
         targetUserId: targetId,
-        roleKey: 'sme_borrower',
-        reason: 'Remove final customer role',
+        roleKey: 'sales_officer',
+        reason: 'Remove final staff role',
         requestId: '00000000-0000-4000-8000-000000000417',
       }),
     ).resolves.toEqual({ ok: false, reason: 'last_role_not_allowed' });
