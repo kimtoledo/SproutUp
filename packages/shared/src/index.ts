@@ -48,3 +48,7 @@ export {
   type OnboardingCaseType,
   type OnboardingEventType,
 } from './onboarding';
+export {
+  borrowerEntityTypeSchema,
+  type BorrowerEntityType,
+} from './borrower';

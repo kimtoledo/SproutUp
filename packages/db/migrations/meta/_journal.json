@@ -176,6 +176,13 @@
       "when": 1788063867512,
       "tag": "0024_customer-auth-cutover",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1788068465751,
+      "tag": "0025_lame_may_parker",
+      "breakpoints": true
     }
   ]
 }

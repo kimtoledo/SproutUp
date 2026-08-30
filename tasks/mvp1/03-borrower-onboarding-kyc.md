@@ -31,6 +31,17 @@
   context, own-device management, and portal sign-out now use only the borrower namespace. The
   legacy unified customer auth path and `sme_borrower` authority are retired; context exposes
   `accountType: borrower`, no roles, and only server-defined borrower capabilities.
+- **2026-08-30 — KYB profile capture (slice S2.1):** Added `borrower_profiles`/`beneficial_owners`
+  (migration `0025`) and `GET`/`POST /v1/onboarding/borrower/cases/:caseId/profile`, capability- and
+  ownership-bound to the existing `borrower_onboarding.read_own`/`manage_own` permissions. A save
+  is an upsert guarded by the profile's own optimistic version, editable only while the case is
+  `draft` or `needs_information`, and replaces beneficial owners wholesale each time; declared
+  ownership percentages are rejected server-side if their total exceeds 100%. Every save appends an
+  immutable `borrower_profile.saved` audit event. This captures company registration, entity type
+  (sole proprietorship/partnership/corporation), authorized contact, and beneficial-owner/PEP
+  fields; it does not yet encode which fields or documents are *required* per entity type — that
+  policy is still an open decision below. Evidence/document attachment, completeness rules, and the
+  approve command remain unimplemented.
 
 ## Scope
 

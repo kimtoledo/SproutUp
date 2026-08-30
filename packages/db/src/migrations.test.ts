@@ -36,6 +36,7 @@ beforeAll(async () => {
     '0022_mean_toad_men.sql',
     '0023_real_daredevil.sql',
     '0024_customer-auth-cutover.sql',
+    '0025_lame_may_parker.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));

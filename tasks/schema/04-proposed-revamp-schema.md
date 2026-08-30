@@ -14,7 +14,11 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 - `admin_accounts`, `borrower_accounts`, `investor_accounts` — implemented separate account classes
 - portal-specific credentials, sessions, verifications, rate limits, routes, cookies, and session
   contexts — implemented and active for all three account classes
-- `admin_profiles`, `investor_profiles`, `borrower_profiles`
+- `admin_profiles`, `investor_profiles`
+- `borrower_profiles`, `beneficial_owners` — **implemented (2026-08-30)**: versioned KYB capture
+  (entity type, registration, authorized contact) plus a full-replace beneficial-owner list checked
+  server-side against a 100% ownership total; required fields/documents per entity type remain an
+  open decision (task 03)
 - `roles`, `permissions`, `admin_role_grants`, `role_permissions` — staff RBAC implemented on the
   admin account boundary; historical customer role definitions are inactive evidence only
 - `mfa_methods`, `auth_attempts`
@@ -26,7 +30,7 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 - `onboarding_cases`, `onboarding_case_events` — implemented workflow spine with registry-backed
   applicant/actor attribution and database-enforced borrower/investor case-class matching
 - `kyc_cases`, `kyc_requirements`, `kyc_submissions`, `kyc_decisions`
-- `screening_checks`, `risk_assessments`, `beneficial_owners`
+- `screening_checks`, `risk_assessments` (`beneficial_owners` moved to Identity above — implemented)
 - `documents`, `document_versions` — **implemented (2026-08-30)**: private file store with an
   owner, coarse classification, and a `purpose` tag; append-only versions whose identity/content
   columns are immutable and whose only mutable field is the malware-scan outcome. Byte storage is

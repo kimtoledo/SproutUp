@@ -34,6 +34,71 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Borrower KYB profile capture (slice S2.1)
+
+**Status:** WIP
+
+### Updated
+
+- Wired an orphaned, uncommitted schema draft (`packages/db/src/schema/borrower.ts`) into the
+  active schema: `borrower_profiles` (one per case, its own optimistic `version`) and
+  `beneficial_owners`. Fixed a stale `recordedByUserId` foreign key the draft still pointed at the
+  retired unified `users` table; ownership is already carried by the owning case, so the field was
+  dropped rather than repointed. Generated migration `0025_lame_may_parker.sql` and added it to
+  every hardcoded migration-list fixture (`database-fixture.ts`, `migrations.test.ts`,
+  `bootstrap-super-admin.test.ts`).
+- Added `borrowerEntityTypeSchema`/`BorrowerEntityType` to `@sproutup/shared` (`sole_proprietorship
+  | partnership | corporation`), matching the enum/type pattern already used for onboarding case
+  type/status.
+- Added `createBorrowerProfileService` (`apps/api/src/onboarding/borrower-profile-service.ts`):
+  `getOwn`/`saveOwn`, ownership- and case-type-bound, editable only while the case is `draft` or
+  `needs_information`, upserted under the profile's own optimistic version (omitted
+  `expectedVersion` means create; a mismatch is `stale_version`). A save replaces beneficial owners
+  wholesale in the same transaction and is rejected with `ownership_percentage_exceeds_total`
+  before any write if the declared percentages sum past 100% (exact integer arithmetic on
+  hundredths of a percent, no floats). Every successful save appends an immutable
+  `borrower_profile.saved` audit event.
+- Added `GET`/`POST /v1/onboarding/borrower/cases/:caseId/profile`
+  (`apps/api/src/routes/borrower-profile.ts`), gated by the existing
+  `borrower_onboarding.read_own`/`manage_own` permissions, with full OpenAPI operation contracts
+  and response schemas (`openapi/borrower-profile-schemas.ts`). Wired into `AppDependencies`/`app.ts`
+  as an optional `onboarding.borrowerProfile` route group and into `server.ts`; extended
+  `openapi.test.ts`'s fixture and path/operation assertions to cover both operations.
+- Added `apps/api/test/borrower-profile-service.test.ts` (6 tests: create, version-guarded update,
+  wholesale owner replacement, percentage-total rejection, cross-applicant denial, non-editable
+  case denial) and `apps/api/test/borrower-profile-routes.test.ts` (8 tests: capability gate,
+  successful read, validation, argument pass-through, and the full HTTP failure-code mapping).
+
+### Decisions
+
+- The KYB profile mechanism (fields, versioning, ownership-percentage integrity) is built ahead of
+  the still-open "required fields/documents per entity type" policy (task 03), the same sequencing
+  already used for `FileStorage` ahead of the storage-vendor decision and `EmailDelivery` ahead of
+  the transactional-email vendor decision. No field beyond `entityType`/`registeredName` is
+  server-required yet; that stays a product/compliance decision, not an engineering default.
+  `borrowerEntityTypeSchema`'s three values (sole proprietorship/partnership/corporation) reflect
+  the standard Philippine DTI/SEC registration categories but are not yet a confirmed product
+  decision either — flagged in the task doc and schema comments, not silently assumed.
+- Beneficial owners are saved as a full replace, not diffed by id, because the client has no
+  per-owner identity to track yet; this keeps the percentage-total check always describing exactly
+  the row set being written.
+
+### Open items
+
+- Supported Philippine entity types, required fields/documents per type, and the AML/sanctions
+  provider/screening policy remain unresolved (task 03's existing open decisions) — evidence
+  upload, completeness rules, and the approve command still depend on them.
+- No web UI reads or writes this endpoint yet; portal profile screens remain listed as not done in
+  task 21.
+- The investor counterpart (an equivalent KYC/suitability profile for task 04) has not been started.
+
+### Next
+
+- Full repository gate passed: API 161, web 87, database 31, and shared 28 tests (307 total),
+  lint/typecheck across all workspaces, API/Next production builds, and database readiness.
+- Candidates for the next slice: the investor KYC/suitability profile (task 04), the borrower
+  profile web form (task 21), or resuming task 02 with MFA/OTP and the forgot-password web pages.
+
 ## 2026-08-30 — Audited password-reset and email-verification delivery
 
 **Status:** WIP
