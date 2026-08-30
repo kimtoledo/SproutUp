@@ -20,6 +20,10 @@ const environmentSchema = z.object({
   // `notifications/email-delivery.ts`. Unused in production, which fails
   // closed until an approved transactional-email provider is wired.
   EMAIL_OUTBOX_DIR: z.string().min(1).default('.data/email-outbox'),
+  // Development-only private-document root; see `storage/select-file-storage.ts`.
+  // Unused in production, which fails closed until an approved object-storage
+  // adapter is wired.
+  DOCUMENT_STORAGE_DIR: z.string().min(1).default('.data/documents'),
 });
 
 export type TrustProxyConfig = boolean | number | string[];
@@ -48,6 +52,7 @@ export interface ApiConfig {
   environment: 'development' | 'test' | 'production';
   trustProxy: TrustProxyConfig;
   emailOutboxDir: string;
+  documentStorageDir: string;
 }
 
 export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiConfig {
@@ -69,5 +74,6 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiCon
     environment: parsed.NODE_ENV,
     trustProxy: parseTrustProxy(parsed.API_TRUST_PROXY),
     emailOutboxDir: parsed.EMAIL_OUTBOX_DIR,
+    documentStorageDir: parsed.DOCUMENT_STORAGE_DIR,
   };
 }

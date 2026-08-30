@@ -1,8 +1,9 @@
 # Private document store (`documents` / `document_versions`)
 
-**Status:** schema + storage adapter + internal service implemented (2026-08-30, slice S1.2a).
-No HTTP upload/download routes yet — those land with the borrower KYB form (S1.2c), where
-`@fastify/multipart` is wired and `documents.*` capabilities are added to the RBAC map.
+**Status:** schema + storage adapter + internal service + HTTP routes implemented (2026-08-30,
+slices S1.2a and S1.2c). `documents.upload_own`/`documents.read_own` are granted to borrower and
+investor accounts; there is no staff review route or automated scan-provider integration yet, so a
+document stays `pending` — and therefore undownloadable — until both of those land.
 
 ## Why
 
@@ -33,8 +34,12 @@ generated ids only, no separators, no `..`.
 
 - `createInMemoryFileStorage()` — tests.
 - `createLocalFileStorage(dir)` — development; one flat file per key under `dir`, `wx` write flag.
-- S3-compatible adapter — deferred to infrastructure approval; metadata + access policy stay in
-  PostgreSQL regardless of backend.
+- `createUnconfiguredFileStorage()` — fails closed; the composition root
+  (`storage/select-file-storage.ts`) selects this in production until an approved
+  object-storage adapter is wired, so a deployment never silently accepts an upload
+  it cannot durably store. `DOCUMENT_STORAGE_DIR` (default `.data/documents`, gitignored)
+  configures the local-dev root; metadata + access policy stay in PostgreSQL regardless
+  of backend.
 
 ## Service — `apps/api/src/documents/document-service.ts`
 
@@ -51,3 +56,18 @@ generated ids only, no separators, no `..`.
 Content type is allowlisted to `application/pdf`, `image/jpeg`, `image/png`; `maxBytes` defaults to
 20 MiB. Download is API-mediated (per-request authz, `Content-Disposition: attachment`,
 `nosniff`) — there is no public or signed object URL in the pilot.
+
+## HTTP routes — `apps/api/src/routes/documents.ts`
+
+All four require an authenticated borrower/investor session and the matching capability
+(`documents.upload_own` or `documents.read_own`); ownership is always re-derived from the session,
+never a client-supplied field.
+
+| Route | Behaviour |
+| --- | --- |
+| `POST /v1/documents` | Creates a new document. `multipart/form-data`: `classification`, `purpose` fields plus one `file` part — **not** a JSON body; Fastify never populates `request.body` for a multipart request, so the route hand-parses every part via `request.parts()` instead of declaring a `body` schema. Each file part is drained (`toBuffer()`) while it is the current part, or the async iterator hangs waiting for backpressure to clear. |
+| `POST /v1/documents/:documentId/versions` | Same multipart shape; appends a version to an owned document. `document_not_found` and `owner_mismatch` both surface as one generic 404 so the response never discloses whether a document id you don't own exists. |
+| `GET /v1/documents` | Lists the caller's own documents at their latest version (JSON). |
+| `GET /v1/documents/:documentVersionId/download` | Streams the bytes with `Content-Type`/`Content-Disposition` set from stored metadata. Deliberately has no `response[200]` JSON schema — a JSON-schema-shaped response would make Fastify try to serialize the raw `Buffer` through `fast-json-stringify`. `403`/`404`/`409` map the service's `forbidden`/`not_found`/`not_scanned_clean` results. |
+
+`@fastify/multipart` is registered globally in `app.ts` with `limits: { fileSize: DEFAULT_MAX_DOCUMENT_BYTES, files: 1, fields: 5 }` — a defense-in-depth cap at the stream level, ahead of the service's own byte-length check.

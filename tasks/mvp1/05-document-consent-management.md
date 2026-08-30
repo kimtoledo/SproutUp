@@ -14,6 +14,18 @@
   foreign keys now use the immutable global account registry; consent publication is admin-only at
   the database boundary. Existing references are preflighted before migration and exact aggregate
   counts are retained in immutable cutover audit evidence.
+- **2026-08-30 — Document HTTP routes (slice S1.2c):** Added `@fastify/multipart` (registered
+  globally with a `DEFAULT_MAX_DOCUMENT_BYTES` stream-level cap) and `POST /v1/documents`,
+  `POST /v1/documents/:documentId/versions`, `GET /v1/documents`, and
+  `GET /v1/documents/:documentVersionId/download`, all capability- and ownership-bound to two new
+  permission keys (`documents.upload_own`, `documents.read_own`) granted to borrower and investor
+  accounts. Added a fail-closed `createUnconfiguredFileStorage` the production composition root
+  selects until an approved object-storage adapter is wired (mirroring the `EmailDelivery`
+  pattern), and `DOCUMENT_STORAGE_DIR` for the local-dev root. See
+  [`../../docs/DOCUMENTS.md`](../../docs/DOCUMENTS.md). No staff review route and no automated
+  malware-scan provider exist yet, so every uploaded document stays `scan_state = 'pending'` and
+  therefore undownloadable by design — this is the correct fail-closed behavior, not a bug, until
+  those land. Legal-content, e-signature, and retention-job decisions are unchanged.
 
 ## Scope
 
@@ -45,3 +57,9 @@
 - Required consent-document keys, content owners/approvers, localization, effective/re-consent rules, and consent withdrawal semantics.
 - E-signature provider and legally required document set.
 - Retention periods, deletion restrictions, and storage region.
+- Malware-scan provider (or an approved manual-review path for the pilot) — until one exists, every
+  uploaded document is permanently stuck `pending`/undownloadable, which blocks the KYB/KYC
+  evidence loop end-to-end even though upload itself works.
+- Object-storage vendor for production (`createUnconfiguredFileStorage` fails closed until then).
+- Whether/how staff can read borrower/investor documents during compliance review (no staff route
+  exists yet; the service's `staffCanReadAny` parameter is unwired from HTTP).

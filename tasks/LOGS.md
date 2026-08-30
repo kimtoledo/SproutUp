@@ -34,6 +34,79 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Private document upload/list/download HTTP routes
+
+**Status:** WIP
+
+### Updated
+
+- Added `@fastify/multipart` 10.1.1 (exact-pinned, matching the `@fastify/swagger` convention),
+  registered globally in `app.ts` with `limits: { fileSize: DEFAULT_MAX_DOCUMENT_BYTES, files: 1,
+  fields: 5 }` — a stream-level cap ahead of the document service's own byte-length check.
+- Added two new permission keys, `documents.upload_own` and `documents.read_own`
+  (`packages/shared/src/authorization.ts`), granted to both the borrower and investor account
+  types alongside their existing onboarding permissions.
+- Added `POST /v1/documents`, `POST /v1/documents/:documentId/versions`, `GET /v1/documents`, and
+  `GET /v1/documents/:documentVersionId/download` (`apps/api/src/routes/documents.ts`), wired into
+  `AppDependencies`/`app.ts` as an optional top-level `documents` service and into `server.ts`. Full
+  details, including two deliberate OpenAPI-contract gaps for the multipart/binary operations, are
+  in [`../../docs/DOCUMENTS.md`](../../docs/DOCUMENTS.md) and task 18's progress log.
+- Added a fail-closed `createUnconfiguredFileStorage()` (`apps/api/src/storage/file-storage.ts`)
+  and a `selectFileStorage(config)` composition-root selector (`select-file-storage.ts`, a separate
+  file from `file-storage.ts` specifically to avoid a circular value import with
+  `local-file-storage.ts`), mirroring the `EmailDelivery` pattern exactly: production fails closed
+  until an approved object-storage adapter is wired; other environments get a local-file store
+  rooted at `DOCUMENT_STORAGE_DIR` (default `.data/documents`, already covered by the `/.data/`
+  gitignore entry added for the email outbox).
+- Added `apps/api/test/document-routes.test.ts` (9 tests, hand-building multipart request bodies
+  since `light-my-request` has no FormData helper) and extended `file-storage.test.ts` (4 new
+  tests) and `openapi.test.ts`'s fixture/assertions.
+
+### Decisions
+
+- Kept this slice to upload/list/download only. A staff document-review route, the actual
+  malware-scan provider integration, and a borrower/investor-specific document-type checklist are
+  explicitly out of scope — each needs its own design (permission model for staff, vendor
+  selection, required-document policy) rather than being invented here. `getForDownload`'s existing
+  `staffCanReadAny` parameter stays unwired from HTTP for the same reason.
+- Documents remain scan-gated by design: every upload lands at `scan_state = 'pending'` and stays
+  undownloadable until a scan resolves it, and nothing in this slice can resolve one. This is the
+  correct behavior given the acceptance criterion "file type, size, integrity, and malware checks
+  run before acceptance," not a regression to fix later — the gap is the missing scan provider, not
+  this gate.
+
+### Debugging notes (for the next session touching this file)
+
+- A `body` JSON schema on a multipart route makes every request fail 400 `VALIDATION_ERROR` before
+  the handler runs, because Fastify never populates `request.body` for multipart requests — AJV
+  validates against an empty/undefined body and rejects it. The fix is no `body` schema at all for
+  those two routes; `uploadDocumentMultipartBody` in `openapi/document-schemas.ts` documents the
+  shape without being wired to a route.
+- `for await (const part of request.parts())` will hang indefinitely once it reaches a `type:
+  'file'` part unless that part's stream is drained (`await part.toBuffer()`) *inside* the loop
+  iteration that yields it — deferring the read to after the loop exits never lets the loop exit.
+  Cost about 10 seconds of test timeouts to track down; now covered by a code comment at the call
+  site so it doesn't get silently reintroduced.
+
+### Open items
+
+- Malware-scan provider (or an approved manual-review path for the pilot) — task 05's most
+  consequential open item now, since it blocks the entire upload→download loop end-to-end even
+  though every other piece works.
+- Object-storage vendor for production.
+- No web UI calls any of these routes yet; `/portal/profile` (the previous entry) does not attach
+  evidence to a profile.
+- Staff document review/read access.
+
+### Next
+
+- Full repository gate passed: API 184, web 97, database 31, and shared 28 tests (340 total),
+  lint/typecheck across all workspaces, both production builds, and database readiness.
+- With borrower profile, investor profile, and now document storage all wired at the API layer,
+  reasonable next candidates: a document-upload web widget wired into `/portal/profile`, task 02's
+  MFA/OTP and forgot-password pages, or moving to task 06 (Credit Scoring & Underwriting), which is
+  currently completely unstarted.
+
 ## 2026-08-30 — Borrower/investor profile web screens
 
 **Status:** WIP

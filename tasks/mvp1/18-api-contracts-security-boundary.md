@@ -22,7 +22,18 @@
   matching paths. Context responses include a server-resolved account class; customer roles are
   always empty. The legacy `/v1/auth/*` and `/v1/session-context` now return `404`, and tests cover
   cross-portal credential denial, duplicate-email privacy, exact cookies, and class-correct context.
-- The Better Auth wildcard remains provider-owned and explicitly excluded; private-file and webhook contracts plus future domain operations remain, so this task stays **WIP**.
+- **2026-08-30 — Private document operations, partially contracted:** All four `/v1/documents*`
+  operations carry an operation id, actor/permission/retry/side-effect/audit metadata, and enforced
+  JSON error-response schemas, so the global CI walk covers them like every other route. Two gaps
+  are deliberate, not oversights: the two upload operations take `multipart/form-data`, not JSON, so
+  they declare no `body` schema (Fastify never populates `request.body` for a multipart request —
+  one was declared and briefly broke every upload in CI before this was understood; see
+  `routes/documents.ts`); and the download operation declares no `response[200]` schema, since a
+  JSON-shaped schema there would make Fastify try to serialize a raw file `Buffer` through
+  `fast-json-stringify`. Both gaps mean these three operations are excluded from `openapi.test.ts`'s
+  strict per-operation table (which requires a `requestBody` on every POST and a 2xx response on
+  every operation) while still passing the generic completeness walk.
+- The Better Auth wildcard remains provider-owned and explicitly excluded; webhook contracts plus future domain operations remain, so this task stays **WIP**.
 
 ## Scope
 

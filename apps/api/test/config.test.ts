@@ -20,6 +20,7 @@ describe('loadConfig', () => {
       environment: 'development',
       trustProxy: false,
       emailOutboxDir: '.data/email-outbox',
+      documentStorageDir: '.data/documents',
     });
   });
 

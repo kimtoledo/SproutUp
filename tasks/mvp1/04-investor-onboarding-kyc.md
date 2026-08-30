@@ -40,6 +40,10 @@
   questionnaire — see Open decisions below.
 - **2026-08-30 — Profile screen:** `/portal/profile` (task 21) reads and saves this profile and
   locks the form once the case leaves `draft`/`needs_information`.
+- **2026-08-30 — Document evidence, upload side only (task 05 slice S1.2c):** Investors can now
+  upload/list/download their own private documents through `/v1/documents*`; see the identical note
+  on task 03 — no investor-specific document checklist or case linkage yet, and every upload stays
+  undownloadable until a malware-scan provider or manual-review path is approved.
 
 ## Scope
 

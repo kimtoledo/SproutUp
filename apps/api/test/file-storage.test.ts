@@ -2,8 +2,13 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { assertStorageKey, createInMemoryFileStorage } from '../src/storage/file-storage.js';
+import {
+  assertStorageKey,
+  createInMemoryFileStorage,
+  createUnconfiguredFileStorage,
+} from '../src/storage/file-storage.js';
 import { createLocalFileStorage } from '../src/storage/local-file-storage.js';
+import { selectFileStorage } from '../src/storage/select-file-storage.js';
 
 describe('assertStorageKey', () => {
   it('accepts our generated id shape', () => {
@@ -68,5 +73,36 @@ describe('local file storage', () => {
     await expect(storage.put('../escape', Buffer.from('x'), 'text/plain')).rejects.toThrow(
       'Invalid storage key',
     );
+  });
+});
+
+describe('unconfigured file storage', () => {
+  it('fails closed on every operation instead of silently accepting an upload', async () => {
+    const storage = createUnconfiguredFileStorage();
+    await expect(storage.put('k', Buffer.from('x'), 'text/plain')).rejects.toThrow(
+      'File storage is not configured',
+    );
+    await expect(storage.get('k')).rejects.toThrow('File storage is not configured');
+    await expect(storage.delete('k')).rejects.toThrow('File storage is not configured');
+  });
+});
+
+describe('selectFileStorage', () => {
+  it('fails closed in production', async () => {
+    const storage = selectFileStorage({ environment: 'production', documentStorageDir: '.data/unused' });
+    await expect(storage.put('k', Buffer.from('x'), 'text/plain')).rejects.toThrow(
+      'File storage is not configured',
+    );
+  });
+
+  it('resolves to local filesystem storage outside production', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sproutup-fs-select-'));
+    try {
+      const storage = selectFileStorage({ environment: 'development', documentStorageDir: dir });
+      await storage.put('k', Buffer.from('hello'), 'text/plain');
+      expect((await storage.get('k'))?.toString()).toBe('hello');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

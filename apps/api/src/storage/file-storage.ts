@@ -41,3 +41,19 @@ export function createInMemoryFileStorage(): FileStorage {
     },
   };
 }
+
+/**
+ * Fails closed. No object-storage provider is approved yet (deferred to
+ * infrastructure approval — see docs/DOCUMENTS.md), so a deployed
+ * environment that reaches this adapter must not silently accept an upload
+ * it cannot durably store.
+ */
+export function createUnconfiguredFileStorage(): FileStorage {
+  const unconfigured = async () => {
+    throw new Error(
+      'File storage is not configured for this environment. Wire an approved object-storage ' +
+        'adapter before documents can be uploaded (see docs/DOCUMENTS.md).',
+    );
+  };
+  return { put: unconfigured, get: unconfigured, delete: unconfigured };
+}

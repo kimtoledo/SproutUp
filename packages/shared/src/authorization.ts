@@ -29,6 +29,8 @@ export const permissionKeys = [
   'investor_onboarding.submit_own',
   'onboarding_cases.read',
   'onboarding_cases.review',
+  'documents.upload_own',
+  'documents.read_own',
 ] as const;
 
 export const roleKeySchema = z.enum(roleKeys);
@@ -73,6 +75,8 @@ export const permissionDefinitions: ReadonlyArray<{
   { key: 'investor_onboarding.submit_own', description: 'Submit the current user investor onboarding case' },
   { key: 'onboarding_cases.read', description: 'Read onboarding cases in a staff work queue' },
   { key: 'onboarding_cases.review', description: 'Review and decide assigned onboarding cases' },
+  { key: 'documents.upload_own', description: 'Upload or replace the current user own private documents' },
+  { key: 'documents.read_own', description: 'List and download the current user own private documents' },
 ];
 
 const ownSessionPermissions: PermissionKey[] = [
@@ -89,6 +93,10 @@ const investorOnboardingPermissions: PermissionKey[] = [
   'investor_onboarding.read_own',
   'investor_onboarding.manage_own',
   'investor_onboarding.submit_own',
+];
+const ownDocumentPermissions: PermissionKey[] = [
+  'documents.upload_own',
+  'documents.read_own',
 ];
 
 /**
@@ -113,8 +121,8 @@ export const initialRolePermissions: Readonly<Record<RoleKey, readonly Permissio
 /** Customer capability bundles come from the physical account class, never an RBAC grant. */
 export const accountTypePermissions: Readonly<Record<AccountType, readonly PermissionKey[]>> = {
   admin: [],
-  borrower: [...ownSessionPermissions, ...borrowerOnboardingPermissions],
-  investor: [...ownSessionPermissions, ...investorOnboardingPermissions],
+  borrower: [...ownSessionPermissions, ...borrowerOnboardingPermissions, ...ownDocumentPermissions],
+  investor: [...ownSessionPermissions, ...investorOnboardingPermissions, ...ownDocumentPermissions],
 };
 
 export interface AuthorizationContext {

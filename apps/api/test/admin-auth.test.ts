@@ -32,6 +32,7 @@ const config: ApiConfig = {
   environment: 'test',
   trustProxy: false,
   emailOutboxDir: '.data/test-email-outbox',
+  documentStorageDir: '.data/test-documents',
 };
 
 const emailDelivery = createInMemoryEmailDelivery();

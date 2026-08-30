@@ -88,6 +88,8 @@ The initial SproutUp scaffold resolves that mismatch on Zod 4. It also upgrades 
 
 The API uses exact-pinned `@fastify/swagger` 9.8.1, whose 9.x line is compatible with Fastify 5. Generated OpenAPI 3.1 coverage is tested in CI across every application-owned operation, including public health and authenticated session context. The framework-owned Better Auth wildcard is explicitly excluded rather than assigned a misleading generic payload contract; future domain/provider routes must satisfy the global assertion when registered.
 
+Private document uploads (task 05) use exact-pinned `@fastify/multipart` 10.1.1, registered globally with a stream-level `fileSize` cap matching the document service's own byte limit. Multipart routes are parsed by hand via `request.parts()` and declare no `body` JSON schema — see `tasks/mvp1/18-api-contracts-security-boundary.md` for why one broke uploads outright when tried.
+
 Major API compatibility is path-based (`/v1`) and every versioned response publishes `SproutUp-API-Version`. Retirement uses RFC 9745 `Deprecation` plus RFC 8594 `Sunset`, with a code-enforced minimum 180-day notice period; current `v1` emits neither retirement header.
 
 ## Decisions still open

@@ -45,6 +45,13 @@
 - **2026-08-30 — Profile screen:** `/portal/profile` (task 21) reads and saves this profile,
   including a dynamic beneficial-owner list, and locks the form once the case leaves
   `draft`/`needs_information`. Evidence/document upload UI is not part of it yet.
+- **2026-08-30 — Document evidence, upload side only (task 05 slice S1.2c):** Borrowers can now
+  upload/list/download their own private documents through `/v1/documents*` (see
+  [`../../docs/DOCUMENTS.md`](../../docs/DOCUMENTS.md)). This is not yet wired into the borrower
+  journey specifically — no borrower-KYB-document checklist, no case linkage, and no way to
+  actually complete the loop, since every upload stays `scan_state = 'pending'` until a malware-scan
+  provider or manual-review path exists (task 05's open decisions). "Evidence" here means the
+  storage/authz mechanism exists; the KYB document checklist and completeness policy do not.
 
 ## Scope
 

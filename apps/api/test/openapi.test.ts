@@ -71,6 +71,13 @@ const dependencies: AppDependencies = {
       saveOwn: async () => ({ ok: false as const, reason: 'case_not_found' as const }),
     },
   },
+  documents: {
+    create: async () => ({ ok: false as const, reason: 'empty_file' as const }),
+    addVersion: async () => ({ ok: false as const, reason: 'document_not_found' as const }),
+    markScanResult: async () => ({ ok: false as const, reason: 'version_not_found' as const }),
+    getForDownload: async () => ({ ok: false as const, reason: 'not_found' as const }),
+    listOwn: async () => [],
+  },
 };
 
 describe('OpenAPI contract generation', () => {
@@ -119,6 +126,9 @@ describe('OpenAPI contract generation', () => {
           '/v1/onboarding/cases/{caseId}/withdraw',
           '/v1/onboarding/borrower/cases/{caseId}/profile',
           '/v1/onboarding/investor/cases/{caseId}/profile',
+          '/v1/documents',
+          '/v1/documents/{documentId}/versions',
+          '/v1/documents/{documentVersionId}/download',
           '/v1/admin/onboarding/cases',
           '/v1/admin/onboarding/cases/{caseId}/start-review',
           '/v1/admin/onboarding/cases/{caseId}/request-information',
@@ -163,6 +173,13 @@ describe('OpenAPI contract generation', () => {
         ['/v1/onboarding/borrower/cases/{caseId}/profile', 'post', 'saveOwnBorrowerProfile'],
         ['/v1/onboarding/investor/cases/{caseId}/profile', 'get', 'getOwnInvestorProfile'],
         ['/v1/onboarding/investor/cases/{caseId}/profile', 'post', 'saveOwnInvestorProfile'],
+        // uploadOwnDocument/addOwnDocumentVersion (multipart/form-data POSTs with no
+        // JSON `body` schema) and downloadOwnDocumentVersion (raw file bytes, no JSON
+        // `response[200]` schema — see routes/documents.ts) are still covered by the
+        // generic operationId/responses/x-sproutup walk below, just not this stricter
+        // per-operation table, which requires a requestBody on every POST and a 2xx
+        // response on every operation.
+        ['/v1/documents', 'get', 'listOwnDocuments'],
         ['/v1/admin/onboarding/cases', 'get', 'listOnboardingReviewQueue'],
         ['/v1/admin/onboarding/cases/{caseId}', 'get', 'getOnboardingReviewCase'],
         ['/v1/admin/onboarding/cases/{caseId}/start-review', 'post', 'startOnboardingReview'],

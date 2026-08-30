@@ -1,5 +1,6 @@
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -28,6 +29,8 @@ import type { BorrowerProfileService } from './onboarding/borrower-profile-servi
 import { registerBorrowerProfileRoutes } from './routes/borrower-profile.js';
 import type { InvestorProfileService } from './onboarding/investor-profile-service.js';
 import { registerInvestorProfileRoutes } from './routes/investor-profile.js';
+import { DEFAULT_MAX_DOCUMENT_BYTES, type DocumentService } from './documents/document-service.js';
+import { registerDocumentRoutes } from './routes/documents.js';
 import { operation } from './openapi/operation.js';
 import { healthResponseSchema } from './openapi/system-schemas.js';
 import { apiVersionHeaders, currentApiVersionPolicy } from './openapi/api-version.js';
@@ -56,6 +59,7 @@ export interface AppDependencies {
     borrowerProfile?: BorrowerProfileService;
     investorProfile?: InvestorProfileService;
   };
+  documents?: DocumentService;
 }
 
 function now(): string {
@@ -111,6 +115,9 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
 
   await app.register(helmet);
   await app.register(rateLimit, { max: 120, timeWindow: '1 minute' });
+  await app.register(multipart, {
+    limits: { fileSize: DEFAULT_MAX_DOCUMENT_BYTES, files: 1, fields: 5 },
+  });
   await app.register(cors, {
     origin(origin, callback) {
       const allowedOrigins = dependencies.config.appOrigins ?? [dependencies.config.appOrigin];
@@ -142,6 +149,7 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
         { name: 'access', description: 'RBAC and approval administration' },
         { name: 'role approvals', description: 'Dual-controlled role change lifecycle' },
         { name: 'onboarding', description: 'Borrower and investor onboarding workflows' },
+        { name: 'documents', description: 'Private document upload, listing, and download' },
       ],
     },
   });
@@ -294,6 +302,13 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
         profiles: dependencies.onboarding.investorProfile,
       });
     }
+  }
+
+  if (dependencies.auth && dependencies.documents) {
+    await registerDocumentRoutes(app, {
+      auth: dependencies.auth.service,
+      documents: dependencies.documents,
+    });
   }
 
   return app;
