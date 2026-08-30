@@ -2,6 +2,7 @@ export * from './audit.js';
 export * from './approvals.js';
 export * from './auth.js';
 export * from './borrower.js';
+export * from './campaigns.js';
 export * from './config.js';
 export * from './credit.js';
 export * from './consents.js';

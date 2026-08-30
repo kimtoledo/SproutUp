@@ -4,7 +4,7 @@
 
 ## Implementation status
 
-The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19. On 2026-08-30, the portal-identity isolation work introduced separate admin, borrower, and investor account/auth relations, a protected global email registry, active `admin_role_grants` plus admin approval/reviewer foreign keys, and registry-anchored onboarding/document/consent/ledger ownership. Migration `0024` completes borrower/investor runtime isolation and retires the legacy unified auth/active customer-role boundary after exact reconciliation. The same day, borrower/investor KYB/KYC profile capture, private document upload/download, and credit application intake plus dual-controlled underwriting (no scoring engine) were added — see their sections below. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
+The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19. On 2026-08-30, the portal-identity isolation work introduced separate admin, borrower, and investor account/auth relations, a protected global email registry, active `admin_role_grants` plus admin approval/reviewer foreign keys, and registry-anchored onboarding/document/consent/ledger ownership. Migration `0024` completes borrower/investor runtime isolation and retires the legacy unified auth/active customer-role boundary after exact reconciliation. The same day, borrower/investor KYB/KYC profile capture, private document upload/download, credit application intake plus dual-controlled underwriting (no scoring engine), and campaign origination plus a dual-controlled publish workflow with exact-arithmetic amortized/interest-only schedule generation were added — see their sections below. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
 
 This is a normalized domain outline for the Philippine revamp. It intentionally avoids copying legacy table names and duplicated summary tables.
 
@@ -59,8 +59,19 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
   06 open decisions)
 - `scorecards`, `scorecard_versions`, `credit_scores`, `credit_decisions` — still proposed; blocked
   on the scorecard/risk-grade decision (task 06)
-- `campaigns`, `campaign_term_versions`, `campaign_events`
-- `loans`, `loan_contracts`, `loan_schedules`, `loan_schedule_items`
+- `campaigns`, `campaign_events` — **implemented (2026-08-30)**: origination from an approved
+  credit application plus a dual-controlled draft→submit→publish workflow (own status/version/
+  event trail, same single-mutable-row-plus-event-log shape as `credit_applications`); replaces
+  the originally proposed `campaign_term_versions` — publish-time immutability is enforced by the
+  state machine (only `draft` is editable) rather than a separate version-snapshot table.
+  Funding-window/investor-commitment fields (target reached, funded/failed) are not modeled — see
+  task 08.
+- Repayment schedule — **implemented (2026-08-30)** as a pure computed function
+  (`generateLoanSchedule`, `@sproutup/shared`), not a persisted `loan_schedules`/
+  `loan_schedule_items` table: a campaign's amortized/interest-only schedule is fully determined
+  by its published terms (amount/term/rate/model), so storing it separately would only risk drift
+  from the terms of record. `loans`, `loan_contracts` — still proposed; loan/contract generation
+  and disbursement remain future tasks (10+).
 
 ## Investments and servicing
 

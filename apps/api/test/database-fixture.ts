@@ -30,6 +30,7 @@ export const migrationFiles = [
   '0025_lame_may_parker.sql',
   '0026_illegal_ravenous.sql',
   '0027_light_rattler.sql',
+  '0028_massive_energizer.sql',
 ] as const;
 
 export async function applyMigrations(database: PGlite): Promise<void> {

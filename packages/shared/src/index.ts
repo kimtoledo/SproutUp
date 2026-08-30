@@ -53,6 +53,16 @@ export {
   type BorrowerEntityType,
 } from './borrower';
 export {
+  annualRatePercentSchema,
+  formatLoanSchedule,
+  generateLoanSchedule,
+  repaymentModelSchema,
+  type LoanSchedule,
+  type LoanScheduleInput,
+  type LoanSchedulePeriod,
+  type RepaymentModel,
+} from './loan-schedule';
+export {
   canTransitionCreditApplication,
   creditApplicationEventTypeSchema,
   creditApplicationStatusSchema,

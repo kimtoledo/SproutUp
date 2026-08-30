@@ -38,6 +38,9 @@ export const permissionKeys = [
   'credit_applications.review',
   'credit_applications.recommend',
   'credit_applications.approve',
+  'campaigns.read',
+  'campaigns.manage',
+  'campaigns.publish',
 ] as const;
 
 export const roleKeySchema = z.enum(roleKeys);
@@ -91,6 +94,9 @@ export const permissionDefinitions: ReadonlyArray<{
   { key: 'credit_applications.review', description: 'Start review and request information on an assigned credit application' },
   { key: 'credit_applications.recommend', description: 'Record an underwriting recommendation on a reviewed credit application' },
   { key: 'credit_applications.approve', description: 'Make the final approve/reject decision on a recommended credit application' },
+  { key: 'campaigns.read', description: 'Read campaigns in a staff work queue' },
+  { key: 'campaigns.manage', description: 'Create, edit, submit, send back, or cancel a campaign' },
+  { key: 'campaigns.publish', description: 'Publish a submitted campaign; must differ from the submitting actor' },
 ];
 
 const ownSessionPermissions: PermissionKey[] = [
@@ -130,6 +136,18 @@ const creditUnderwritingPermissions: PermissionKey[] = [
   'credit_applications.recommend',
   'credit_applications.approve',
 ];
+/**
+ * Manage and publish are both granted to `credit_analyst` too, for the same
+ * reason as credit underwriting above: dual control means a different
+ * *actor* (enforced by the service and a database check constraint), not a
+ * different role. Whether publish should instead sit with a distinct role
+ * is unresolved (task 07).
+ */
+const campaignPermissions: PermissionKey[] = [
+  'campaigns.read',
+  'campaigns.manage',
+  'campaigns.publish',
+];
 
 /**
  * Initial auth-domain grants only. Domain capabilities are added by their
@@ -142,6 +160,7 @@ export const initialRolePermissions: Readonly<Record<RoleKey, readonly Permissio
     'users.read',
     'roles.read',
     ...creditUnderwritingPermissions,
+    ...campaignPermissions,
     ...ownSessionPermissions,
   ],
   compliance_officer: [

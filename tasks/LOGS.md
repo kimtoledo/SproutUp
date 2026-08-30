@@ -107,6 +107,108 @@ This is the chronological handoff record for people and AI working on the revamp
   MFA/OTP and forgot-password pages, or moving to task 06 (Credit Scoring & Underwriting), which is
   currently completely unstarted.
 
+## 2026-08-30 — Campaign origination, dual-controlled publish, and exact loan-schedule math
+
+**Status:** WIP
+
+### Updated
+
+- Read the full legacy loan/campaign reference before writing any code
+  (`tasks/reference/legacy/domain-loans-borrowing.md`, 357 lines). It documents **three** parallel
+  amortization/repayment engines selected per-loan (Balloon, "EMR" — equal principal + flat
+  interest on the *original* balance, not a true amortization despite the name — and Effective
+  Rate, a true declining-balance annuity with actual/365 day-count), a second, entirely dead
+  scoring-linked engine with a hardcoded letter-grade-to-interest-rate table, **three** different
+  real-estate collateral-haircut formulas that silently disagree with each other, penalty formulas
+  that read config keys (`borrower_penalty_rate_daily`, `withholding_tax_rate`, etc.) absent from
+  every checked-in environment file, and a flagged bug where a "charge per week" formula divides
+  weeks by a percentage. None of this is reproduced — see Decisions.
+- Added `packages/shared/src/loan-schedule.ts`: `generateLoanSchedule`/`formatLoanSchedule`, a
+  pure function for the two product-brief-approved repayment models (`amortized`,
+  `interest_only`). Every monetary value — including the amortized model's periodic payment (PMT)
+  figure — is computed with exact bigint/rational arithmetic, never floating point: `(1+r)^n` for
+  an integer term is exact bigint exponentiation of a rational monthly rate
+  (`rateScaled/12_000_000`), so no transcendental function or float ever touches a value that
+  becomes money. The final period is always paid the *remaining* balance rather than a re-derived
+  "regular" principal figure, which is what guarantees exact reconciliation to the loan amount
+  regardless of rounding earlier in the schedule (a standard "last-period plug" technique, not
+  novel, but implemented without any floating-point step anywhere, which is stricter than typical
+  practice). Interest convention: fixed monthly rate (`annualRatePercent/12`), not the legacy
+  Effective-Rate engine's actual/365 day-count — a deliberate simplicity choice, flagged as
+  revisitable if PH disclosure rules require day-count-actual. Covered by 8 boundary-value tests
+  in `loan-schedule.test.ts`: exact reconciliation on a term/rate that doesn't divide evenly, the
+  0% degenerate case (falls back to equal principal installments), a single-period term, declining
+  interest period-over-period, and due-date month-length clamping (anchors to the *original* day
+  of month every period, e.g. Jan 31 → Feb 28 → back to Mar 31, not permanently clamped).
+- Added `campaigns`/`campaign_events` (migration `0028_massive_energizer.sql`) and
+  `createCampaignService` (`apps/api/src/campaigns/campaign-service.ts`): `create` (only from an
+  **approved** credit application, loan amount capped at its approved amount, one open campaign
+  per credit application via the same bare-`onConflictDoNothing()`-against-a-partial-index pattern
+  used for credit applications), `update` (draft only), `submit` → `publish` (dual control: the
+  publisher must differ from the submitter, enforced by the service **and** a database check
+  constraint — `campaigns_dual_control`, identical shape to `credit_applications_dual_control`),
+  `sendBack` (publisher returns a submission to draft, no dual control needed for a negative
+  action), `cancel`. A database check also enforces `investorAnnualRatePercent <=
+  borrowerAnnualRatePercent` (the platform must never pay investors more than it charges the
+  borrower) and `minimumCommitmentAmount <= loanAmount`. `detail()` returns the persisted terms
+  plus the schedule **computed on read** from `generateLoanSchedule` — never persisted, so it can
+  never drift from the terms of record.
+- Added `campaigns.{read,manage,publish}` (granted to `credit_analyst`, same provisional
+  same-role/different-actor dual-control pairing as task 06) and
+  `GET`/`POST /v1/admin/campaigns*` with full OpenAPI contracts.
+- Added `apps/api/test/campaign-service.test.ts` (7 tests) and `campaign-routes.test.ts` (13
+  tests).
+
+### Decisions
+
+- No legacy repayment engine is ported, faithfully or otherwise — not Balloon, EMR, Effective
+  Rate, or the dead alternate engine — for the same reason as task 06: the acceptance criterion
+  requires legacy conflicts *resolved*, and three engines that silently disagree on the same
+  "amortized" concept is exactly the kind of conflict that must not be copied forward. What was
+  built instead is standard, textbook amortized/interest-only math — not a business-policy
+  judgment call the way credit scoring weights were, since correct amortization formulas are
+  well-defined regardless of which legacy engine inspired the product's naming.
+- Campaign origination only reaches `published` or `cancelled` in this slice. `funded`/`failed`
+  states (and releasing investor holds on failure/cancellation) depend on actual investor
+  commitment totals, which don't exist until task 08 — modeling states with no real trigger would
+  just be dead code, so they're left out rather than half-built.
+- No fees or taxes on the schedule. Unlike principal/interest math, fee/tax treatment has no
+  approved policy at all (task 13 territory) — the schedule simply doesn't carry those fields yet,
+  rather than defaulting them to zero and implying a decision was made.
+- `campaigns.manage`/`campaigns.publish` both granted to `credit_analyst` for now, mirroring task
+  06's `recommend`/`approve` pairing exactly (dual control via actor, not role) — flagged as
+  provisional the same way.
+
+### Debugging notes (for the next session touching this file)
+
+- `packages/shared` uses **extensionless** internal imports (`from './money'`), unlike `apps/api`
+  and `apps/db`'s `.js`-suffixed ones (`moduleResolution: "bundler"` vs `"nodenext"` — see each
+  package's own `tsconfig.json`). `tsc --noEmit` did not catch a `.js`-suffixed import of
+  `./money.js` inside the new `loan-schedule.ts` — only `next build`'s Turbopack bundler did, with
+  `Module not found: Can't resolve './money.js'`, since `apps/web` imports `@sproutup/shared`
+  transitively (via `/admin/role-approvals`) and had never bundled this new file before. `npm run
+  typecheck` and `npm run test` are not sufficient to catch this class of bug in this package —
+  `npm run build` (all workspaces) must run too, and it wasn't until this entry that a shared-
+  package file broke that specific edge; every earlier shared addition in this session happened
+  not to trip it.
+
+### Open items
+
+- Task 07's remaining open decisions: partial-funding policy, campaign extension rules, minimum
+  investment, cancellation rights, fee/tax treatment, campaign approval authority, and
+  amendment-after-publish policy.
+- No web UI calls any of these routes yet.
+- Contract generation/e-signature and any investor-facing browsing of published campaigns are not
+  built — the latter belongs to task 08's public listing surface.
+
+### Next
+
+- Full repository gate passed: API 238, web 97, database 31, and shared 36 tests (402 total),
+  lint/typecheck across all workspaces, both production builds, and database readiness.
+- Task 08 (Investor Commitments) is the natural next step — it's what turns a `published` campaign
+  into an actual funding round (commitments, funding totals, the funded/failed transitions this
+  slice deliberately left out) and is next in MVP1's dependency order.
+
 ## 2026-08-30 — Credit application intake and dual-controlled underwriting (no scoring engine)
 
 **Status:** WIP

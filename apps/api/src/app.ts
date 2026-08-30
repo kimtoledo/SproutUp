@@ -35,6 +35,8 @@ import type { CreditApplicationService } from './credit/application-service.js';
 import { registerCreditApplicationRoutes } from './routes/credit-applications.js';
 import type { CreditReviewService } from './credit/review-service.js';
 import { registerCreditReviewRoutes } from './routes/credit-review.js';
+import type { CampaignService } from './campaigns/campaign-service.js';
+import { registerCampaignRoutes } from './routes/campaigns.js';
 import { operation } from './openapi/operation.js';
 import { healthResponseSchema } from './openapi/system-schemas.js';
 import { apiVersionHeaders, currentApiVersionPolicy } from './openapi/api-version.js';
@@ -68,6 +70,7 @@ export interface AppDependencies {
     applications: CreditApplicationService;
     review?: CreditReviewService;
   };
+  campaigns?: CampaignService;
 }
 
 function now(): string {
@@ -159,6 +162,7 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
         { name: 'onboarding', description: 'Borrower and investor onboarding workflows' },
         { name: 'documents', description: 'Private document upload, listing, and download' },
         { name: 'credit', description: 'Credit application intake and dual-controlled underwriting' },
+        { name: 'campaigns', description: 'Campaign origination and dual-controlled publish workflow' },
       ],
     },
   });
@@ -331,6 +335,13 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
         review: dependencies.credit.review,
       });
     }
+  }
+
+  if (dependencies.auth && dependencies.campaigns) {
+    await registerCampaignRoutes(app, {
+      auth: dependencies.auth.adminService ?? dependencies.auth.service,
+      campaigns: dependencies.campaigns,
+    });
   }
 
   return app;
