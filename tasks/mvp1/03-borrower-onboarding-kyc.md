@@ -42,6 +42,9 @@
   fields; it does not yet encode which fields or documents are *required* per entity type — that
   policy is still an open decision below. Evidence/document attachment, completeness rules, and the
   approve command remain unimplemented.
+- **2026-08-30 — Profile screen:** `/portal/profile` (task 21) reads and saves this profile,
+  including a dynamic beneficial-owner list, and locks the form once the case leaves
+  `draft`/`needs_information`. Evidence/document upload UI is not part of it yet.
 
 ## Scope
 

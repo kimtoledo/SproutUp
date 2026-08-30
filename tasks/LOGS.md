@@ -34,6 +34,61 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Borrower/investor profile web screens
+
+**Status:** WIP
+
+### Updated
+
+- Added `apps/web/lib/borrower-profile-client.ts` and `investor-profile-client.ts`, following the
+  existing `portal-client.ts`/`session-client.ts` pattern exactly (a bare `fetch`-based client,
+  cookie credentials, an envelope parser, and a server-error-code → plain-language message map;
+  each module is self-contained rather than sharing an HTTP helper, matching the rest of `lib/`).
+- Added `apps/web/app/portal/profile/page.tsx`. It resolves the caller's own onboarding case from
+  `loadPortal()`, then renders the matching form: business details plus a dynamic add/remove
+  beneficial-owner list for borrowers, or personal/identity/source-of-funds fields for investors.
+  An existing saved profile pre-fills the form; every field disables once the case leaves
+  `draft`/`needs_information`, and the save button is hidden entirely rather than disabled-but-
+  clickable in that state. Saves carry the profile's own optimistic version; stale-version,
+  over-allocated-ownership, and non-editable-case server responses map to plain messages, never
+  raw error codes.
+- Built this page on the Tailwind component kit (`Field`, `Input`, `Textarea`, `RadioCards`,
+  `Button`, `Alert`, `PageHeading`, `SiteHeader`) rather than `/portal`'s legacy CSS classes. This
+  is additive — a new page, not a rewrite of the existing tested `/portal` page — so it makes
+  forward progress on the still-open "portal kit migration" item without touching working code or
+  its test coverage.
+- Linked `/portal/profile` from `/portal`'s case card ("Edit profile") when the case is owned and
+  in an editable state, added with the existing legacy-CSS `text-button` class to match that
+  page's current styling exactly (not the new kit, since it is not a kit page).
+- Added `apps/web/lib/borrower-profile-client.test.ts` (6 tests) and
+  `investor-profile-client.test.ts` (5 tests).
+
+### Decisions
+
+- New, currently-unstyled-elsewhere UI is built on the Tailwind kit going forward; existing pages
+  keep their current styling until they are deliberately migrated, so the app is expected to look
+  inconsistent between `/portal` and `/portal/profile` during this transition.
+- No client-side replica of the server's ownership-percentage-sum rule beyond an `inputMode`/
+  `pattern` hint and a running total display — the API remains the sole authority, consistent with
+  the documented "client validation is usability-only" rule (`docs/SECURITY.md`).
+
+### Open items
+
+- Evidence/document upload UI, e-signature, and a full resumable multi-step onboarding journey are
+  still not built (task 21's broader scope).
+- The rest of `/portal` (case list, sessions) has not been migrated onto the kit.
+- Every open item from the two profile-capture log entries above (institutional investor support,
+  suitability questionnaire, entity/document requirement policy, etc.) still applies — this slice
+  is presentation only.
+
+### Next
+
+- Full repository gate passed: API 172, web 97, database 31, and shared 28 tests (328 total),
+  lint/typecheck across all workspaces, and both production builds (the web build now emits
+  `/portal/profile` as a static route).
+- Reasonable next candidates: task 02's MFA/OTP and forgot-password web pages, document/evidence
+  upload wired to the existing document store (task 05), or continuing the `/portal` kit migration.
+
 ## 2026-08-30 — Individual investor KYC profile capture
 
 **Status:** WIP

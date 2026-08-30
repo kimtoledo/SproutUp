@@ -32,6 +32,17 @@
   explicit account-type chooser for navigation, but it does not transmit a role or authority field.
   Portal navigation and capability rendering use `accountType` plus server-returned permissions,
   never customer roles.
+- **2026-08-30 — Borrower/investor profile screens (kit, additive):** Added `/portal/profile`,
+  built on the Tailwind component kit rather than the legacy CSS `/portal` still uses (an additive,
+  low-risk step toward the kit migration, not a rewrite of the existing page). It resolves the
+  caller's own onboarding case, renders the matching KYB/KYC form (business details plus a dynamic
+  beneficial-owner list for borrowers; personal/identity details for investors), loads any existing
+  saved profile, and disables every field once the case leaves `draft`/`needs_information`. Saves
+  go through the task 03/04 profile APIs with the profile's own optimistic version; server error
+  codes (stale version, over-allocated ownership, non-editable case) map to plain-language
+  messages, never raw codes. `/portal`'s case card links here when the case is owned and editable.
+  Evidence/document upload UI, e-signature, and the full resumable multi-step journey remain
+  unimplemented.
 
 ## Scope
 

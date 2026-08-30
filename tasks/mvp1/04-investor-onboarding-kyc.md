@@ -38,6 +38,8 @@
   nationality, government ID, address, occupation, source of funds), with only `fullName` required.
   It intentionally does **not** add institutional-investor support or a risk/suitability
   questionnaire — see Open decisions below.
+- **2026-08-30 — Profile screen:** `/portal/profile` (task 21) reads and saves this profile and
+  locks the form once the case leaves `draft`/`needs_information`.
 
 ## Scope
 

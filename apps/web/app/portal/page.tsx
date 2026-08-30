@@ -256,6 +256,11 @@ export default function PortalPage() {
                         ? 'Loading history…'
                         : detail?.id === item.id ? 'Hide history' : 'View history'}
                     </button>
+                    {canManage && (item.status === 'draft' || item.status === 'needs_information') ? (
+                      <Link className="text-button" href="/portal/profile">
+                        Edit profile
+                      </Link>
+                    ) : null}
                     {submittable ? (
                       <button
                         className="compact-action button-reset"
