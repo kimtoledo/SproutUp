@@ -19,6 +19,7 @@ describe('loadConfig', () => {
       databaseUrl: 'postgresql://sproutup:sproutup@localhost:5432/sproutup',
       environment: 'development',
       trustProxy: false,
+      emailOutboxDir: '.data/email-outbox',
     });
   });
 

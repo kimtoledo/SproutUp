@@ -39,6 +39,7 @@ function toWebRequest(request: FastifyRequest, baseUrl: string): Request {
   const hasBody = method !== 'GET' && method !== 'HEAD' && request.body !== undefined;
   const headers = fromNodeHeaders(request.headers);
   headers.set('x-sproutup-client-ip', request.ip);
+  headers.set('x-sproutup-request-id', request.id);
 
   return new Request(url, {
     method,

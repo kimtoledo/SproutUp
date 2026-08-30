@@ -2,22 +2,56 @@ import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { betterAuth } from 'better-auth';
 import { eq } from 'drizzle-orm';
 import type { Database } from '@sproutup/db';
-import { schema } from '@sproutup/db';
+import { hashIpAddress, schema, writeAudit } from '@sproutup/db';
 import type { ApiConfig } from '../config.js';
+import type { EmailDelivery } from '../notifications/email-delivery.js';
 import {
   createAdminAuthorizationResolver,
   createCustomerAuthorizationResolver,
 } from './authorization.js';
 import type { AuthServices, BetterAuthSession } from './types.js';
 
+function resetPasswordEmailBody(url: string): string {
+  return [
+    'Use the link below to reset your password. It expires in 1 hour and can be used once.',
+    '',
+    url,
+    '',
+    'If you did not request this, you can safely ignore this message.',
+  ].join('\n');
+}
+
+function verificationEmailBody(url: string): string {
+  return [
+    'Confirm this email address to finish setting up your account.',
+    '',
+    url,
+  ].join('\n');
+}
+
+/**
+ * Better Auth forwards the raw web `Request` to these callbacks, not a
+ * Fastify request — `toWebRequest` in `routes/auth.ts` carries the resolved
+ * client IP and Fastify request id across that boundary as headers so the
+ * resulting audit evidence stays correlated.
+ */
+function requestAuditContext(request?: Request): { ipAddressHash?: string; requestId?: string } {
+  return {
+    ipAddressHash: hashIpAddress(request?.headers.get('x-sproutup-client-ip')),
+    requestId: request?.headers.get('x-sproutup-request-id') ?? undefined,
+  };
+}
+
 function createPortalAuthServices(
   config: ApiConfig,
   database: Database,
   accountType: 'borrower' | 'investor',
+  emailDelivery: EmailDelivery,
 ): AuthServices {
   const borrower = accountType === 'borrower';
+  const appName = borrower ? 'SproutUp for Business' : 'SproutUp Invest';
   const auth = betterAuth({
-    appName: borrower ? 'SproutUp for Business' : 'SproutUp Invest',
+    appName,
     secret: config.authSecret,
     baseURL: config.authBaseUrl,
     basePath: `/v1/auth/${accountType}`,
@@ -33,6 +67,40 @@ function createPortalAuthServices(
       enabled: true,
       minPasswordLength: 12,
       maxPasswordLength: 128,
+      sendResetPassword: async ({ user, url }) => {
+        await emailDelivery.send({
+          to: user.email,
+          subject: `Reset your ${appName} password`,
+          text: resetPasswordEmailBody(url),
+        });
+      },
+      onPasswordReset: async ({ user }, request) => {
+        await writeAudit(database, {
+          actorType: 'user',
+          actorUserId: user.id,
+          // The caller's currently-held roles are not available inside this
+          // Better Auth callback; borrower/investor accounts carry no RBAC
+          // roles regardless.
+          actorRoles: [],
+          action: 'credential.password_reset_completed',
+          outcome: 'succeeded',
+          resourceType: 'credential',
+          resourceId: user.id,
+          metadata: { accountType },
+          ...requestAuditContext(request),
+        });
+      },
+    },
+    emailVerification: {
+      // Self-serve signup: send the verification link as soon as the account exists.
+      sendOnSignUp: true,
+      sendVerificationEmail: async ({ user, url }) => {
+        await emailDelivery.send({
+          to: user.email,
+          subject: `Verify your ${appName} email`,
+          text: verificationEmailBody(url),
+        });
+      },
     },
     session: {
       expiresIn: 60 * 60 * 24 * 7,
@@ -102,12 +170,20 @@ function createPortalAuthServices(
   };
 }
 
-export function createBorrowerAuthServices(config: ApiConfig, database: Database): AuthServices {
-  return createPortalAuthServices(config, database, 'borrower');
+export function createBorrowerAuthServices(
+  config: ApiConfig,
+  database: Database,
+  emailDelivery: EmailDelivery,
+): AuthServices {
+  return createPortalAuthServices(config, database, 'borrower', emailDelivery);
 }
 
-export function createInvestorAuthServices(config: ApiConfig, database: Database): AuthServices {
-  return createPortalAuthServices(config, database, 'investor');
+export function createInvestorAuthServices(
+  config: ApiConfig,
+  database: Database,
+  emailDelivery: EmailDelivery,
+): AuthServices {
+  return createPortalAuthServices(config, database, 'investor', emailDelivery);
 }
 
 /**
@@ -140,9 +216,14 @@ export function createCustomerAuthServices(
   };
 }
 
-export function createAdminAuthServices(config: ApiConfig, database: Database): AuthServices {
+export function createAdminAuthServices(
+  config: ApiConfig,
+  database: Database,
+  emailDelivery: EmailDelivery,
+): AuthServices {
+  const appName = 'SproutUp Admin';
   const auth = betterAuth({
-    appName: 'SproutUp Admin',
+    appName,
     secret: config.authSecret,
     baseURL: config.authBaseUrl,
     basePath: '/v1/auth/admin',
@@ -156,6 +237,39 @@ export function createAdminAuthServices(config: ApiConfig, database: Database): 
       enabled: true,
       minPasswordLength: 12,
       maxPasswordLength: 128,
+      sendResetPassword: async ({ user, url }) => {
+        await emailDelivery.send({
+          to: user.email,
+          subject: `Reset your ${appName} password`,
+          text: resetPasswordEmailBody(url),
+        });
+      },
+      onPasswordReset: async ({ user }, request) => {
+        await writeAudit(database, {
+          actorType: 'user',
+          actorUserId: user.id,
+          actorRoles: [],
+          action: 'credential.password_reset_completed',
+          outcome: 'succeeded',
+          resourceType: 'credential',
+          resourceId: user.id,
+          metadata: { accountType: 'admin' },
+          ...requestAuditContext(request),
+        });
+      },
+    },
+    emailVerification: {
+      // Administrator accounts are provisioned through a controlled operation
+      // (provision-initial-admin.ts), not self-serve signup, so a
+      // verification email must never fire automatically on account creation.
+      sendOnSignUp: false,
+      sendVerificationEmail: async ({ user, url }) => {
+        await emailDelivery.send({
+          to: user.email,
+          subject: `Verify your ${appName} email`,
+          text: verificationEmailBody(url),
+        });
+      },
     },
     session: {
       expiresIn: 60 * 60 * 12,

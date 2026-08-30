@@ -107,5 +107,7 @@ forward safely. The completed sequence was:
 6. **Done:** reconcile counts, email ownership, invalidated legacy sessions, onboarding ownership,
    and immutable cutover evidence before accepting traffic.
 
-Portal identity isolation itself is complete. Password recovery/email verification delivery,
-MFA/step-up policy, and the remaining controls listed in `SECURITY.md` are separate release gates.
+Portal identity isolation itself is complete. Password-reset/email-verification delivery over a
+swappable, audited provider port is implemented; the approved transactional-email vendor, the
+forgot-password/reset-password/verify-email web pages, MFA/step-up policy, and the remaining
+controls listed in `SECURITY.md` are separate release gates.

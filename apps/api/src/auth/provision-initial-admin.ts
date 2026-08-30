@@ -2,6 +2,7 @@ import { bootstrapSuperAdmin, createDatabase, schema, type Database } from '@spr
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { loadConfig, type ApiConfig } from '../config.js';
+import { selectEmailDelivery } from '../notifications/email-delivery.js';
 import { createAdminAuthServices } from './service.js';
 
 const initialAdminInputSchema = z.object({
@@ -31,7 +32,10 @@ export async function provisionInitialAdmin(
   let accountId = existing?.id;
   let accountStatus: InitialAdminProvisionResult['accountStatus'] = 'existing';
   if (!accountId) {
-    const auth = createAdminAuthServices(config, database);
+    // Admin sign-up never sends a verification email (see service.ts), so
+    // this controlled bootstrap never exercises email delivery regardless of
+    // which adapter the current environment resolves to.
+    const auth = createAdminAuthServices(config, database, selectEmailDelivery(config));
     const response = await auth.handler(new Request(`${config.authBaseUrl}/v1/auth/admin/sign-up/email`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', origin: config.appOrigin },

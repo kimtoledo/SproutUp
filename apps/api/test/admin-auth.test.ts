@@ -12,6 +12,7 @@ import {
 } from '../src/auth/service.js';
 import { provisionInitialAdmin } from '../src/auth/provision-initial-admin.js';
 import type { ApiConfig } from '../src/config.js';
+import { createInMemoryEmailDelivery } from '../src/notifications/email-delivery.js';
 import { applyMigrations } from './database-fixture.js';
 
 const pglite = new PGlite();
@@ -30,11 +31,13 @@ const config: ApiConfig = {
   databaseUrl: 'postgresql://unused:unused@localhost:5432/unused',
   environment: 'test',
   trustProxy: false,
+  emailOutboxDir: '.data/test-email-outbox',
 };
 
-const adminAuth = createAdminAuthServices(config, orm);
-const borrowerAuth = createBorrowerAuthServices(config, orm);
-const investorAuth = createInvestorAuthServices(config, orm);
+const emailDelivery = createInMemoryEmailDelivery();
+const adminAuth = createAdminAuthServices(config, orm, emailDelivery);
+const borrowerAuth = createBorrowerAuthServices(config, orm, emailDelivery);
+const investorAuth = createInvestorAuthServices(config, orm, emailDelivery);
 const customerAuth = createCustomerAuthServices(orm, borrowerAuth, investorAuth);
 
 function authRequest(path: string, body: Record<string, unknown>, origin = config.appOrigin) {

@@ -9,6 +9,7 @@ import {
   createInvestorAuthServices,
 } from '../src/auth/service.js';
 import type { ApiConfig } from '../src/config.js';
+import { createInMemoryEmailDelivery } from '../src/notifications/email-delivery.js';
 import { applyMigrations } from './database-fixture.js';
 
 const pglite = new PGlite();
@@ -23,9 +24,11 @@ const config: ApiConfig = {
   databaseUrl: 'postgresql://unused:unused@localhost:5432/unused',
   environment: 'test',
   trustProxy: false,
+  emailOutboxDir: '.data/test-email-outbox',
 };
-const borrowerAuth = createBorrowerAuthServices(config, orm);
-const investorAuth = createInvestorAuthServices(config, orm);
+const emailDelivery = createInMemoryEmailDelivery();
+const borrowerAuth = createBorrowerAuthServices(config, orm, emailDelivery);
+const investorAuth = createInvestorAuthServices(config, orm, emailDelivery);
 const customerAuth = createCustomerAuthServices(orm, borrowerAuth, investorAuth);
 
 beforeAll(async () => applyMigrations(pglite));
@@ -108,7 +111,7 @@ describe('isolated customer account registration', () => {
       .from(schema.investorAccounts)
       .where(eq(schema.investorAccounts.email, 'signup-investor@sproutup.ph'));
     const context = investor
-      ? await createInvestorAuthServices(config, orm).resolveAuthorization(investor.id)
+      ? await createInvestorAuthServices(config, orm, emailDelivery).resolveAuthorization(investor.id)
       : null;
     expect(context).toMatchObject({ accountType: 'investor', roles: [] });
     expect(context?.permissions).toContain('investor_onboarding.manage_own');

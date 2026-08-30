@@ -36,6 +36,9 @@ apps/web/CLAUDE.md
 *.log
 npm-debug.log*
 
+### Local-only runtime data (e.g. the development email outbox)
+/.data/
+
 ### Editors
 .idea/
 .vscode/

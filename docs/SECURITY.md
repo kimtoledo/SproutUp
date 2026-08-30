@@ -59,9 +59,18 @@ Own-session responses are schema-allowlisted to opaque session identity and disp
 - Authenticated users can list and revoke only their own sessions through opaque session IDs. Session tokens are never returned by the session-management API.
 - Session revocation and its immutable audit event commit in one database transaction. A mismatched owner/session pair is treated as not found.
 
-Password-reset delivery and email verification are not operational until a transactional-email adapter and templates are approved. MFA/OTP is not enabled until the required events, recovery process, and delivery provider are approved. These are release blockers under MVP 1 task 02, not silently deferred security controls.
+Password-reset requests and email verification are delivered through a swappable `EmailDelivery`
+port (`apps/api/src/notifications/`): an in-memory adapter for tests, a local-file dev outbox that
+never writes to the application logger, and a fail-closed adapter production resolves to until an
+approved transactional-email provider is wired — a production deployment that reaches this adapter
+gets a loud delivery failure rather than a silently unsent link. A completed password reset appends
+an immutable `credential.password_reset_completed` audit event with a hashed client IP and
+correlated request id. Borrower/investor self-serve signup also sends a verification email;
+controlled administrator provisioning does not. The actual transactional-email vendor, MFA/OTP, and
+the web forgot-password/reset-password/verify-email pages remain release blockers under MVP 1 task
+02, not silently deferred security controls.
 
-The web registration and sign-in pages send JSON only to the configured API origin with `credentials: "include"`; they do not read or store session tokens. Client validation is usability-only and the API remains authoritative. Sign-in failures use one non-enumerating message for unknown account and incorrect password, rate limits receive a distinct retry-later message, and network exception details are never rendered. Password recovery and email verification UI remain unavailable until their delivery and policy controls are implemented.
+The web registration and sign-in pages send JSON only to the configured API origin with `credentials: "include"`; they do not read or store session tokens. Client validation is usability-only and the API remains authoritative. Sign-in failures use one non-enumerating message for unknown account and incorrect password, rate limits receive a distinct retry-later message, and network exception details are never rendered. Password recovery and email verification UI remain unavailable until an approved provider is wired and their web pages are implemented.
 
 The portal does not infer access from URL, a registration field, or browser state. It loads the
 portal-specific server-resolved session context, renders only returned borrower/investor
@@ -178,7 +187,8 @@ Never put real secrets in `.env.example`, Markdown, source code, fixtures, logs,
 
 ## Known open controls
 
-- Email verification and password-reset delivery provider
+- Approved transactional-email provider (delivery port and audit trail are implemented; production fails closed without one)
+- Forgot-password/reset-password/verify-email web pages
 - OTP/TOTP policy, required step-up events, recovery, and trusted-device behavior
 - Final domain role-permission and maker/checker matrices; role assignment itself is dual-controlled
 - Emergency access and support impersonation policy

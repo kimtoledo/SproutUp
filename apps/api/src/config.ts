@@ -16,6 +16,10 @@ const environmentSchema = z.object({
   // proxy always terminates client connections; prefer a hop count (`1`) or a
   // comma-separated proxy IP/CIDR allowlist.
   API_TRUST_PROXY: z.string().min(1).optional(),
+  // Development-only outbox for password-reset/email-verification links; see
+  // `notifications/email-delivery.ts`. Unused in production, which fails
+  // closed until an approved transactional-email provider is wired.
+  EMAIL_OUTBOX_DIR: z.string().min(1).default('.data/email-outbox'),
 });
 
 export type TrustProxyConfig = boolean | number | string[];
@@ -43,6 +47,7 @@ export interface ApiConfig {
   databaseUrl: string;
   environment: 'development' | 'test' | 'production';
   trustProxy: TrustProxyConfig;
+  emailOutboxDir: string;
 }
 
 export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiConfig {
@@ -63,5 +68,6 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiCon
     databaseUrl: parsed.DATABASE_URL,
     environment: parsed.NODE_ENV,
     trustProxy: parseTrustProxy(parsed.API_TRUST_PROXY),
+    emailOutboxDir: parsed.EMAIL_OUTBOX_DIR,
   };
 }

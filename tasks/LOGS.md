@@ -34,6 +34,69 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Audited password-reset and email-verification delivery
+
+**Status:** WIP
+
+### Updated
+
+- Added a swappable `EmailDelivery` port (`apps/api/src/notifications/email-delivery.ts`,
+  `local-file-email-delivery.ts`) following the same pattern as the `FileStorage` port: an
+  in-memory adapter for tests, a local-file dev outbox that never writes through the application
+  logger (reset/verification links are single-use credentials, the same rule
+  `provision-initial-admin.ts` already applies to provisioned passwords), and a fail-closed adapter
+  the composition root selects in production until an approved transactional-email provider is
+  wired. Added `EMAIL_OUTBOX_DIR` (default `.data/email-outbox`, gitignored) to `ApiConfig`.
+- Wired Better Auth's `sendResetPassword` and `sendVerificationEmail` callbacks for all three
+  portals (admin, borrower, investor) through the port. Borrower/investor self-serve signup also
+  sends a verification email (`emailVerification.sendOnSignUp: true`); controlled administrator
+  provisioning explicitly does not, so `provision-initial-admin.ts` never depends on which adapter
+  the current environment resolves to.
+- A completed password reset now appends an immutable `credential.password_reset_completed` audit
+  event (actor, outcome, resource, hashed client IP, correlated request id) via the existing
+  `writeAudit` helper. Better Auth's reset/verification callbacks only receive the raw web
+  `Request`, not the Fastify request, so `toWebRequest` in `routes/auth.ts` now also forwards
+  `x-sproutup-request-id` alongside the existing `x-sproutup-client-ip` header to carry that
+  correlation across the boundary.
+- `createBorrowerAuthServices`/`createInvestorAuthServices`/`createAdminAuthServices` now take an
+  explicit `emailDelivery` argument; updated `server.ts`, `provision-initial-admin.ts`, and the two
+  existing tests that called these factories directly. Updated `docs/SECURITY.md` and
+  `docs/IDENTITY.md`, which previously stated delivery was not operational.
+- Added `apps/api/test/email-delivery.test.ts` (adapter unit tests) and
+  `apps/api/test/credential-recovery.test.ts` (end-to-end: signup → request reset → consume token
+  → old password rejected/new password accepted → audit event recorded, for borrower and investor;
+  plus admin/borrower/investor verification-email dispatch rules).
+
+### Decisions
+
+- Password-reset/email-verification delivery is implemented as a provider-agnostic port now, ahead
+  of the vendor decision, matching how `FileStorage` was built ahead of the object-storage vendor
+  decision. Production intentionally fails closed (throws) rather than silently accepting requests
+  it cannot deliver.
+- Administrator accounts never receive an automatic verification email on creation, since they are
+  always provisioned through the controlled `provision-initial-admin` operation, not self-serve
+  signup.
+
+### Open items
+
+- The actual transactional-email vendor is still unapproved (task 02 open decisions).
+- The web forgot-password, reset-password, and verify-email pages do not exist yet; the capability
+  is currently API-only. Email-verification links work end-to-end without a web page (Better Auth's
+  `/verify-email` completes over a plain GET), but password reset needs its own web form before a
+  real user can complete one.
+- MFA/OTP, audit integration into the remaining privileged workflows (login itself is not yet
+  audited), final grants, and emergency access remain open across task 02.
+- The orphan, unwired `packages/db/src/schema/borrower.ts` (KYB profile / beneficial-owner tables)
+  noted in the previous entry is still uncommitted and untouched.
+
+### Next
+
+- Full repository gate passed: API 147, web 87, database 31, and shared 28 tests (293 total),
+  lint/typecheck across all workspaces, API/Next production builds, and database readiness.
+- Either build the forgot-password/reset-password web pages (task 21) to make this capability
+  user-reachable, or continue task 02 with MFA/OTP and broader audit integration, or resume
+  task 03/04 with the Philippine borrower/investor profile work the orphan schema file hints at.
+
 ## 2026-08-30 — Borrower/investor auth runtime cutover and legacy customer-auth retirement
 
 **Status:** Done

@@ -72,7 +72,18 @@
   invalidates all remaining legacy customer sessions and auxiliary auth state, removes active
   customer grants, and makes the unified auth namespace write-inert. The unscoped `/v1/auth/*` and
   `/v1/session-context` paths are no longer mounted; cross-portal credentials are denied.
-- Password-reset/email-verification delivery, MFA/OTP, audit integration into each privileged workflow, final grants, and emergency access remain; this task stays **WIP**.
+- **2026-08-30 — Password-reset and email-verification delivery:** Added a swappable
+  `EmailDelivery` port (`apps/api/src/notifications/`) with an in-memory adapter for tests, a
+  local-file dev outbox that never touches the application logger, and a fail-closed adapter the
+  composition root selects in production until an approved transactional-email provider is wired
+  (still an open decision below). All three portals now wire `sendResetPassword` and
+  `sendVerificationEmail` through it; borrower/investor self-serve signup also sends a verification
+  email (`sendOnSignUp`), while controlled administrator provisioning intentionally does not.
+  Completed password resets append an immutable `credential.password_reset_completed` audit event
+  with a hashed client IP and correlated request id, carried across the Better Auth boundary via
+  the same header pattern already used for rate-limit IP resolution. The forgot-password/
+  reset-password web pages, MFA/OTP, audit integration into the remaining privileged workflows,
+  final grants, and emergency access remain; this task stays **WIP**.
 
 ## Scope
 

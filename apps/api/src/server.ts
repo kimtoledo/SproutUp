@@ -15,6 +15,7 @@ import { createApprovalLifecycleService } from './auth/approval-lifecycle-servic
 import { createApprovalHistoryService } from './auth/approval-history-service.js';
 import { createOnboardingCaseService } from './onboarding/case-service.js';
 import { createOnboardingReviewService } from './onboarding/review-service.js';
+import { selectEmailDelivery } from './notifications/email-delivery.js';
 
 const config = loadConfig();
 // Keep third-party libraries (Better Auth's dev/test detection, etc.) aligned
@@ -22,9 +23,10 @@ const config = loadConfig();
 process.env.NODE_ENV ??= config.environment;
 const database = createDatabase(config.databaseUrl);
 await database.check();
-const adminAuth = createAdminAuthServices(config, database.db);
-const borrowerAuth = createBorrowerAuthServices(config, database.db);
-const investorAuth = createInvestorAuthServices(config, database.db);
+const emailDelivery = selectEmailDelivery(config);
+const adminAuth = createAdminAuthServices(config, database.db, emailDelivery);
+const borrowerAuth = createBorrowerAuthServices(config, database.db, emailDelivery);
+const investorAuth = createInvestorAuthServices(config, database.db, emailDelivery);
 const customerAuth = createCustomerAuthServices(database.db, borrowerAuth, investorAuth);
 const sessions = createSessionService(database.db);
 const roleAssignments = createRoleAssignmentService(database.db);
