@@ -53,6 +53,12 @@
   legacy auth material for admin IDs. Admin catalogue/assignment/revocation services now operate
   on admin accounts and cannot accept borrower/investor roles. Added idempotent controlled
   `auth:provision-initial-admin`; customer ownership/runtime cutover remains.
+- **2026-08-30 — Account ownership FK cutover:** Migration `0023` repoints onboarding applicant
+  and event actor, document owner/uploader, consent acceptor, and ledger actor references from
+  legacy `users` to the immutable global account registry; admin-only rule/consent publishers now
+  reference `admin_accounts`. It fails closed on unclassified or mismatched data, enforces that
+  onboarding case type matches a borrower/investor account, rejects admin applicants, and records
+  aggregate immutable reconciliation evidence. Borrower/investor runtime auth remains.
 - Password-reset/email-verification delivery, MFA/OTP, audit integration into each privileged workflow, final grants, and emergency access remain; this task stays **WIP**.
 
 ## Scope

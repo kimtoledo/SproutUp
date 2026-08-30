@@ -4,7 +4,7 @@
 
 ## Implementation status
 
-The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19. On 2026-08-30, the portal-identity isolation work introduced separate admin, borrower, and investor account/auth relations, a protected global email registry, and active `admin_role_grants` plus admin approval/reviewer foreign keys. The legacy unified `users` relations remain temporarily active for customer compatibility and mixed onboarding event attribution until borrower/investor ownership and runtime auth are migrated forward. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
+The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19. On 2026-08-30, the portal-identity isolation work introduced separate admin, borrower, and investor account/auth relations, a protected global email registry, active `admin_role_grants` plus admin approval/reviewer foreign keys, and registry-anchored onboarding/document/consent/ledger ownership. The legacy unified identity remains only as a temporary customer-auth compatibility boundary; borrower/investor runtime auth must still be cut over. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
 
 This is a normalized domain outline for the Philippine revamp. It intentionally avoids copying legacy table names and duplicated summary tables.
 
@@ -13,7 +13,7 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 - `account_email_registry` — implemented global normalized-email/account-id ownership across portals
 - `admin_accounts`, `borrower_accounts`, `investor_accounts` — implemented separate account classes
 - portal-specific credentials, sessions, verifications, and rate limits — implemented foundation;
-  runtime cutover remains
+  borrower/investor runtime cutover remains
 - `admin_profiles`, `investor_profiles`, `borrower_profiles`
 - `roles`, `permissions`, `admin_role_grants`, `role_permissions` — staff RBAC implemented on the
   admin account boundary; customer compatibility roles remain only until customer cutover
@@ -23,7 +23,8 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 ## Parties, KYC, and documents
 
 - `organizations`, `people`, `organization_members`
-- `onboarding_cases`, `onboarding_case_events` — implemented workflow spine shared by borrower and investor journeys
+- `onboarding_cases`, `onboarding_case_events` — implemented workflow spine with registry-backed
+  applicant/actor attribution and database-enforced borrower/investor case-class matching
 - `kyc_cases`, `kyc_requirements`, `kyc_submissions`, `kyc_decisions`
 - `screening_checks`, `risk_assessments`, `beneficial_owners`
 - `documents`, `document_versions` — **implemented (2026-08-30)**: private file store with an

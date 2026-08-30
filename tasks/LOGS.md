@@ -34,6 +34,55 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Portal account ownership and actor foreign-key cutover
+
+**Status:** Done
+
+### Updated
+
+- Added migration `0023_real_daredevil.sql`. It preflights every rule/consent publisher,
+  consent acceptor, document owner/uploader, ledger actor, and onboarding applicant/event actor;
+  any unregistered identity, non-admin publisher, or onboarding account-class mismatch aborts the
+  migration before constraint changes.
+- Repointed shared customer/staff actor and owner references to immutable
+  `account_email_registry.account_id`; admin-only rule/consent publication references
+  `admin_accounts` directly. A PostgreSQL trigger now requires borrower cases to belong to a
+  borrower account and investor cases to an investor account, and rejects admin applicants.
+- Added aggregate immutable `identity.account_ownership_cutover_completed` evidence and expanded
+  migration/service fixtures for existing-data upgrade, borrower/investor mismatch, admin-applicant
+  denial, unknown-owner denial, and the new portal account relations.
+- Applied and reconciled locally: 3 onboarding cases, 12 events, 0 account-class mismatches, and 1
+  ownership-cutover audit. The preflight found one isolated local-only invalid investor draft owned
+  by an admin account; after confirming it had only one `created` event and no document, consent,
+  or ledger linkage, that exact draft/event was removed transactionally and preserved as an
+  immutable `identity.local_invalid_draft_archived` audit record.
+- Full repository gate passed: API 134, web 86, database 31, and shared 28 tests (279 total), all
+  lint/typecheck checks, API/Next production builds, database readiness, and production audit
+  (0 vulnerabilities).
+
+### Decisions
+
+- Account-agnostic ownership/actor columns use the globally unique immutable registry account ID;
+  they do not use weak polymorphic IDs or fall back to legacy `users`.
+- Onboarding journey class is a database invariant derived from the physical portal account class,
+  not a role, host, request field, or client-selected authority.
+- Historical column/property names containing `user_id` remain for API v1 compatibility while
+  their foreign keys now enforce the isolated account model.
+
+### Open items
+
+- Mount borrower and investor Better Auth services with separate routes, cookies, sessions, and
+  server-resolved account-class capabilities.
+- Migrate session-device APIs to the matching portal session tables, then disable legacy customer
+  auth, customer-role bootstrap, credentials, sessions, and grants with exact reconciliation.
+- Existing `.claude/` and `packages/db/src/schema/borrower.ts` remain untouched/uncommitted.
+
+### Next
+
+- Activate the borrower and investor runtime boundaries over the now-safe ownership model, update
+  the web clients to their portal-specific auth/context endpoints, and complete the legacy customer
+  auth retirement migration.
+
 ## 2026-08-30 — Administrator RBAC, actor FK, and legacy-auth cutover
 
 **Status:** Done

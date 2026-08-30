@@ -20,10 +20,11 @@
 - No borrower profile, KYB evidence, completeness rules, or approval command is implemented yet; this task stays **WIP** pending the Philippine entity/document matrix and screening/escalation policy.
 - **2026-08-30 — Lifecycle completion + eligibility spine (slice S1.1):** Added the owner-bound `POST /v1/onboarding/cases/:caseId/reopen` (`rejected|expired → draft`, `reopened` event, reviewer/decision cleared, version bump, audit), so a rejected applicant corrects and reapplies on the same account without a dead end (acceptance criterion "corrected without creating duplicate accounts"). `create` now refuses `409 CASE_ALREADY_APPROVED` while an approved borrower case still stands; an expired one does not block. Added the internal `eligibility(userId, journey)` projection (`none|pending|approved|expired`) that credit/campaign/commitment gating will consume. Regulated profile/evidence completeness and the policy-gated approve still layer on in later slices.
 - **2026-08-30 — Identity dependency correction:** The target borrower identity is now
-  `borrower_accounts`, not a customer role on the unified `users` table. The additive account/auth
-  schema exists, but onboarding ownership must be migrated to it before the borrower KYB service and
-  HTTP form are considered complete. The current untracked schema draft remains outside this
-  completed foundation slice.
+  `borrower_accounts`, not a customer role on the unified `users` table.
+- **2026-08-30 — Borrower ownership cutover:** Onboarding applicant/event attribution now uses the
+  global registry entry created only by a physical portal account. PostgreSQL requires a borrower
+  account for a borrower case and rejects investor/admin IDs, so host selection or a legacy role
+  cannot change the journey class. Borrower auth runtime still needs to move off compatibility auth.
 
 ## Scope
 

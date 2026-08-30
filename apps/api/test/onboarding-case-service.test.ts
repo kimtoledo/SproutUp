@@ -18,6 +18,10 @@ beforeAll(async () => {
     { id: applicantId, name: 'Borrower Applicant', email: 'case-applicant@sproutup.ph' },
     { id: otherUserId, name: 'Other Applicant', email: 'case-other@sproutup.ph' },
   ]);
+  await orm.insert(schema.borrowerAccounts).values([
+    { id: applicantId, name: 'Borrower Applicant', email: 'case-applicant@sproutup.ph' },
+    { id: otherUserId, name: 'Other Applicant', email: 'case-other@sproutup.ph' },
+  ]);
 });
 
 afterAll(async () => {

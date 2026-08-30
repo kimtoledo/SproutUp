@@ -10,6 +10,10 @@
 - Added internal transaction-aware services that compute exact UTF-8 content SHA-256, publish immutable versions with conflict-safe retries and audit, select the latest effective key/locale at a given time, and accept an exact effective document once per user with atomic audit evidence.
 - No legal content is seeded and no publication/read/acceptance route exists. Required document policy, legal approval authority, re-consent/withdrawal, retention, private upload, scanning, storage, and e-signature controls remain unimplemented; this task stays **WIP**.
 - **2026-08-30 — Private document store (slice S1.2a):** Added `documents` + append-only `document_versions` (migrations `0017`/`0018`): owner, coarse classification, `purpose` tag; a version's identity/content/provenance is immutable, versions cannot be deleted or truncated, and the only mutable fields are the malware-scan outcome (`scan_state`/`scanned_at`) and `retention_until`. Added a swappable `FileStorage` port (`apps/api/src/storage/`, in-memory + local-filesystem impls; keys are opaque generated ids, never user paths) and an internal `DocumentService` — create/add-version (atomic metadata + audit, orphaned-object cleanup on failure), record-scan-result (once, `pending → clean/infected/error`), API-mediated download hard-gated on `scan_state = 'clean'` with owner/staff authz, and list-own. Content type is allowlisted (PDF/JPEG/PNG), size cap 20 MiB. **No HTTP route, no e-signature, no retention job, and no `documents.*` capability yet** — those land with the borrower KYB upload form (task 03) and the approved retention policy. Legal-content and required-consent-matrix decisions are unchanged. See [`../../docs/DOCUMENTS.md`](../../docs/DOCUMENTS.md).
+- **2026-08-30 — Portal-account attribution cutover:** Document owner/uploader and consent acceptor
+  foreign keys now use the immutable global account registry; consent publication is admin-only at
+  the database boundary. Existing references are preflighted before migration and exact aggregate
+  counts are retained in immutable cutover audit evidence.
 
 ## Scope
 

@@ -34,6 +34,7 @@ beforeAll(async () => {
     '0020_portal-identity-isolation.sql',
     '0021_backfill-portal-identities.sql',
     '0022_mean_toad_men.sql',
+    '0023_real_daredevil.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
@@ -182,9 +183,62 @@ describe('initial authentication migration', () => {
     await expect(database.exec('truncate table admin_accounts cascade')).rejects.toThrow(
       'portal account tables cannot be truncated',
     );
-    await expect(database.exec('truncate table account_email_registry')).rejects.toThrow(
+    await expect(database.exec('truncate table account_email_registry cascade')).rejects.toThrow(
       'account_email_registry cannot be truncated',
     );
+  });
+
+  it('anchors customer ownership to the registry and enforces the onboarding account class', async () => {
+    const borrowerId = '00000000-0000-4000-8000-00000000b102';
+    const investorId = '00000000-0000-4000-8000-00000000c102';
+    const adminId = '00000000-0000-4000-8000-00000000a102';
+    await database.query(
+      `insert into borrower_accounts (id, name, email)
+       values ($1, 'Ownership Borrower', 'ownership-borrower@sproutup.ph')`,
+      [borrowerId],
+    );
+    await database.query(
+      `insert into investor_accounts (id, name, email)
+       values ($1, 'Ownership Investor', 'ownership-investor@sproutup.ph')`,
+      [investorId],
+    );
+    await database.query(
+      `insert into admin_accounts (id, name, email)
+       values ($1, 'Ownership Admin', 'ownership-admin@sproutup.ph')`,
+      [adminId],
+    );
+
+    const borrowerCase = await database.query<{ id: string }>(
+      `insert into onboarding_cases (case_type, applicant_user_id)
+       values ('borrower', $1) returning id::text`,
+      [borrowerId],
+    );
+    await database.query(
+      `insert into onboarding_case_events
+        (case_id, case_version, event_type, to_status, actor_type, actor_user_id)
+       values ($1, 1, 'created', 'draft', 'user', $2)`,
+      [borrowerCase.rows[0]?.id, borrowerId],
+    );
+    await database.query(
+      `insert into onboarding_cases (case_type, applicant_user_id)
+       values ('investor', $1)`,
+      [investorId],
+    );
+
+    await expect(database.query(
+      `insert into onboarding_cases (case_type, applicant_user_id)
+       values ('investor', $1)`,
+      [borrowerId],
+    )).rejects.toThrow('onboarding case type must match borrower or investor account class');
+    await expect(database.query(
+      `insert into onboarding_cases (case_type, applicant_user_id)
+       values ('borrower', $1)`,
+      [adminId],
+    )).rejects.toThrow('onboarding case type must match borrower or investor account class');
+    await expect(database.query(
+      `insert into documents (owner_user_id, classification, purpose)
+       values ('00000000-0000-4000-8000-00000000ffff', 'kyc_identity', 'unknown')`,
+    )).rejects.toThrow();
   });
 
   it('enforces exact balanced append-only ledger postings at transaction commit', async () => {
@@ -280,6 +334,11 @@ describe('initial authentication migration', () => {
     const acceptanceId = '00000000-0000-4000-8000-000000000c03';
     await database.query(
       `insert into users (id, name, email)
+       values ($1, 'Consent User', 'consent-migration@sproutup.ph')`,
+      [userId],
+    );
+    await database.query(
+      `insert into borrower_accounts (id, name, email)
        values ($1, 'Consent User', 'consent-migration@sproutup.ph')`,
       [userId],
     );
@@ -390,6 +449,11 @@ describe('initial authentication migration', () => {
     const eventId = '00000000-0000-4000-8000-000000000007';
     await database.query(
       `insert into users (id, name, email) values ($1, 'Applicant', 'onboarding-migration@sproutup.ph')`,
+      [applicantId],
+    );
+    await database.query(
+      `insert into borrower_accounts (id, name, email)
+       values ($1, 'Applicant', 'onboarding-migration@sproutup.ph')`,
       [applicantId],
     );
     await database.query(
@@ -631,6 +695,11 @@ describe('private document store migration', () => {
   it('creates the document relations', async () => {
     await database.query(
       `insert into users (id, name, email) values ($1, 'Doc Owner', 'doc-migration@sproutup.ph')`,
+      [owner],
+    );
+    await database.query(
+      `insert into borrower_accounts (id, name, email)
+       values ($1, 'Doc Owner', 'doc-migration@sproutup.ph')`,
       [owner],
     );
     const relations = await database.query<{ table_name: string }>(`

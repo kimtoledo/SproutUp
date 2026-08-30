@@ -44,6 +44,15 @@ beforeAll(async () => {
     { id: otherId, name: 'Other', email: 'doc-other@sproutup.ph' },
     { id: staffId, name: 'Compliance', email: 'doc-staff@sproutup.ph' },
   ]);
+  await database.insert(schema.borrowerAccounts).values([
+    { id: ownerId, name: 'Owner', email: 'doc-owner@sproutup.ph' },
+    { id: otherId, name: 'Other', email: 'doc-other@sproutup.ph' },
+  ]);
+  await database.insert(schema.adminAccounts).values({
+    id: staffId,
+    name: 'Compliance',
+    email: 'doc-staff@sproutup.ph',
+  });
 });
 
 afterAll(async () => {

@@ -12,7 +12,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { id, timestamps } from './helpers.js';
-import { users } from './users.js';
+import { adminAccounts } from './portal-identities.js';
 
 /**
  * Effective-dated configuration.
@@ -49,7 +49,7 @@ export const ruleVersions = pgTable(
     effectiveFrom: timestamp('effective_from', { withTimezone: true }).notNull(),
     body: jsonb('body').$type<Record<string, unknown>>().notNull(),
     note: text('note'),
-    publishedByUserId: uuid('published_by_user_id').references(() => users.id, {
+    publishedByUserId: uuid('published_by_user_id').references(() => adminAccounts.id, {
       onDelete: 'restrict',
     }),
     publishedAt: timestamp('published_at', { withTimezone: true }).notNull().defaultNow(),

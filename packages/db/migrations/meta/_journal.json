@@ -162,6 +162,13 @@
       "when": 1788029341172,
       "tag": "0022_mean_toad_men",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1788062657905,
+      "tag": "0023_real_daredevil",
+      "breakpoints": true
     }
   ]
 }

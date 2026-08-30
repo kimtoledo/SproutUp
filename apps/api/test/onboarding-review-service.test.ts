@@ -27,6 +27,10 @@ beforeAll(async () => {
     { id: reviewerId, name: 'Reviewer', email: 'review-owner@sproutup.ph' },
     { id: otherReviewerId, name: 'Other Reviewer', email: 'review-other@sproutup.ph' },
   ]);
+  await orm.insert(schema.borrowerAccounts).values([
+    { id: applicantId, name: 'Applicant', email: 'review-applicant@sproutup.ph' },
+    { id: draftApplicantId, name: 'Draft Applicant', email: 'review-draft@sproutup.ph' },
+  ]);
   const cases = createOnboardingCaseService(orm);
   const created = await cases.create({
     applicantUserId: applicantId,
@@ -254,6 +258,11 @@ describe.sequential('onboarding review service', () => {
   it('lets only the assigned reviewer approve an in-review case from its exact version', async () => {
     const approveApplicant = '00000000-0000-4000-8000-000000000821';
     await orm.insert(schema.users).values({
+      id: approveApplicant,
+      name: 'Approve Applicant',
+      email: 'approve-applicant@sproutup.ph',
+    });
+    await orm.insert(schema.borrowerAccounts).values({
       id: approveApplicant,
       name: 'Approve Applicant',
       email: 'approve-applicant@sproutup.ph',

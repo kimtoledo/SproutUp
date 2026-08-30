@@ -5,6 +5,10 @@
 
 ## Implementation progress
 
+- **2026-08-30 — Actor identity cutover:** Non-system ledger posting attribution now references a
+  globally registered portal account ID instead of legacy `users`, preserving one strong foreign
+  key across the separate admin, borrower, and investor account tables.
+
 - **2026-08-19 — Exact settled-money primitive:** Added canonical `PHP` decimal-string contracts and immutable `bigint`-centavo runtime values with exact signed arithmetic and a shared `numeric(30,2)` persistence boundary.
 - Numeric JSON, ambiguous formats, floating-point arithmetic, negative zero, and overflow are rejected. Multiplication, allocation, and rounding remain unavailable until the ledger/calculation rules are approved.
 - Added generic `ledger_accounts`, immutable `ledger_transactions`, and immutable positive debit/credit `ledger_entries` with PHP `numeric(30,2)`, global posting idempotency, source/reversal identity, and commit-deferred minimum-line/balance enforcement.

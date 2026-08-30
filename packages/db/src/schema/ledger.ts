@@ -16,7 +16,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { phpMoneyPrecision, phpMoneyScale } from '@sproutup/shared';
 import { id, timestamps } from './helpers.js';
-import { users } from './users.js';
+import { accountEmailRegistry } from './portal-identities.js';
 
 export const currencyCodeEnum = pgEnum('currency_code', ['PHP']);
 export const ledgerNormalBalanceEnum = pgEnum('ledger_normal_balance', ['debit', 'credit']);
@@ -51,7 +51,9 @@ export const ledgerTransactions = pgTable(
       (): AnyPgColumn => ledgerTransactions.id,
       { onDelete: 'restrict' },
     ),
-    actorUserId: uuid('actor_user_id').references(() => users.id, { onDelete: 'restrict' }),
+    actorUserId: uuid('actor_user_id').references(() => accountEmailRegistry.accountId, {
+      onDelete: 'restrict',
+    }),
     requestId: uuid('request_id'),
   },
   (table) => [

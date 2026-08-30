@@ -17,6 +17,11 @@ beforeAll(async () => {
     name: 'Finance Officer',
     email: 'rule-service@sproutup.ph',
   });
+  await database.insert(schema.adminAccounts).values({
+    id: staffId,
+    name: 'Finance Officer',
+    email: 'rule-service@sproutup.ph',
+  });
 });
 
 afterAll(async () => {

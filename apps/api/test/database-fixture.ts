@@ -25,6 +25,7 @@ export const migrationFiles = [
   '0020_portal-identity-isolation.sql',
   '0021_backfill-portal-identities.sql',
   '0022_mean_toad_men.sql',
+  '0023_real_daredevil.sql',
 ] as const;
 
 export async function applyMigrations(database: PGlite): Promise<void> {

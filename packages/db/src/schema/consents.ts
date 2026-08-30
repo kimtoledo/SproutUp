@@ -11,7 +11,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { id } from './helpers.js';
-import { users } from './users.js';
+import { accountEmailRegistry, adminAccounts } from './portal-identities.js';
 
 export const consentDocuments = pgTable(
   'consent_documents',
@@ -25,7 +25,7 @@ export const consentDocuments = pgTable(
     contentSha256: varchar('content_sha256', { length: 64 }).notNull(),
     effectiveAt: timestamp('effective_at', { withTimezone: true }).notNull(),
     publishedAt: timestamp('published_at', { withTimezone: true }).notNull(),
-    publishedByUserId: uuid('published_by_user_id').references(() => users.id, {
+    publishedByUserId: uuid('published_by_user_id').references(() => adminAccounts.id, {
       onDelete: 'restrict',
     }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -62,7 +62,7 @@ export const consentAcceptances = pgTable(
     id: id(),
     userId: uuid('user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'restrict' }),
+      .references(() => accountEmailRegistry.accountId, { onDelete: 'restrict' }),
     consentDocumentId: uuid('consent_document_id')
       .notNull()
       .references(() => consentDocuments.id, { onDelete: 'restrict' }),

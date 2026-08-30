@@ -1,6 +1,6 @@
 # Portal Identity Isolation
 
-**Status:** Foundation, legacy backfill, administrator runtime/RBAC cutover implemented; customer runtime/foreign-key cutover in progress.
+**Status:** Foundation, backfill, staff runtime/RBAC, and account-ownership cutover implemented; customer runtime cutover in progress.
 
 SproutUp treats administrator, borrower, and investor as separate account classes. Borrower and
 investor are not target RBAC roles and a credential issued in one portal must never authenticate
@@ -62,8 +62,15 @@ maker/checker/action, permission-grant attribution, and assigned-reviewer foreig
 `admin_accounts`, and reconciles the copy before cleanup. It revokes legacy admin credentials and
 sessions and removes every legacy role grant for admin IDs. Database triggers permit staff roles
 only in `admin_role_grants`, customer compatibility roles only in `user_roles`, and reject any new
-legacy account/session material for an admin ID. Staff onboarding event actors retain same-ID
-legacy identity shadows until the polymorphic customer/admin event-attribution cutover.
+legacy account/session material for an admin ID.
+
+Migration `0023_real_daredevil.sql` removes the remaining domain ownership dependency on legacy
+`users`. Onboarding applicants, onboarding event actors, document owners/uploaders, consent
+acceptors, and ledger actors now reference immutable `account_email_registry.account_id` values;
+admin-only rule and consent publishers reference `admin_accounts` directly. A database trigger
+requires every onboarding case type to match its borrower or investor account class and rejects an
+admin applicant. The migration fails before changing constraints if any existing reference is
+unclassified or mismatched, then writes an aggregate immutable reconciliation event.
 
 ## Cutover sequence
 
@@ -75,10 +82,10 @@ be migrated forward safely. Before release, the cutover must:
    taking precedence and ambiguous customer records rejected for operator review;
 2. **Done:** copy credential/session evidence into the matching namespace without exposing password
    hashes, with exact count reconciliation;
-3. **Staff done:** move staff RBAC/approval/reviewer foreign keys to `admin_accounts`; customer
-   ownership still needs to move to the matching borrower or investor account;
-4. **Admin done:** mount separate Better Auth boundaries and distinct cookie names for admin,
-   borrower, and investor; borrower/investor remain;
+3. **Done:** move staff RBAC/approval/reviewer foreign keys to `admin_accounts` and shared actor or
+   owner references to the globally unique portal-account registry, with onboarding class matching;
+4. **Admin done:** mount separate Better Auth boundaries and distinct cookie names; borrower and
+   investor runtime boundaries remain;
 5. remove public customer-role selection and disable the legacy `/v1/auth/*` boundary; and
 6. reconcile counts, email ownership, active sessions, onboarding ownership, and audit attribution
    before accepting traffic.

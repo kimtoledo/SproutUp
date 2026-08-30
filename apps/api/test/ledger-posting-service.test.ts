@@ -27,6 +27,11 @@ beforeAll(async () => {
   await database.insert(schema.users).values({
     id: actorUserId, name: 'Ledger Operator', email: 'ledger-operator@sproutup.ph',
   });
+  await database.insert(schema.adminAccounts).values({
+    id: actorUserId,
+    name: 'Ledger Operator',
+    email: 'ledger-operator@sproutup.ph',
+  });
   await database.insert(schema.ledgerAccounts).values([
     { id: debitAccountId, code: 'test.cash', name: 'Test Cash', normalBalance: 'debit' },
     { id: creditAccountId, code: 'test.clearing', name: 'Test Clearing', normalBalance: 'credit' },

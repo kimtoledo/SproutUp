@@ -28,6 +28,11 @@ beforeAll(async () => {
     name: 'Consent Applicant',
     email: 'consent-service@sproutup.ph',
   });
+  await database.insert(schema.borrowerAccounts).values({
+    id: userId,
+    name: 'Consent Applicant',
+    email: 'consent-service@sproutup.ph',
+  });
 });
 
 afterAll(async () => {

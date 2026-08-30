@@ -71,6 +71,20 @@ describe('portal identity backfill migration', () => {
         },
       ]);
       await db.insert(schema.userRoles).values({ userId: adminId, roleKey: 'super_admin' });
+      const onboardingCaseId = '00000000-0000-4000-8000-00000000e150';
+      await db.insert(schema.onboardingCases).values({
+        id: onboardingCaseId,
+        caseType: 'borrower',
+        applicantUserId: borrowerId,
+      });
+      await db.insert(schema.onboardingCaseEvents).values({
+        caseId: onboardingCaseId,
+        caseVersion: 1,
+        eventType: 'created',
+        toStatus: 'draft',
+        actorType: 'user',
+        actorUserId: borrowerId,
+      });
       await db.insert(schema.accounts).values([
         {
           id: '00000000-0000-4000-8000-00000000e201',
@@ -188,6 +202,23 @@ describe('portal identity backfill migration', () => {
         `select action from audit_events where action = 'identity.admin_rbac_cutover_completed'`,
       );
       expect(staffAudit.rows).toEqual([{ action: 'identity.admin_rbac_cutover_completed' }]);
+
+      await applyMigration(pglite, '0023_real_daredevil.sql');
+      const ownershipAudit = await pglite.query<{
+        action: string;
+        metadata: Record<string, number>;
+      }>(
+        `select action, metadata from audit_events
+         where action = 'identity.account_ownership_cutover_completed'`,
+      );
+      expect(ownershipAudit.rows).toEqual([{
+        action: 'identity.account_ownership_cutover_completed',
+        metadata: expect.objectContaining({ onboardingCases: 1, onboardingEvents: 1 }),
+      }]);
+      await expect(pglite.query(
+        `update onboarding_cases set case_type = 'investor' where id = $1`,
+        [onboardingCaseId],
+      )).rejects.toThrow('onboarding case type must match borrower or investor account class');
     } finally {
       await pglite.close();
     }

@@ -13,7 +13,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { id, timestamps } from './helpers.js';
-import { users } from './users.js';
+import { accountEmailRegistry } from './portal-identities.js';
 
 /**
  * Private document store.
@@ -50,7 +50,7 @@ export const documents = pgTable(
     id: id(),
     ownerUserId: uuid('owner_user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'restrict' }),
+      .references(() => accountEmailRegistry.accountId, { onDelete: 'restrict' }),
     classification: documentClassificationEnum('classification').notNull(),
     // A rule-key-style tag for what this document is, e.g. 'borrower.sec_registration'.
     purpose: varchar('purpose', { length: 120 }).notNull(),
@@ -82,7 +82,7 @@ export const documentVersions = pgTable(
     scannedAt: timestamp('scanned_at', { withTimezone: true }),
     uploadedByUserId: uuid('uploaded_by_user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'restrict' }),
+      .references(() => accountEmailRegistry.accountId, { onDelete: 'restrict' }),
     uploadedAt: timestamp('uploaded_at', { withTimezone: true }).notNull().defaultNow(),
     retentionUntil: timestamp('retention_until', { withTimezone: true }),
   },

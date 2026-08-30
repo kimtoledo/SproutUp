@@ -23,6 +23,11 @@ beforeAll(async () => {
     name: 'Reviewer',
     email: 'reopen-reviewer@sproutup.ph',
   });
+  await database.insert(schema.borrowerAccounts).values({
+    id: applicantId,
+    name: 'Reopen Applicant',
+    email: 'reopen@sproutup.ph',
+  });
 });
 
 afterAll(async () => {
