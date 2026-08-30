@@ -20,6 +20,8 @@ import { createInvestorProfileService } from './onboarding/investor-profile-serv
 import { selectEmailDelivery } from './notifications/email-delivery.js';
 import { selectFileStorage } from './storage/select-file-storage.js';
 import { createDocumentService } from './documents/document-service.js';
+import { createCreditApplicationService } from './credit/application-service.js';
+import { createCreditReviewService } from './credit/review-service.js';
 
 const config = loadConfig();
 // Keep third-party libraries (Better Auth's dev/test detection, etc.) aligned
@@ -43,6 +45,8 @@ const onboardingReview = createOnboardingReviewService(database.db);
 const borrowerProfile = createBorrowerProfileService(database.db);
 const investorProfile = createInvestorProfileService(database.db);
 const documents = createDocumentService(database.db, selectFileStorage(config));
+const creditApplications = createCreditApplicationService(database.db);
+const creditReview = createCreditReviewService(database.db);
 
 const app = await buildApp({
   config,
@@ -67,6 +71,7 @@ const app = await buildApp({
     investorProfile,
   },
   documents,
+  credit: { applications: creditApplications, review: creditReview },
 });
 
 app.addHook('onClose', async () => {

@@ -31,6 +31,13 @@ export const permissionKeys = [
   'onboarding_cases.review',
   'documents.upload_own',
   'documents.read_own',
+  'credit_applications.read_own',
+  'credit_applications.manage_own',
+  'credit_applications.submit_own',
+  'credit_applications.read',
+  'credit_applications.review',
+  'credit_applications.recommend',
+  'credit_applications.approve',
 ] as const;
 
 export const roleKeySchema = z.enum(roleKeys);
@@ -77,6 +84,13 @@ export const permissionDefinitions: ReadonlyArray<{
   { key: 'onboarding_cases.review', description: 'Review and decide assigned onboarding cases' },
   { key: 'documents.upload_own', description: 'Upload or replace the current user own private documents' },
   { key: 'documents.read_own', description: 'List and download the current user own private documents' },
+  { key: 'credit_applications.read_own', description: 'Read the current user credit applications' },
+  { key: 'credit_applications.manage_own', description: 'Create and edit the current user credit application draft' },
+  { key: 'credit_applications.submit_own', description: 'Submit the current user credit application' },
+  { key: 'credit_applications.read', description: 'Read credit applications in a staff underwriting queue' },
+  { key: 'credit_applications.review', description: 'Start review and request information on an assigned credit application' },
+  { key: 'credit_applications.recommend', description: 'Record an underwriting recommendation on a reviewed credit application' },
+  { key: 'credit_applications.approve', description: 'Make the final approve/reject decision on a recommended credit application' },
 ];
 
 const ownSessionPermissions: PermissionKey[] = [
@@ -98,6 +112,24 @@ const ownDocumentPermissions: PermissionKey[] = [
   'documents.upload_own',
   'documents.read_own',
 ];
+const ownCreditApplicationPermissions: PermissionKey[] = [
+  'credit_applications.read_own',
+  'credit_applications.manage_own',
+  'credit_applications.submit_own',
+];
+/**
+ * Recommend and approve are both granted to `credit_analyst` for now — the
+ * exact approval authority (a distinct credit committee role? compliance?)
+ * is an open decision (tasks/mvp1/06-credit-scoring-underwriting.md). Dual
+ * control is enforced at the service layer instead: the approving actor must
+ * differ from the recommending one, regardless of role.
+ */
+const creditUnderwritingPermissions: PermissionKey[] = [
+  'credit_applications.read',
+  'credit_applications.review',
+  'credit_applications.recommend',
+  'credit_applications.approve',
+];
 
 /**
  * Initial auth-domain grants only. Domain capabilities are added by their
@@ -106,7 +138,12 @@ const ownDocumentPermissions: PermissionKey[] = [
 export const initialRolePermissions: Readonly<Record<RoleKey, readonly PermissionKey[]>> = {
   super_admin: permissionKeys,
   sales_officer: ['users.read', 'roles.read', ...ownSessionPermissions],
-  credit_analyst: ['users.read', 'roles.read', ...ownSessionPermissions],
+  credit_analyst: [
+    'users.read',
+    'roles.read',
+    ...creditUnderwritingPermissions,
+    ...ownSessionPermissions,
+  ],
   compliance_officer: [
     'users.read',
     'roles.read',
@@ -121,7 +158,12 @@ export const initialRolePermissions: Readonly<Record<RoleKey, readonly Permissio
 /** Customer capability bundles come from the physical account class, never an RBAC grant. */
 export const accountTypePermissions: Readonly<Record<AccountType, readonly PermissionKey[]>> = {
   admin: [],
-  borrower: [...ownSessionPermissions, ...borrowerOnboardingPermissions, ...ownDocumentPermissions],
+  borrower: [
+    ...ownSessionPermissions,
+    ...borrowerOnboardingPermissions,
+    ...ownDocumentPermissions,
+    ...ownCreditApplicationPermissions,
+  ],
   investor: [...ownSessionPermissions, ...investorOnboardingPermissions, ...ownDocumentPermissions],
 };
 

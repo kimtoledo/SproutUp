@@ -107,6 +107,113 @@ This is the chronological handoff record for people and AI working on the revamp
   MFA/OTP and forgot-password pages, or moving to task 06 (Credit Scoring & Underwriting), which is
   currently completely unstarted.
 
+## 2026-08-30 — Credit application intake and dual-controlled underwriting (no scoring engine)
+
+**Status:** WIP
+
+### Updated
+
+- Read the full legacy credit-rating reference before writing any code
+  (`tasks/reference/legacy/domain-credit-rating-underwriting.md`). It documents two mutually
+  inconsistent scoring engines (a live weighted A–F model and a dead A–D model with a direct
+  interest-rate mapping that was apparently never wired up), three different, silently-disagreeing
+  real-estate collateral haircut formulas, an undischarged-bankruptcy disqualification that a
+  collateral short-circuit can bypass, and several outright bugs (a Days-Sales-Outstanding formula
+  that algebraically drops the revenue term). Given that, and that task 06's own acceptance
+  criteria require legacy scoring conflicts to be *resolved*, not copied, this slice deliberately
+  builds no calculated score, risk grade, or collateral valuation formula at all.
+- Added `credit_applications`, `credit_application_events`, `credit_collateral_items`, and
+  `credit_guarantors` (migration `0027_light_rattler.sql`) and `packages/shared/src/credit.ts` — a
+  status/transition model deliberately separate from `onboarding_case_status`: it adds a
+  `recommended` state between `in_review` and a final decision, because task 06 requires
+  "separation between calculated score, analyst recommendation, and final approval" and the
+  onboarding state machine has no room for a distinct recommendation step. `in_review` cannot
+  transition directly to `approved` — every approval passes through `recommended` first, even when
+  an analyst wants to reject outright.
+- Added `createCreditApplicationService` (`apps/api/src/credit/application-service.ts`):
+  `saveOwn` (create against an **approved** borrower onboarding case, or update an existing
+  draft/needs_information application by id+version — the same create-xor-update shape as the
+  borrower profile service), `submit`/`withdraw`/`reopen`, `listOwn`/`detailOwn`. Collateral and
+  guarantors are full-replaced on every save, like the borrower profile's beneficial owners.
+- Added `createCreditReviewService` (`apps/api/src/credit/review-service.ts`): `startReview`/
+  `requestInformation` mirror the onboarding review service's assigned-reviewer pattern exactly;
+  `recommend` is new — the assigned analyst's narrative plus suggested amount/term, **never a
+  score**; `approve` and a post-recommendation `reject` both require an approver *different* from
+  the recommending analyst (maker/checker-style dual control, not a distinct assigned-approver
+  role — enforced by the service AND a database check constraint,
+  `credit_applications_dual_control`). An early `reject` straight from `in_review` (no
+  recommendation exists yet) is the assigned analyst's own call instead.
+- Added `credit_applications.{read_own,manage_own,submit_own}` (granted to borrower accounts) and
+  `credit_applications.{read,review,recommend,approve}` (granted to `credit_analyst` — both
+  `recommend` and `approve`, since dual control here means a different *actor*, not a different
+  *role*; this pairing is explicitly flagged as provisional in task 06).
+- Added `POST`/`GET /v1/credit/applications*` (owner) and `GET`/`POST /v1/admin/credit/applications*`
+  (staff), full OpenAPI contracts, wired into `AppDependencies`/`app.ts` as an optional top-level
+  `credit` service group and into `server.ts`.
+- Reused `@sproutup/shared`'s canonical `phpAmountSchema`/`nonNegativePhpAmountSchema` for every
+  money field (loan amounts non-negative; profit/loss figures allow negative, since a loss year is
+  legitimate) rather than inventing new decimal validation.
+- Added `apps/api/test/credit-application-service.test.ts` (7 tests),
+  `credit-review-service.test.ts` (6 tests), `credit-applications-routes.test.ts` (9 tests), and
+  `credit-review-routes.test.ts` (12 tests, including the reject route's either-permission gate).
+
+### Decisions
+
+- No scoring engine, risk grade, or collateral valuation formula. This is the single biggest
+  scope decision in this entry — see the legacy-conflict summary above. `estimatedValue`/
+  `outstandingLoan`/`assessedNetWorth` are stored exactly as declared, with no haircut applied.
+- Financial statement capture is a flat 2-year summary (`last_year{1,2}_{sales_revenue,
+  gross_profit,net_profit}`) matching what the legacy scoring engine actually read, not the
+  legacy "financial ratio engine" (`FinancialStatementMaster`) or its balance-sheet roll-ups —
+  that engine has three separately-implemented, disagreeing margin calculations in the legacy
+  code and is deferred per the legacy reference's own recommendation, not rebuilt with corrected
+  math either (no design authority reviewed replacement formulas).
+- Director/shareholder KYC documents route through the existing document store (task 05,
+  `documents.upload_own`/`purpose` tag) rather than new dedicated tables — reuses infrastructure
+  instead of duplicating it.
+- `recommend`/`approve` both granted to `credit_analyst` for now; the exact approval authority is
+  data-driven (`role_permissions`), so it can move to a distinct role later without an engineering
+  change — flagged as provisional in task 06 rather than treated as decided.
+
+### Debugging notes (for the next session touching this file)
+
+- `insert(...).onConflictDoNothing({ target: <column> })` fails at runtime ("no unique or
+  exclusion constraint matching the ON CONFLICT specification") when the only matching index is a
+  **partial** unique index (ours: one-open-application-per-borrower-case, `WHERE status IN
+  (...)`). Postgres can't use a partial index as an arbiter for a plain column target. The fix,
+  matching `case-service.ts`'s existing `create()`, is a bare `.onConflictDoNothing()` with no
+  `target` — this let five tests fail with a real, confusing Postgres error before being caught.
+- A route's declared `response[200]` schema must match what the *route handler* actually returns,
+  not what a same-named field returns elsewhere. `review-service.ts`'s mutation methods
+  (`startReview`/`recommend`/`approve`/`reject`) return the plain `CreditApplicationSummary` (no
+  joined applicant name/email), but the routes were first wired to the staff-augmented schema that
+  requires those fields — Fastify's response serializer then throws `"applicantName" is
+  required!"` inside `fast-json-stringify`, which the global error handler swallows into a bare
+  500 with no detail. Caught only because route-level tests exercise real response serialization,
+  not just the service layer in isolation; the fix was using the plain summary schema for every
+  mutation response, matching `onboarding-review.ts`'s own `caseSummarySchema` (not
+  `staffCaseSummarySchema`) precedent. Worth remembering next time a 500 with no detail shows up
+  in a test: temporarily pass `logger: true` to `buildApp` and rerun with
+  `--reporter=verbose` to see the real Fastify/pino error.
+
+### Open items
+
+- Every item in task 06's Open decisions section: final scorecard, risk grades, collateral
+  haircut, exposure limits, approval-authority role, and the mandatory-field/document policy
+  beyond amount/term/purpose.
+- No web UI calls any of these routes yet.
+- Xero/QuickBooks integrations, the standalone Financial Analysis tool, and Jarvis credit-bureau
+  integration remain out of scope, matching the legacy reference's own "defer" recommendation.
+
+### Next
+
+- Full repository gate passed: API 218, web 97, database 31, and shared 28 tests (374 total),
+  lint/typecheck across all workspaces, both production builds, and database readiness.
+- Task 06 cannot progress further without the scorecard/risk-grade/approval-authority decisions —
+  those need product/credit-policy sign-off, not more engineering. Reasonable next candidates:
+  task 07 (Campaign & Loan Management, next in dependency order), a web UI for the credit
+  application flow, or task 02's MFA/forgot-password pages.
+
 ## 2026-08-30 — Borrower/investor profile web screens
 
 **Status:** WIP

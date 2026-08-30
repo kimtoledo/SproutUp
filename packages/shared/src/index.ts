@@ -52,3 +52,15 @@ export {
   borrowerEntityTypeSchema,
   type BorrowerEntityType,
 } from './borrower';
+export {
+  canTransitionCreditApplication,
+  creditApplicationEventTypeSchema,
+  creditApplicationStatusSchema,
+  creditApplicationTransitions,
+  creditCollateralTypeSchema,
+  creditGuarantorResidencySchema,
+  type CreditApplicationEventType,
+  type CreditApplicationStatus,
+  type CreditCollateralType,
+  type CreditGuarantorResidency,
+} from './credit';

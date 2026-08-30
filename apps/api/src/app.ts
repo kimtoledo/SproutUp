@@ -31,6 +31,10 @@ import type { InvestorProfileService } from './onboarding/investor-profile-servi
 import { registerInvestorProfileRoutes } from './routes/investor-profile.js';
 import { DEFAULT_MAX_DOCUMENT_BYTES, type DocumentService } from './documents/document-service.js';
 import { registerDocumentRoutes } from './routes/documents.js';
+import type { CreditApplicationService } from './credit/application-service.js';
+import { registerCreditApplicationRoutes } from './routes/credit-applications.js';
+import type { CreditReviewService } from './credit/review-service.js';
+import { registerCreditReviewRoutes } from './routes/credit-review.js';
 import { operation } from './openapi/operation.js';
 import { healthResponseSchema } from './openapi/system-schemas.js';
 import { apiVersionHeaders, currentApiVersionPolicy } from './openapi/api-version.js';
@@ -60,6 +64,10 @@ export interface AppDependencies {
     investorProfile?: InvestorProfileService;
   };
   documents?: DocumentService;
+  credit?: {
+    applications: CreditApplicationService;
+    review?: CreditReviewService;
+  };
 }
 
 function now(): string {
@@ -150,6 +158,7 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
         { name: 'role approvals', description: 'Dual-controlled role change lifecycle' },
         { name: 'onboarding', description: 'Borrower and investor onboarding workflows' },
         { name: 'documents', description: 'Private document upload, listing, and download' },
+        { name: 'credit', description: 'Credit application intake and dual-controlled underwriting' },
       ],
     },
   });
@@ -309,6 +318,19 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
       auth: dependencies.auth.service,
       documents: dependencies.documents,
     });
+  }
+
+  if (dependencies.auth && dependencies.credit) {
+    await registerCreditApplicationRoutes(app, {
+      auth: dependencies.auth.service,
+      applications: dependencies.credit.applications,
+    });
+    if (dependencies.credit.review) {
+      await registerCreditReviewRoutes(app, {
+        auth: dependencies.auth.adminService ?? dependencies.auth.service,
+        review: dependencies.credit.review,
+      });
+    }
   }
 
   return app;

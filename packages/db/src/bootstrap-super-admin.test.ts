@@ -40,6 +40,7 @@ beforeAll(async () => {
     '0024_customer-auth-cutover.sql',
     '0025_lame_may_parker.sql',
     '0026_illegal_ravenous.sql',
+    '0027_light_rattler.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await pglite.exec(sql.replaceAll('--> statement-breakpoint', ''));

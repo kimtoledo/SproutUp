@@ -4,7 +4,7 @@
 
 ## Implementation status
 
-The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19. On 2026-08-30, the portal-identity isolation work introduced separate admin, borrower, and investor account/auth relations, a protected global email registry, active `admin_role_grants` plus admin approval/reviewer foreign keys, and registry-anchored onboarding/document/consent/ledger ownership. Migration `0024` completes borrower/investor runtime isolation and retires the legacy unified auth/active customer-role boundary after exact reconciliation. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
+The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19. On 2026-08-30, the portal-identity isolation work introduced separate admin, borrower, and investor account/auth relations, a protected global email registry, active `admin_role_grants` plus admin approval/reviewer foreign keys, and registry-anchored onboarding/document/consent/ledger ownership. Migration `0024` completes borrower/investor runtime isolation and retires the legacy unified auth/active customer-role boundary after exact reconciliation. The same day, borrower/investor KYB/KYC profile capture, private document upload/download, and credit application intake plus dual-controlled underwriting (no scoring engine) were added — see their sections below. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
 
 This is a normalized domain outline for the Philippine revamp. It intentionally avoids copying legacy table names and duplicated summary tables.
 
@@ -45,9 +45,20 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 
 ## Credit, campaigns, and contracts
 
-- `credit_applications`, `credit_application_versions`
-- `financial_statements`, `collateral_items`, `guarantors`
-- `scorecards`, `scorecard_versions`, `credit_scores`, `credit_decisions`
+- `credit_applications`, `credit_application_events` — **implemented (2026-08-30)**: intake +
+  dual-controlled recommend-then-approve workflow (own status/version/event trail, no scoring
+  engine); replaces the originally proposed `credit_application_versions` — a single mutable row
+  plus an append-only event log, matching `onboarding_cases`, turned out simpler than a
+  version-snapshot table for this shape
+- `credit_collateral_items`, `credit_guarantors` — **implemented (2026-08-30)**: raw declared
+  figures only, no valuation/haircut formula (replaces the proposed `collateral_items`/
+  `guarantors` naming)
+- Two-year flat financial summary — **implemented (2026-08-30)** as columns directly on
+  `credit_applications` (`last_year{1,2}_{sales_revenue,gross_profit,net_profit}`), not a separate
+  `financial_statements` table; the fuller financial-ratio engine remains proposed/deferred (task
+  06 open decisions)
+- `scorecards`, `scorecard_versions`, `credit_scores`, `credit_decisions` — still proposed; blocked
+  on the scorecard/risk-grade decision (task 06)
 - `campaigns`, `campaign_term_versions`, `campaign_events`
 - `loans`, `loan_contracts`, `loan_schedules`, `loan_schedule_items`
 
