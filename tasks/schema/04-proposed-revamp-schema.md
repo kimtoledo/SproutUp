@@ -4,7 +4,7 @@
 
 ## Implementation status
 
-The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19. On 2026-08-30, the portal-identity isolation work introduced separate admin, borrower, and investor account/auth relations, a protected global email registry, active `admin_role_grants` plus admin approval/reviewer foreign keys, and registry-anchored onboarding/document/consent/ledger ownership. The legacy unified identity remains only as a temporary customer-auth compatibility boundary; borrower/investor runtime auth must still be cut over. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
+The first reviewed identity, approval, onboarding-workflow, durable-job, and generic ledger slices were implemented on 2026-08-19. On 2026-08-30, the portal-identity isolation work introduced separate admin, borrower, and investor account/auth relations, a protected global email registry, active `admin_role_grants` plus admin approval/reviewer foreign keys, and registry-anchored onboarding/document/consent/ledger ownership. Migration `0024` completes borrower/investor runtime isolation and retires the legacy unified auth/active customer-role boundary after exact reconciliation. The remaining entities below are still proposed and must be introduced only through their owning MVP tasks.
 
 This is a normalized domain outline for the Philippine revamp. It intentionally avoids copying legacy table names and duplicated summary tables.
 
@@ -12,11 +12,11 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 
 - `account_email_registry` — implemented global normalized-email/account-id ownership across portals
 - `admin_accounts`, `borrower_accounts`, `investor_accounts` — implemented separate account classes
-- portal-specific credentials, sessions, verifications, and rate limits — implemented foundation;
-  borrower/investor runtime cutover remains
+- portal-specific credentials, sessions, verifications, rate limits, routes, cookies, and session
+  contexts — implemented and active for all three account classes
 - `admin_profiles`, `investor_profiles`, `borrower_profiles`
 - `roles`, `permissions`, `admin_role_grants`, `role_permissions` — staff RBAC implemented on the
-  admin account boundary; customer compatibility roles remain only until customer cutover
+  admin account boundary; historical customer role definitions are inactive evidence only
 - `mfa_methods`, `auth_attempts`
 - `audit_events` — append-only actor/action/resource/change metadata
 

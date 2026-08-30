@@ -14,8 +14,9 @@ function authWithPermissions(permissions: Array<'sessions.read_own' | 'sessions.
       user: { id: 'user-id', email: 'investor@example.com', name: 'Investor' },
     }),
     resolveAuthorization: async () => ({
+      accountType: 'investor',
       user: { id: 'user-id', email: 'investor@example.com', name: 'Investor' },
-      roles: ['investor'],
+      roles: [],
       permissions,
     }),
   };

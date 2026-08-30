@@ -40,6 +40,11 @@ async function createFixture(): Promise<{ pglite: PGlite; db: Database }> {
   for (const migration of foundationMigrations) await applyMigration(pglite, migration);
   const db = drizzle(pglite, { schema }) as unknown as Database;
   await seedAuthorization(db);
+  await pglite.exec(`
+    insert into roles (key, name, category) values
+      ('sme_borrower', 'SME Borrower', 'customer'),
+      ('investor', 'Investor', 'customer')
+  `);
   return { pglite, db };
 }
 
@@ -219,6 +224,60 @@ describe('portal identity backfill migration', () => {
         `update onboarding_cases set case_type = 'investor' where id = $1`,
         [onboardingCaseId],
       )).rejects.toThrow('onboarding case type must match borrower or investor account class');
+
+      const lateBorrowerId = '00000000-0000-4000-8000-00000000e104';
+      const lateCredentialId = '00000000-0000-4000-8000-00000000e204';
+      await db.insert(schema.users).values({
+        id: lateBorrowerId,
+        name: 'Late Borrower',
+        email: 'late-backfill-borrower@sproutup.ph',
+        registrationIntent: 'borrower',
+      });
+      await db.insert(schema.accounts).values({
+        id: lateCredentialId,
+        userId: lateBorrowerId,
+        providerId: 'credential',
+        accountId: 'late-backfill-borrower@sproutup.ph',
+        password: 'opaque-late-borrower-hash',
+      });
+      await db.insert(schema.sessions).values({
+        userId: lateBorrowerId,
+        token: 'opaque-late-borrower-session',
+        expiresAt: new Date('2030-01-01T00:00:00Z'),
+      });
+
+      await applyMigration(pglite, '0024_customer-auth-cutover.sql');
+      const customerCutover = await pglite.query<{
+        legacy_credentials: number;
+        legacy_sessions: number;
+        legacy_grants: number;
+        cutover_audits: number;
+      }>(`select
+        (select count(*)::int from accounts) legacy_credentials,
+        (select count(*)::int from sessions) legacy_sessions,
+        (select count(*)::int from user_roles) legacy_grants,
+        (select count(*)::int from audit_events
+          where action = 'identity.customer_auth_cutover_completed') cutover_audits`);
+      expect(customerCutover.rows[0]).toEqual({
+        legacy_credentials: 0,
+        legacy_sessions: 0,
+        legacy_grants: 0,
+        cutover_audits: 1,
+      });
+      const lateTarget = await pglite.query<{
+        borrowers: number;
+        credentials: number;
+      }>(`select
+        (select count(*)::int from borrower_accounts where id = $1) borrowers,
+        (select count(*)::int from borrower_credentials
+          where id = $2 and borrower_account_id = $1) credentials`,
+      [lateBorrowerId, lateCredentialId]);
+      expect(lateTarget.rows[0]).toEqual({ borrowers: 1, credentials: 1 });
+      await expect(pglite.query(
+          `insert into accounts (account_id, provider_id, user_id)
+         values ('retired@sproutup.ph', 'credential', $1)`,
+        [borrowerId],
+      )).rejects.toThrow('legacy unified authentication namespace is retired');
     } finally {
       await pglite.close();
     }

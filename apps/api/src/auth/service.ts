@@ -1,36 +1,34 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { betterAuth } from 'better-auth';
+import { eq } from 'drizzle-orm';
 import type { Database } from '@sproutup/db';
 import { schema } from '@sproutup/db';
 import type { ApiConfig } from '../config.js';
 import {
   createAdminAuthorizationResolver,
-  createAuthorizationResolver,
+  createCustomerAuthorizationResolver,
 } from './authorization.js';
 import type { AuthServices, BetterAuthSession } from './types.js';
 
-export function createAuthServices(config: ApiConfig, database: Database): AuthServices {
+function createPortalAuthServices(
+  config: ApiConfig,
+  database: Database,
+  accountType: 'borrower' | 'investor',
+): AuthServices {
+  const borrower = accountType === 'borrower';
   const auth = betterAuth({
-    appName: 'SproutUp',
+    appName: borrower ? 'SproutUp for Business' : 'SproutUp Invest',
     secret: config.authSecret,
     baseURL: config.authBaseUrl,
-    basePath: '/v1/auth',
+    basePath: `/v1/auth/${accountType}`,
     trustedOrigins: config.appOrigins,
+    // Vendor errors may contain SQL parameters. Fastify owns sanitized request
+    // telemetry, so the adapter logger must never print identity/credential data.
+    logger: { disabled: true },
     database: drizzleAdapter(database, {
       provider: 'pg',
-      schema,
-      usePlural: true,
+      schema: borrower ? schema.borrowerAuthSchema : schema.investorAuthSchema,
     }),
-    user: {
-      additionalFields: {
-        registrationIntent: {
-          type: ['borrower', 'investor'],
-          required: true,
-          input: true,
-          returned: true,
-        },
-      },
-    },
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 12,
@@ -56,12 +54,16 @@ export function createAuthServices(config: ApiConfig, database: Database): AuthS
     },
     advanced: {
       database: { generateId: 'uuid' },
+      cookiePrefix: borrower ? 'sproutup_borrower' : 'sproutup_investor',
       useSecureCookies: config.environment === 'production',
       defaultCookieAttributes: {
         httpOnly: true,
         sameSite: 'lax',
         secure: config.environment === 'production',
       },
+      ...(config.authCookieDomain
+        ? { crossSubDomainCookies: { enabled: true, domain: config.authCookieDomain } }
+        : {}),
       // The Fastify boundary resolves the client IP (honouring API_TRUST_PROXY)
       // and forwards it on this header. Without this, Better Auth cannot key its
       // sign-in/sign-up rate limits per client and falls back to one shared
@@ -73,10 +75,68 @@ export function createAuthServices(config: ApiConfig, database: Database): AuthS
   });
 
   return {
-    handler: auth.handler,
+    async handler(request) {
+      const pathname = new URL(request.url).pathname;
+      if (request.method === 'POST' && pathname.endsWith('/sign-up/email')) {
+        const body = await request.clone().json().catch(() => null) as Record<string, unknown> | null;
+        const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
+        if (email) {
+          const [existing] = await database
+            .select({ accountId: schema.accountEmailRegistry.accountId })
+            .from(schema.accountEmailRegistry)
+            .where(eq(schema.accountEmailRegistry.email, email))
+            .limit(1);
+          if (existing) {
+            return Response.json(
+              { code: 'ACCOUNT_CREATION_FAILED', message: 'Account could not be created' },
+              { status: 422 },
+            );
+          }
+        }
+      }
+      return auth.handler(request);
+    },
     getSession: async (headers) =>
       (await auth.api.getSession({ headers })) as BetterAuthSession | null,
-    resolveAuthorization: createAuthorizationResolver(database),
+    resolveAuthorization: createCustomerAuthorizationResolver(database, accountType),
+  };
+}
+
+export function createBorrowerAuthServices(config: ApiConfig, database: Database): AuthServices {
+  return createPortalAuthServices(config, database, 'borrower');
+}
+
+export function createInvestorAuthServices(config: ApiConfig, database: Database): AuthServices {
+  return createPortalAuthServices(config, database, 'investor');
+}
+
+/**
+ * Protected customer operations accept exactly one isolated portal session.
+ * If both cookies are present, fail closed instead of choosing an identity.
+ */
+export function createCustomerAuthServices(
+  database: Database,
+  borrowerAuth: AuthServices,
+  investorAuth: AuthServices,
+): AuthServices {
+  const borrowerResolver = createCustomerAuthorizationResolver(database, 'borrower');
+  const investorResolver = createCustomerAuthorizationResolver(database, 'investor');
+  return {
+    handler: async () => Response.json({ error: 'Not found' }, { status: 404 }),
+    async getSession(headers) {
+      const [borrower, investor] = await Promise.all([
+        borrowerAuth.getSession(headers),
+        investorAuth.getSession(headers),
+      ]);
+      return borrower && !investor ? borrower : investor && !borrower ? investor : null;
+    },
+    async resolveAuthorization(userId) {
+      const [borrower, investor] = await Promise.all([
+        borrowerResolver(userId),
+        investorResolver(userId),
+      ]);
+      return borrower && !investor ? borrower : investor && !borrower ? investor : null;
+    },
   };
 }
 
@@ -87,6 +147,7 @@ export function createAdminAuthServices(config: ApiConfig, database: Database): 
     baseURL: config.authBaseUrl,
     basePath: '/v1/auth/admin',
     trustedOrigins: config.appOrigins,
+    logger: { disabled: true },
     database: drizzleAdapter(database, {
       provider: 'pg',
       schema: schema.adminAuthSchema,

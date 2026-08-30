@@ -121,7 +121,7 @@ describe.sequential('consent service', () => {
     if (!document) throw new Error('Expected effective document');
     const input: ConsentAcceptanceInput = {
       userId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       consentDocumentId: document.id,
       contentSha256: document.contentSha256,
       requestId: '00000000-0000-4000-8000-000000000d04',
@@ -157,7 +157,7 @@ describe.sequential('consent service', () => {
     if (!versionOne || !future) throw new Error('Expected consent fixtures');
     const base: ConsentAcceptanceInput = {
       userId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       consentDocumentId: versionOne.id,
       contentSha256: versionOne.contentSha256,
     };
@@ -187,7 +187,7 @@ describe.sequential('consent service', () => {
     await expect(database.transaction(async (transaction) => {
       const result = await acceptConsentDocumentInTransaction(transaction, {
         userId,
-        actorRoles: ['sme_borrower'],
+        actorRoles: [],
         consentDocumentId: published.document.id,
         contentSha256: published.document.contentSha256,
         requestId: '00000000-0000-4000-8000-000000000d06',

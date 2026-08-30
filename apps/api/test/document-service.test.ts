@@ -63,7 +63,7 @@ function upload(overrides: Partial<UploadDocumentInput> = {}): UploadDocumentInp
   return {
     ownerUserId: ownerId,
     uploadedByUserId: ownerId,
-    actorRoles: ['sme_borrower'],
+    actorRoles: [],
     classification: 'kyc_business',
     purpose: 'borrower.sec_registration',
     filename: 'sec.pdf',

@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { buildApp, type AppDependencies } from '../src/app.js';
 
+const unavailableAuth = {
+  handler: async () => Response.json({}),
+  getSession: async () => null,
+  resolveAuthorization: async () => null,
+};
+
 const dependencies: AppDependencies = {
   config: { appOrigin: 'http://localhost:3000', environment: 'test' },
   checkDatabase: async () => undefined,
   auth: {
     baseUrl: 'http://localhost:3001',
-    service: {
-      handler: async () => Response.json({}),
-      getSession: async () => null,
-      resolveAuthorization: async () => null,
-    },
+    service: unavailableAuth,
+    borrowerService: unavailableAuth,
+    investorService: unavailableAuth,
     sessions: { listOwn: async () => [], revokeOwn: async () => false },
     roleAssignments: {
       listPending: async () => [],
@@ -94,7 +98,8 @@ describe('OpenAPI contract generation', () => {
         expect.arrayContaining([
           '/health',
           '/v1/health',
-          '/v1/session-context',
+          '/v1/borrower/session-context',
+          '/v1/investor/session-context',
           '/v1/sessions',
           '/v1/admin/roles',
           '/v1/admin/users',
@@ -114,7 +119,8 @@ describe('OpenAPI contract generation', () => {
       expect(response.body).not.toMatch(/registration-test-secret|password-hash|session-token-value/i);
 
       const contractedOperations = [
-        ['/v1/session-context', 'get', 'getSessionContext'],
+        ['/v1/borrower/session-context', 'get', 'getBorrowerSessionContext'],
+        ['/v1/investor/session-context', 'get', 'getInvestorSessionContext'],
         ['/v1/sessions', 'get', 'listOwnSessions'],
         ['/v1/sessions/{sessionId}', 'delete', 'revokeOwnSession'],
         ['/v1/admin/roles', 'get', 'listRoleCatalogue'],

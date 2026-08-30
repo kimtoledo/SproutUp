@@ -39,6 +39,11 @@ beforeAll(async () => {
     await pglite.exec(sql.replaceAll('--> statement-breakpoint', ''));
   }
   await seedAuthorization(db);
+  await pglite.exec(`
+    insert into roles (key, name, category) values
+      ('sme_borrower', 'SME Borrower', 'customer'),
+      ('investor', 'Investor', 'customer')
+  `);
 });
 
 afterAll(async () => {

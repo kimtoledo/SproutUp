@@ -1,4 +1,4 @@
-import { and, asc, count, eq, inArray, type SQL } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { canTransitionOnboardingCase, type OnboardingCaseStatus, type OnboardingCaseType, type RoleKey } from '@sproutup/shared';
 import { schema, writeAudit, type AuditWriterDatabase, type Database } from '@sproutup/db';
 import type { OnboardingCaseSummary } from './case-service.js';
@@ -114,6 +114,13 @@ const summarySelection = {
   updatedAt: schema.onboardingCases.updatedAt,
 };
 
+const applicantName = sql<string>`coalesce(
+  ${schema.borrowerAccounts.name}, ${schema.investorAccounts.name}
+)`.as('applicant_name');
+const applicantEmail = sql<string>`coalesce(
+  ${schema.borrowerAccounts.email}, ${schema.investorAccounts.email}
+)`.as('applicant_email');
+
 export function createOnboardingReviewService(
   database: Database,
   clock: () => Date = () => new Date(),
@@ -136,11 +143,18 @@ export function createOnboardingReviewService(
         database
           .select({
             ...summarySelection,
-            applicantName: schema.users.name,
-            applicantEmail: schema.users.email,
+            applicantName,
+            applicantEmail,
           })
           .from(schema.onboardingCases)
-          .innerJoin(schema.users, eq(schema.onboardingCases.applicantUserId, schema.users.id))
+          .leftJoin(
+            schema.borrowerAccounts,
+            eq(schema.onboardingCases.applicantUserId, schema.borrowerAccounts.id),
+          )
+          .leftJoin(
+            schema.investorAccounts,
+            eq(schema.onboardingCases.applicantUserId, schema.investorAccounts.id),
+          )
           .where(where)
           .orderBy(asc(schema.onboardingCases.createdAt), asc(schema.onboardingCases.id))
           .limit(input.pageSize)
@@ -154,11 +168,18 @@ export function createOnboardingReviewService(
         .select({
           ...summarySelection,
           applicantUserId: schema.onboardingCases.applicantUserId,
-          applicantName: schema.users.name,
-          applicantEmail: schema.users.email,
+          applicantName,
+          applicantEmail,
         })
         .from(schema.onboardingCases)
-        .innerJoin(schema.users, eq(schema.onboardingCases.applicantUserId, schema.users.id))
+        .leftJoin(
+          schema.borrowerAccounts,
+          eq(schema.onboardingCases.applicantUserId, schema.borrowerAccounts.id),
+        )
+        .leftJoin(
+          schema.investorAccounts,
+          eq(schema.onboardingCases.applicantUserId, schema.investorAccounts.id),
+        )
         .where(eq(schema.onboardingCases.id, caseId))
         .limit(1);
       if (!onboardingCase) return null;

@@ -11,6 +11,12 @@ interface RegisterAuthRoutesOptions {
   authBaseUrl: string;
 }
 
+interface RegisterCustomerAuthRoutesOptions {
+  borrowerAuth: AuthServices;
+  investorAuth: AuthServices;
+  authBaseUrl: string;
+}
+
 async function sendAuthResponse(
   response: Response,
   reply: FastifyReply,
@@ -45,40 +51,18 @@ function toWebRequest(request: FastifyRequest, baseUrl: string): Request {
   });
 }
 
-export async function registerAuthRoutes(
+async function registerCustomerPortal(
   app: FastifyInstance,
   options: RegisterAuthRoutesOptions,
+  accountType: 'borrower' | 'investor',
 ): Promise<void> {
   app.route({
     method: ['GET', 'POST'],
-    url: '/v1/auth/*',
+    url: `/v1/auth/${accountType}/*`,
     config: {
       rateLimit: { max: 30, timeWindow: '1 minute' },
     },
     handler: async (request, reply) => {
-      // Fail bad registration intents on the stable validation envelope before
-      // they reach Better Auth, which would otherwise surface an opaque
-      // "Failed to create user" for an invalid enum value.
-      if (
-        request.method.toUpperCase() === 'POST'
-        && (request.raw.url ?? request.url).split('?', 1)[0]?.endsWith('/sign-up/email')
-      ) {
-        const body = request.body;
-        const intent =
-          body && typeof body === 'object' && 'registrationIntent' in body
-            ? (body as Record<string, unknown>).registrationIntent
-            : undefined;
-        if (intent !== undefined && intent !== 'borrower' && intent !== 'investor') {
-          return reply.status(400).send({
-            success: false,
-            error: {
-              code: 'VALIDATION_ERROR',
-              message: 'registrationIntent must be "borrower" or "investor"',
-            },
-          });
-        }
-      }
-
       return sendAuthResponse(
         await options.auth.handler(toWebRequest(request, options.authBaseUrl)),
         reply,
@@ -86,13 +70,15 @@ export async function registerAuthRoutes(
     },
   });
 
-  app.get('/v1/session-context', {
+  app.get(`/v1/${accountType}/session-context`, {
     schema: operation({
-      operationId: 'getSessionContext',
-      summary: 'Resolve the active user and server-authoritative access context',
+      operationId: accountType === 'borrower'
+        ? 'getBorrowerSessionContext'
+        : 'getInvestorSessionContext',
+      summary: `Resolve the active ${accountType} account and server-authoritative access context`,
       tags: ['authentication'],
       metadata: {
-        actor: 'authenticated_user',
+        actor: 'authenticated_customer',
         permissions: [],
         permissionMode: 'all',
         retryModel: 'safe_read',
@@ -111,12 +97,29 @@ export async function registerAuthRoutes(
     if (!authorization) {
       return reply.status(401).send({
         success: false,
-        error: { code: 'UNAUTHENTICATED', message: 'A valid active session is required' },
+        error: {
+          code: 'UNAUTHENTICATED',
+          message: `A valid ${accountType} session is required`,
+        },
       });
     }
 
     return reply.send({ success: true, data: authorization });
   });
+}
+
+export async function registerCustomerAuthRoutes(
+  app: FastifyInstance,
+  options: RegisterCustomerAuthRoutesOptions,
+): Promise<void> {
+  await registerCustomerPortal(app, {
+    auth: options.borrowerAuth,
+    authBaseUrl: options.authBaseUrl,
+  }, 'borrower');
+  await registerCustomerPortal(app, {
+    auth: options.investorAuth,
+    authBaseUrl: options.authBaseUrl,
+  }, 'investor');
 }
 
 export async function registerAdminAuthRoutes(

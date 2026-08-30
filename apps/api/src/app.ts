@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import type { HealthResponse } from '@sproutup/shared';
 import type { ApiConfig } from './config.js';
 import type { AuthServices } from './auth/types.js';
-import { registerAdminAuthRoutes, registerAuthRoutes } from './routes/auth.js';
+import { registerAdminAuthRoutes, registerCustomerAuthRoutes } from './routes/auth.js';
 import { registerSessionRoutes } from './routes/sessions.js';
 import type { SessionService } from './auth/sessions-service.js';
 import type { RoleAssignmentService } from './auth/role-assignments-service.js';
@@ -35,6 +35,8 @@ export interface AppDependencies {
   auth?: {
     service: AuthServices;
     adminService?: AuthServices;
+    borrowerService?: AuthServices;
+    investorService?: AuthServices;
     baseUrl: string;
     sessions?: SessionService;
     roleAssignments?: RoleAssignmentService;
@@ -218,10 +220,13 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
         authBaseUrl: dependencies.auth.baseUrl,
       });
     }
-    await registerAuthRoutes(app, {
-      auth: dependencies.auth.service,
-      authBaseUrl: dependencies.auth.baseUrl,
-    });
+    if (dependencies.auth.borrowerService && dependencies.auth.investorService) {
+      await registerCustomerAuthRoutes(app, {
+        borrowerAuth: dependencies.auth.borrowerService,
+        investorAuth: dependencies.auth.investorService,
+        authBaseUrl: dependencies.auth.baseUrl,
+      });
+    }
     if (dependencies.auth.sessions) {
       await registerSessionRoutes(app, {
         auth: dependencies.auth.service,

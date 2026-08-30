@@ -21,14 +21,14 @@ function apiBaseUrl(): string {
 
 export function routeForSession(
   requestedSurface: PortalSurface,
-  session: Pick<PortalSession, 'roles' | 'permissions'>,
+  session: Pick<PortalSession, 'accountType' | 'permissions'>,
 ): AuthRoute {
   const hasAdminWorkspace = session.permissions.includes('onboarding_cases.read')
     || session.permissions.includes('roles.assign');
-  const isBorrower = session.roles.includes('sme_borrower');
-  const isInvestor = session.roles.includes('investor');
+  const isBorrower = session.accountType === 'borrower';
+  const isInvestor = session.accountType === 'investor';
 
-  if (requestedSurface === 'admin' && hasAdminWorkspace) {
+  if (requestedSurface === 'admin' && session.accountType === 'admin' && hasAdminWorkspace) {
     return session.permissions.includes('onboarding_cases.read')
       ? { surface: 'admin', path: '/admin/onboarding' }
       : { surface: 'admin', path: '/admin/role-approvals' };
@@ -39,13 +39,14 @@ export function routeForSession(
   if (requestedSurface === 'investor' && isInvestor) {
     return { surface: 'investor', path: '/portal' };
   }
-  if (hasAdminWorkspace) {
+  if (session.accountType === 'admin' && hasAdminWorkspace) {
     return session.permissions.includes('onboarding_cases.read')
       ? { surface: 'admin', path: '/admin/onboarding' }
       : { surface: 'admin', path: '/admin/role-approvals' };
   }
   if (isBorrower) return { surface: 'borrower', path: '/portal' };
-  return { surface: 'investor', path: '/portal' };
+  if (isInvestor) return { surface: 'investor', path: '/portal' };
+  return { surface: 'borrower', path: '/portal' };
 }
 
 export async function resolveAuthenticatedRoute(
@@ -55,7 +56,9 @@ export async function resolveAuthenticatedRoute(
   try {
     const contextPath = requestedSurface === 'admin'
       ? '/v1/admin/session-context'
-      : '/v1/session-context';
+      : requestedSurface === 'investor'
+        ? '/v1/investor/session-context'
+        : '/v1/borrower/session-context';
     const response = await fetcher(`${apiBaseUrl()}${contextPath}`, {
       method: 'GET',
       credentials: 'include',

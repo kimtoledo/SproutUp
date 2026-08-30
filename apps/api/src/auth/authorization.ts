@@ -1,42 +1,45 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import type { AuthorizationContext } from '@sproutup/shared';
+import { accountTypePermissions, type AuthorizationContext } from '@sproutup/shared';
 import type { Database } from '@sproutup/db';
 import { schema } from '@sproutup/db';
 
-export function createAuthorizationResolver(database: Database) {
+export function createCustomerAuthorizationResolver(
+  database: Database,
+  accountType: 'borrower' | 'investor',
+) {
   return async (userId: string): Promise<AuthorizationContext | null> => {
-    const [user] = await database
-      .select({
-        id: schema.users.id,
-        email: schema.users.email,
-        name: schema.users.name,
-      })
-      .from(schema.users)
-      .where(and(eq(schema.users.id, userId), eq(schema.users.status, 'active')))
-      .limit(1);
-
-    if (!user) {
-      return null;
-    }
-
-    const roleRows = await database
-      .select({ roleKey: schema.userRoles.roleKey })
-      .from(schema.userRoles)
-      .innerJoin(schema.roles, eq(schema.userRoles.roleKey, schema.roles.key))
-      .where(and(eq(schema.userRoles.userId, user.id), eq(schema.roles.isActive, true)));
-
-    const roleKeys = roleRows.map(({ roleKey }) => roleKey);
-    const permissionRows = roleKeys.length
+    const [user] = accountType === 'borrower'
       ? await database
-          .selectDistinct({ permissionKey: schema.rolePermissions.permissionKey })
-          .from(schema.rolePermissions)
-          .where(inArray(schema.rolePermissions.roleKey, roleKeys))
-      : [];
+          .select({
+            id: schema.borrowerAccounts.id,
+            email: schema.borrowerAccounts.email,
+            name: schema.borrowerAccounts.name,
+          })
+          .from(schema.borrowerAccounts)
+          .where(and(
+            eq(schema.borrowerAccounts.id, userId),
+            eq(schema.borrowerAccounts.status, 'active'),
+          ))
+          .limit(1)
+      : await database
+          .select({
+            id: schema.investorAccounts.id,
+            email: schema.investorAccounts.email,
+            name: schema.investorAccounts.name,
+          })
+          .from(schema.investorAccounts)
+          .where(and(
+            eq(schema.investorAccounts.id, userId),
+            eq(schema.investorAccounts.status, 'active'),
+          ))
+          .limit(1);
 
+    if (!user) return null;
     return {
+      accountType,
       user,
-      roles: roleKeys,
-      permissions: permissionRows.map(({ permissionKey }) => permissionKey),
+      roles: [],
+      permissions: [...accountTypePermissions[accountType]],
     };
   };
 }
@@ -80,6 +83,7 @@ export function createAdminAuthorizationResolver(database: Database) {
       : [];
 
     return {
+      accountType: 'admin',
       user,
       roles: roleKeys,
       permissions: permissionRows.map(({ permissionKey }) => permissionKey),

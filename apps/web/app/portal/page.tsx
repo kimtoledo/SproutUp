@@ -5,11 +5,9 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ArrowRight,
   Building2,
-  ClipboardCheck,
   LogOut,
   Monitor,
   RefreshCw,
-  ShieldCheck,
   Sprout,
   TrendingUp,
 } from 'lucide-react';
@@ -187,25 +185,9 @@ export default function PortalPage() {
         <div className="identity-card">
           <small>Signed in as</small>
           <strong>{state.session.user.email}</strong>
-          <span>{state.session.roles.join(' · ')}</span>
+          <span>{state.session.accountType === 'borrower' ? 'SME borrower account' : 'Investor account'}</span>
         </div>
       </section>
-
-      {state.session.permissions.includes('onboarding_cases.read')
-        || state.session.permissions.includes('roles.assign') ? (
-        <div className="staff-workspace-links">
-          {state.session.permissions.includes('onboarding_cases.read') ? (
-            <Link className="staff-workspace-link" href="/admin/onboarding">
-              <ClipboardCheck aria-hidden="true" size={18} /> Open compliance workspace
-            </Link>
-          ) : null}
-          {state.session.permissions.includes('roles.assign') ? (
-            <Link className="staff-workspace-link" href="/admin/role-approvals">
-              <ShieldCheck aria-hidden="true" size={18} /> Open role approvals
-            </Link>
-          ) : null}
-        </div>
-      ) : null}
 
       <section className="portal-section" aria-labelledby="journeys-title">
         <div className="portal-section-heading">

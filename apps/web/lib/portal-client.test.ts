@@ -24,8 +24,9 @@ describe('portal API client', () => {
   it('loads server-resolved context then owned cases with cookie credentials', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://api.sproutup.test/');
     const session = {
+      accountType: 'borrower',
       user: { id: 'user-1', name: 'Pilot User', email: 'pilot@example.com' },
-      roles: ['sme_borrower'],
+      roles: [],
       permissions: ['borrower_onboarding.manage_own'],
     };
     const fetcher = vi.fn()
@@ -34,7 +35,7 @@ describe('portal API client', () => {
     await expect(loadPortal(fetcher)).resolves.toEqual({ ok: true, session, cases: [] });
     expect(fetcher).toHaveBeenNthCalledWith(
       1,
-      'https://api.sproutup.test/v1/session-context',
+      'https://api.sproutup.test/v1/borrower/session-context',
       expect.objectContaining({ method: 'GET', credentials: 'include' }),
     );
     expect(fetcher).toHaveBeenNthCalledWith(

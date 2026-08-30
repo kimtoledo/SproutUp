@@ -34,7 +34,7 @@ beforeAll(async () => {
   const cases = createOnboardingCaseService(orm);
   const created = await cases.create({
     applicantUserId: applicantId,
-    actorRoles: ['sme_borrower'],
+    actorRoles: [],
     caseType: 'borrower',
     requestId: '00000000-0000-4000-8000-000000000804',
   });
@@ -42,7 +42,7 @@ beforeAll(async () => {
   caseId = created.case.id;
   const submitted = await cases.submit({
     applicantUserId: applicantId,
-    actorRoles: ['sme_borrower'],
+    actorRoles: [],
     allowedCaseTypes: ['borrower'],
     caseId,
     expectedVersion: 1,
@@ -74,7 +74,7 @@ describe.sequential('onboarding review service', () => {
     const cases = createOnboardingCaseService(orm);
     const draft = await cases.create({
       applicantUserId: draftApplicantId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       caseType: 'borrower',
       requestId: '00000000-0000-4000-8000-000000000806',
     });
@@ -148,7 +148,7 @@ describe.sequential('onboarding review service', () => {
 
     const resubmitted = await createOnboardingCaseService(orm).submit({
       applicantUserId: applicantId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       allowedCaseTypes: ['borrower'],
       caseId,
       expectedVersion: 4,
@@ -270,7 +270,7 @@ describe.sequential('onboarding review service', () => {
     const cases = createOnboardingCaseService(orm);
     const created = await cases.create({
       applicantUserId: approveApplicant,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       caseType: 'borrower',
       requestId: '00000000-0000-4000-8000-000000000822',
     });
@@ -278,7 +278,7 @@ describe.sequential('onboarding review service', () => {
     const approveCaseId = created.case.id;
     await cases.submit({
       applicantUserId: approveApplicant,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       allowedCaseTypes: ['borrower'],
       caseId: approveCaseId,
       expectedVersion: 1,

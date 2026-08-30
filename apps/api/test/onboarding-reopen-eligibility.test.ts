@@ -57,7 +57,7 @@ describe.sequential('onboarding reopen + eligibility', () => {
   it('reports "pending" while a case is open and "none" again after rejection', async () => {
     const created = await service().create({
       applicantUserId: applicantId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       caseType: 'borrower',
       requestId: '00000000-0000-4000-8000-000000000f10',
     });
@@ -84,7 +84,7 @@ describe.sequential('onboarding reopen + eligibility', () => {
 
     const result = await service().reopen({
       applicantUserId: applicantId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       allowedCaseTypes: ['borrower'],
       caseId: rejected.id,
       expectedVersion: rejected.version,
@@ -121,7 +121,7 @@ describe.sequential('onboarding reopen + eligibility', () => {
       .limit(1);
     const result = await service().reopen({
       applicantUserId: applicantId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       allowedCaseTypes: ['borrower'],
       caseId: draft.id,
       expectedVersion: draft.version,
@@ -141,7 +141,7 @@ describe.sequential('onboarding reopen + eligibility', () => {
     expect(
       await service().reopen({
         applicantUserId: applicantId,
-        actorRoles: ['sme_borrower'],
+        actorRoles: [],
         allowedCaseTypes: ['borrower'],
         caseId: current.id,
         expectedVersion: current.version + 99,
@@ -152,7 +152,7 @@ describe.sequential('onboarding reopen + eligibility', () => {
     expect(
       await service().reopen({
         applicantUserId: reviewerId,
-        actorRoles: ['sme_borrower'],
+        actorRoles: [],
         allowedCaseTypes: ['borrower'],
         caseId: current.id,
         expectedVersion: current.version,
@@ -173,7 +173,7 @@ describe.sequential('onboarding reopen + eligibility', () => {
     expect(
       await service().create({
         applicantUserId: applicantId,
-        actorRoles: ['sme_borrower'],
+        actorRoles: [],
         caseType: 'borrower',
         requestId: '00000000-0000-4000-8000-000000000f15',
       }),
@@ -185,7 +185,7 @@ describe.sequential('onboarding reopen + eligibility', () => {
     expect(
       await service().create({
         applicantUserId: applicantId,
-        actorRoles: ['sme_borrower'],
+        actorRoles: [],
         caseType: 'borrower',
         requestId: '00000000-0000-4000-8000-000000000f16',
       }),
@@ -211,7 +211,7 @@ describe.sequential('onboarding reopen + eligibility', () => {
 
     const result = await service().reopen({
       applicantUserId: applicantId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       allowedCaseTypes: ['borrower'],
       caseId: expired!.id,
       expectedVersion: expired!.version,

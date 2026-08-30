@@ -1,6 +1,6 @@
 # Portal Identity Isolation
 
-**Status:** Foundation, backfill, staff runtime/RBAC, and account-ownership cutover implemented; customer runtime cutover in progress.
+**Status:** Portal identity, runtime authentication, staff RBAC, ownership, and legacy-auth cutover implemented.
 
 SproutUp treats administrator, borrower, and investor as separate account classes. Borrower and
 investor are not target RBAC roles and a credential issued in one portal must never authenticate
@@ -33,6 +33,13 @@ Run `npm run db:report-identity-cutover` before applying the backfill. Its outpu
 counts and opaque exception user IDs/role keys only; it does not print email addresses or password
 material.
 
+Migration `0024_customer-auth-cutover.sql` performs the final customer runtime cutover. It copies
+and exactly reconciles any borrower/investor accounts and password credentials created after the
+earlier backfill, invalidates every remaining legacy customer session, verification, and rate-limit
+record, removes legacy customer role grants, and makes the old account/session/grant namespace
+write-inert. Historical customer role definitions remain inactive only because immutable approval
+evidence may reference them; they are not active authority.
+
 ## Authorization model
 
 - `admin_accounts` use staff RBAC: Super Admin, Sales Officer, Credit Analyst, Compliance Officer,
@@ -46,23 +53,32 @@ material.
 
 ## Active portal boundary
 
-The administrator portal now signs in only through `/v1/auth/admin/*`, stores sessions only in
-`admin_sessions`, and uses the distinct HTTP-only `sproutup_admin` cookie namespace. Public admin
-signup is rejected by the Fastify boundary; staff provisioning remains a controlled operation.
-`GET /v1/admin/session-context` resolves an active `admin_accounts` row and `admin_role_grants`
-only, and all current staff operations use that resolver. The admin, borrower, and investor web hosts have
-independent marketing and auth presentation; host selection never grants authority.
+Each portal now has an independent runtime boundary:
 
-Borrower and investor login/registration temporarily continue through the legacy compatibility
-boundary while their ownership foreign keys are migrated. Their separate target tables are already
-backfilled, but they must not be called the active customer auth source yet.
+| Portal | Auth route | Session context | Cookie prefix |
+| --- | --- | --- | --- |
+| Admin | `/v1/auth/admin/*` | `/v1/admin/session-context` | `sproutup_admin` |
+| Borrower | `/v1/auth/borrower/*` | `/v1/borrower/session-context` | `sproutup_borrower` |
+| Investor | `/v1/auth/investor/*` | `/v1/investor/session-context` | `sproutup_investor` |
+
+Public admin signup is rejected; staff provisioning remains a controlled operation. Borrower and
+investor signup create records only in their matching physical namespace. A credential from one
+namespace receives the same non-enumerating authentication failure at either other namespace. The
+unscoped legacy `/v1/auth/*` wildcard and `/v1/session-context` no longer exist.
+
+The admin, borrower, and investor web hosts have independent marketing and auth presentation; host
+selection never grants authority. Each protected request resolves the matching HTTP-only session
+cookie and active physical account. Admin context then resolves staff RBAC; borrower/investor
+contexts return their account class with no roles and only the fixed class capabilities. A request
+carrying both customer cookie classes is rejected instead of guessing an identity.
 
 Migration `0022_mean_toad_men.sql` moves staff grants into `admin_role_grants`, repoints approval
 maker/checker/action, permission-grant attribution, and assigned-reviewer foreign keys to
 `admin_accounts`, and reconciles the copy before cleanup. It revokes legacy admin credentials and
-sessions and removes every legacy role grant for admin IDs. Database triggers permit staff roles
-only in `admin_role_grants`, customer compatibility roles only in `user_roles`, and reject any new
-legacy account/session material for an admin ID.
+sessions and removes every legacy role grant for admin IDs. Its transitional database triggers
+permitted only customer compatibility roles in `user_roles` and rejected new legacy auth material
+for admin IDs; migration `0024` later replaced those triggers with unconditional legacy-namespace
+retirement guards.
 
 Migration `0023_real_daredevil.sql` removes the remaining domain ownership dependency on legacy
 `users`. Onboarding applicants, onboarding event actors, document owners/uploaders, consent
@@ -74,9 +90,9 @@ unclassified or mismatched, then writes an aggregate immutable reconciliation ev
 
 ## Cutover sequence
 
-The new relations are additive in the foundation commit. The existing `users` / `accounts` /
-`sessions` boundary remains temporarily active so deployed data and all existing foreign keys can
-be migrated forward safely. Before release, the cutover must:
+The new relations were additive in the foundation commit. The existing `users` / `accounts` /
+`sessions` boundary remained temporarily active while deployed data and foreign keys migrated
+forward safely. The completed sequence was:
 
 1. **Done:** classify each legacy `users` record into exactly one account class, with staff identity
    taking precedence and ambiguous customer records rejected for operator review;
@@ -84,11 +100,12 @@ be migrated forward safely. Before release, the cutover must:
    hashes, with exact count reconciliation;
 3. **Done:** move staff RBAC/approval/reviewer foreign keys to `admin_accounts` and shared actor or
    owner references to the globally unique portal-account registry, with onboarding class matching;
-4. **Admin done:** mount separate Better Auth boundaries and distinct cookie names; borrower and
-   investor runtime boundaries remain;
-5. remove public customer-role selection and disable the legacy `/v1/auth/*` boundary; and
-6. reconcile counts, email ownership, active sessions, onboarding ownership, and audit attribution
-   before accepting traffic.
+4. **Done:** mount separate Better Auth boundaries with distinct route, cookie, session, and
+   server-resolved context namespaces;
+5. **Done:** remove public customer-role selection and disable the legacy `/v1/auth/*` boundary;
+   and
+6. **Done:** reconcile counts, email ownership, invalidated legacy sessions, onboarding ownership,
+   and immutable cutover evidence before accepting traffic.
 
-Until that sequence is complete, portal identity isolation is a release blocker and the new tables
-must not be described as the active authentication source.
+Portal identity isolation itself is complete. Password recovery/email verification delivery,
+MFA/step-up policy, and the remaining controls listed in `SECURITY.md` are separate release gates.

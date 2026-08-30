@@ -35,6 +35,7 @@ beforeAll(async () => {
     '0021_backfill-portal-identities.sql',
     '0022_mean_toad_men.sql',
     '0023_real_daredevil.sql',
+    '0024_customer-auth-cutover.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await database.exec(sql.replaceAll('--> statement-breakpoint', ''));
@@ -567,38 +568,24 @@ describe('initial authentication migration', () => {
     expect(superAdminGrantCount.rows[0]?.count).toBe(permissionKeys.length);
   });
 
-  it('atomically bootstraps only the self-selected customer role and registration audit', async () => {
-    const borrowerId = '00000000-0000-4000-8000-000000000008';
-    const investorId = '00000000-0000-4000-8000-000000000009';
-    await database.query(
-      `insert into users (id, name, email, registration_intent)
-       values
-         ($1, 'Borrower Applicant', 'bootstrap-borrower@sproutup.ph', 'borrower'),
-         ($2, 'Investor Applicant', 'bootstrap-investor@sproutup.ph', 'investor')`,
-      [borrowerId, investorId],
-    );
-
-    const grants = await database.query<{ user_id: string; role_key: string }>(
-      `select user_id::text, role_key from user_roles
-       where user_id in ($1, $2)
-       order by user_id`,
-      [borrowerId, investorId],
-    );
-    const audits = await database.query<{ actor_user_id: string; action: string }>(
-      `select actor_user_id::text, action from audit_events
-       where actor_user_id in ($1, $2)
-       order by actor_user_id`,
-      [borrowerId, investorId],
-    );
-
-    expect(grants.rows).toEqual([
-      { user_id: borrowerId, role_key: 'sme_borrower' },
-      { user_id: investorId, role_key: 'investor' },
-    ]);
-    expect(audits.rows).toEqual([
-      { actor_user_id: borrowerId, action: 'account.registered' },
-      { actor_user_id: investorId, action: 'account.registered' },
-    ]);
+  it('retires unified customer registration and authentication material', async () => {
+    await expect(database.query(
+      `insert into users (name, email, registration_intent)
+       values ('Legacy Borrower', 'legacy-borrower@sproutup.ph', 'borrower')`,
+    )).rejects.toThrow('customer registration belongs in a portal account namespace');
+    await expect(database.query(
+      `insert into accounts (account_id, provider_id, user_id)
+       values ('retired', 'credential', '00000000-0000-4000-8000-000000000008')`,
+    )).rejects.toThrow('legacy unified authentication namespace is retired');
+    const legacyCounts = await database.query<{
+      credentials: number;
+      sessions: number;
+      grants: number;
+    }>(`select
+      (select count(*)::int from accounts) credentials,
+      (select count(*)::int from sessions) sessions,
+      (select count(*)::int from user_roles) grants`);
+    expect(legacyCounts.rows[0]).toEqual({ credentials: 0, sessions: 0, grants: 0 });
   });
 });
 

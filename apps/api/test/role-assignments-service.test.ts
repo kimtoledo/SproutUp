@@ -17,7 +17,6 @@ beforeAll(async () => {
   await orm.insert(schema.roles).values([
     { key: 'super_admin', name: 'Super Admin', category: 'staff' },
     { key: 'compliance_officer', name: 'Compliance Officer', category: 'staff' },
-    { key: 'investor', name: 'Investor', category: 'customer' },
   ]);
   await orm.insert(schema.adminAccounts).values([
     { id: makerId, name: 'Maker', email: 'maker-service@sproutup.ph' },
@@ -115,7 +114,7 @@ describe('role assignment approval service', () => {
         makerUserId: makerId,
         makerRoles: ['super_admin'],
         targetUserId: targetId,
-        roleKey: 'investor',
+        roleKey: 'investor' as never,
         reason: 'Customer roles are not admin grants',
         requestId: '00000000-0000-4000-8000-000000000209',
       }),

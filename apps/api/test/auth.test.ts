@@ -12,8 +12,8 @@ function createAuth(overrides: Partial<AuthServices> = {}): AuthServices {
 }
 
 describe('authentication boundary', () => {
-  it('proxies Better Auth responses without exposing implementation details', async () => {
-    const auth = createAuth({
+  it('proxies the borrower auth namespace and leaves the legacy wildcard retired', async () => {
+    const borrowerAuth = createAuth({
       handler: async (request) =>
         new Response(JSON.stringify({ path: new URL(request.url).pathname }), {
           status: 201,
@@ -23,14 +23,21 @@ describe('authentication boundary', () => {
     const app = await buildApp({
       config: { appOrigin: 'http://localhost:3000', environment: 'test' },
       checkDatabase: async () => undefined,
-      auth: { service: auth, baseUrl: 'http://localhost:3001' },
+      auth: {
+        service: borrowerAuth,
+        borrowerService: borrowerAuth,
+        investorService: createAuth(),
+        baseUrl: 'http://localhost:3001',
+      },
     });
 
     try {
-      const response = await app.inject({ method: 'POST', url: '/v1/auth/sign-in/email' });
+      const response = await app.inject({ method: 'POST', url: '/v1/auth/borrower/sign-in/email' });
       expect(response.statusCode).toBe(201);
-      expect(response.json()).toEqual({ path: '/v1/auth/sign-in/email' });
+      expect(response.json()).toEqual({ path: '/v1/auth/borrower/sign-in/email' });
       expect(String(response.headers['set-cookie'])).toContain('HttpOnly');
+      const legacy = await app.inject({ method: 'POST', url: '/v1/auth/sign-in/email' });
+      expect(legacy.statusCode).toBe(404);
     } finally {
       await app.close();
     }
@@ -40,11 +47,16 @@ describe('authentication boundary', () => {
     const app = await buildApp({
       config: { appOrigin: 'http://localhost:3000', environment: 'test' },
       checkDatabase: async () => undefined,
-      auth: { service: createAuth(), baseUrl: 'http://localhost:3001' },
+      auth: {
+        service: createAuth(),
+        borrowerService: createAuth(),
+        investorService: createAuth(),
+        baseUrl: 'http://localhost:3001',
+      },
     });
 
     try {
-      const response = await app.inject({ method: 'GET', url: '/v1/session-context' });
+      const response = await app.inject({ method: 'GET', url: '/v1/borrower/session-context' });
       expect(response.statusCode).toBe(401);
       expect(response.json()).toMatchObject({ error: { code: 'UNAUTHENTICATED' } });
     } finally {
@@ -60,22 +72,32 @@ describe('authentication boundary', () => {
         user: { id: userId, email: 'analyst@sproutup.ph', name: 'Credit Analyst' },
       }),
       resolveAuthorization: async () => ({
-        user: { id: userId, email: 'analyst@sproutup.ph', name: 'Credit Analyst' },
-        roles: ['credit_analyst'],
-        permissions: ['users.read', 'roles.read'],
+        accountType: 'borrower',
+        user: { id: userId, email: 'borrower@sproutup.ph', name: 'Borrower' },
+        roles: [],
+        permissions: ['borrower_onboarding.read_own'],
       }),
     });
     const app = await buildApp({
       config: { appOrigin: 'http://localhost:3000', environment: 'test' },
       checkDatabase: async () => undefined,
-      auth: { service: auth, baseUrl: 'http://localhost:3001' },
+      auth: {
+        service: auth,
+        borrowerService: auth,
+        investorService: createAuth(),
+        baseUrl: 'http://localhost:3001',
+      },
     });
 
     try {
-      const response = await app.inject({ method: 'GET', url: '/v1/session-context' });
+      const response = await app.inject({ method: 'GET', url: '/v1/borrower/session-context' });
       expect(response.statusCode).toBe(200);
       expect(response.json()).toMatchObject({
-        data: { roles: ['credit_analyst'], permissions: ['users.read', 'roles.read'] },
+        data: {
+          accountType: 'borrower',
+          roles: [],
+          permissions: ['borrower_onboarding.read_own'],
+        },
       });
     } finally {
       await app.close();

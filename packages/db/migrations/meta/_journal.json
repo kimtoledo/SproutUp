@@ -169,6 +169,13 @@
       "when": 1788062657905,
       "tag": "0023_real_daredevil",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1788063867512,
+      "tag": "0024_customer-auth-cutover",
+      "breakpoints": true
     }
   ]
 }

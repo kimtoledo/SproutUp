@@ -5,7 +5,9 @@
 
 ## Implementation progress
 
-- **2026-08-19 — Auth foundation complete:** Better Auth email/password and database sessions are mounted at `/v1/auth/*`; `GET /v1/session-context` returns only server-resolved active-user roles and permissions.
+- **2026-08-19 — Auth foundation complete:** Better Auth email/password and database sessions were
+  initially mounted at `/v1/auth/*`; that compatibility boundary was superseded by the isolated
+  portal cutover recorded below.
 - Added the seven approved roles, ten initial auth-domain capability keys, deny-by-default policy helper, idempotent authorization seed, and normalized `roles`, `permissions`, `user_roles`, and `role_permissions` tables.
 - Added database-backed authentication throttling plus an API rate-limit layer, secure-cookie production defaults, seven-day sessions, hashed verification identifiers, and 12–128-character password limits.
 - Added append-only `audit_events`, sensitive-metadata rejection, and PostgreSQL triggers that reject update, delete, and truncate operations.
@@ -16,7 +18,9 @@
 - Added dual-controlled role revocation with the same hash/expiry/lock/evidence boundary. It revalidates current grants under lock, rejects self-change and `super_admin` mutation, and prevents removal of an active user's final role.
 - Added role-change rejection and cancellation: a distinct authorized non-target reviewer may reject, only the maker may cancel, both require reasons, and terminal transitions append immutable action/audit evidence.
 - Added bounded role-approval history/detail APIs with command/status filters, immutable action timelines, and independently recomputed payload-integrity results; privileged reasons require `roles.assign`.
-- Added required borrower/investor registration intent to Better Auth email signup. A database trigger atomically grants only the matching customer role and appends registration audit evidence; staff/`super_admin` values are impossible through this field.
+- The initial borrower/investor registration-intent and customer-role bootstrap was later replaced
+  by physical borrower/investor signup namespaces. The legacy trigger and customer grants are now
+  retired by migration `0024`.
 - Added generated OpenAPI operation metadata and enforced allowlist schemas for own-session and access-catalogue APIs. Session tokens, credential records, and provider-account data are structurally absent from these response contracts.
 - Contracted all role-change APIs with bounded request schemas, allowlisted approval/evidence responses, structured errors, and explicit unique-pending or row-locked retry semantics. The contract regression test now covers proposals, execution, rejection, cancellation, and history/detail.
 - Contracted session context as an active-user boundary that returns only schema-allowlisted identity, roles, and permissions. The Better Auth wildcard remains an explicitly documented, rate-limited provider adapter rather than a fabricated generic API schema.
@@ -59,6 +63,15 @@
   reference `admin_accounts`. It fails closed on unclassified or mismatched data, enforces that
   onboarding case type matches a borrower/investor account, rejects admin applicants, and records
   aggregate immutable reconciliation evidence. Borrower/investor runtime auth remains.
+- **2026-08-30 — Borrower/investor runtime and legacy customer-auth retirement:** Mounted
+  `/v1/auth/borrower/*` and `/v1/auth/investor/*` over their separate physical account, credential,
+  session, verification, and rate-limit tables, with distinct `sproutup_borrower` and
+  `sproutup_investor` cookies and exact account-class session contexts. Customer authorization now
+  returns an empty role list plus fixed class capabilities and still enforces resource ownership.
+  Migration `0024` exactly reconciles accounts/credentials created after the earlier backfill,
+  invalidates all remaining legacy customer sessions and auxiliary auth state, removes active
+  customer grants, and makes the unified auth namespace write-inert. The unscoped `/v1/auth/*` and
+  `/v1/session-context` paths are no longer mounted; cross-portal credentials are denied.
 - Password-reset/email-verification delivery, MFA/OTP, audit integration into each privileged workflow, final grants, and emergency access remain; this task stays **WIP**.
 
 ## Scope

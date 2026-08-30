@@ -32,6 +32,9 @@ export function AuthCard({ mode, surface }: { mode: 'login' | 'register'; surfac
     const email = String(form.get('email') ?? '');
     const password = String(form.get('password') ?? '');
     const submittedIntent = form.get('registrationIntent');
+    const customerSurface = submittedIntent === 'borrower' || submittedIntent === 'investor'
+      ? submittedIntent
+      : fixedIntent ?? intent;
     const result = registering
       ? await registerWithEmail({
           name: String(form.get('name') ?? ''),
@@ -40,13 +43,14 @@ export function AuthCard({ mode, surface }: { mode: 'login' | 'register'; surfac
           registrationIntent:
             submittedIntent === 'borrower' || submittedIntent === 'investor'
               ? submittedIntent
-              : fixedIntent ?? intent,
+              : customerSurface,
         })
       : surface === 'admin'
         ? await signInAdminWithEmail({ email, password })
-        : await signInWithEmail({ email, password });
+        : await signInWithEmail({ email, password, accountType: customerSurface });
     if (result.ok) {
-      const route = await resolveAuthenticatedRoute(surface);
+      const requestedSurface = surface === 'main' ? customerSurface : surface;
+      const route = await resolveAuthenticatedRoute(requestedSurface);
       if (!route) {
         setMessage('Signed in, but your workspace access could not be resolved. Please try again.');
         setPending(false);
@@ -79,10 +83,10 @@ export function AuthCard({ mode, surface }: { mode: 'login' | 'register'; surfac
       </div>
 
       <form className="mt-8 grid gap-5" onSubmit={submit} noValidate>
-        {registering && !fixedIntent ? (
+        {(registering || (!registering && surface === 'main')) && !fixedIntent ? (
           <RadioCards
             name="registrationIntent"
-            legend="I am joining as"
+            legend={registering ? 'I am joining as' : 'Sign in to'}
             value={intent}
             onChange={setIntent}
             options={[

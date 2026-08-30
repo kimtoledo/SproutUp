@@ -2,7 +2,10 @@
 
 ## Authentication boundary
 
-Better Auth is mounted behind the Fastify API. Customer compatibility endpoints remain at `/v1/auth/*`; the active administrator boundary is `/v1/auth/admin/*`. The web application does not read credentials, session tables, or role tables directly.
+Better Auth is mounted behind the Fastify API in three isolated namespaces:
+`/v1/auth/admin/*`, `/v1/auth/borrower/*`, and `/v1/auth/investor/*`. The unscoped legacy
+`/v1/auth/*` customer wildcard is retired. The web application does not read credentials, session
+tables, account tables, or role tables directly.
 
 The target authentication topology uses separate admin, borrower, and investor account,
 credential, session, verification, and rate-limit relations. Migrations `0019`/`0020` implement
@@ -13,13 +16,21 @@ sign-in now uses `admin_accounts`/`admin_credentials`, `admin_sessions`, the `sp
 and `/v1/admin/session-context`; public administrator signup is always denied. Staff authorization
 uses `admin_role_grants`, and approval actors plus assigned reviewers have `admin_accounts` foreign
 keys. Migration `0022` deletes legacy admin credentials/sessions/role grants and database triggers
-prevent their return. Borrower/investor route/cookie boundaries and all remaining customer foreign-key
-cutover are release blockers. Borrower and investor must not remain RBAC roles after cutover. See
-[IDENTITY.md](./IDENTITY.md).
+prevent their return. Migration `0023` repoints shared customer ownership and actor attribution to
+the globally unique portal-account registry. Migration `0024` exactly reconciles late customer
+accounts/credentials, invalidates remaining legacy customer session state, removes active customer
+role grants, and makes the legacy auth tables write-inert. Borrower and investor runtime requests
+now use only their physical account class, matching cookie/session tables, and fixed class
+capabilities; they are not RBAC roles. See [IDENTITY.md](./IDENTITY.md).
 
 `GET /openapi.json` publishes route/contract metadata only. It declares the HTTP-only session-cookie security scheme but contains no cookie values, credentials, environment secrets, or internal database configuration; the generated document is covered by a secret-regression test.
 
-Liveness and readiness are explicitly public and return only service/dependency status. Every other application-owned operation declares session-cookie authentication. `GET /v1/session-context` is the temporary customer compatibility context; `GET /v1/admin/session-context` requires an active administrator account and schema-allowlists only server-resolved staff identity, roles, and permissions.
+Liveness and readiness are explicitly public and return only service/dependency status. Every other
+application-owned operation declares session-cookie authentication. The three context endpoints are
+`GET /v1/admin/session-context`, `GET /v1/borrower/session-context`, and
+`GET /v1/investor/session-context`. Each requires an active account in its physical namespace and
+schema-allowlists only server-resolved identity, account type, roles, and permissions. Customer
+contexts always return an empty role list.
 
 Every contracted onboarding, own-session, access-catalogue, and role-approval operation declares its authenticated actor boundary and required capability set in the generated contract. These declarations are documentation checked by CI; runtime authorization remains the server-resolved permission check in each handler/service and is independently covered by denial tests.
 
@@ -36,13 +47,15 @@ Own-session responses are schema-allowlisted to opaque session identity and disp
 - Email/password credentials use Better Auth's memory-hard scrypt hashing.
 - Password length is 12–128 characters.
 - Session tokens are stored in the database and transported through HTTP-only, SameSite=Lax cookies; production cookies are Secure.
+- Cookie names and tables are portal-specific (`sproutup_admin`, `sproutup_borrower`, and
+  `sproutup_investor`); a credential or cookie cannot cross-authenticate another account class.
 - Sessions expire after seven days and refresh at most once per day.
 - Verification identifiers are stored hashed.
 - Authentication rate limits are database-backed so they apply across API replicas. Email sign-in is limited to five attempts per minute and password-reset requests to three per five minutes.
 - Authentication rate limits are keyed per client: the Fastify boundary resolves the client IP (subject to `API_TRUST_PROXY`, see below) and forwards it as `x-sproutup-client-ip`, and Better Auth is configured with `advanced.ipAddress.ipAddressHeaders` to bucket on that value instead of a single shared global bucket.
 - API-level rate limiting is also enabled as defense in depth.
 - `API_TRUST_PROXY` controls how much of `X-Forwarded-For` the API trusts when deriving `request.ip` (used for both rate-limit bucketing and audit evidence). It defaults to `false` (trust none — correct when the API is reached directly) and accepts `true`, a hop count, or a comma-separated proxy IP/CIDR allowlist. It must be set to the real proxy's address range in any deployment that terminates client connections at a proxy, and must never be left at `true` for a directly reachable API.
-- Suspended or disabled users cannot resolve an authorization context even if an old session cookie still exists.
+- Suspended or disabled accounts cannot resolve an authorization context even if an old session cookie still exists.
 - Authenticated users can list and revoke only their own sessions through opaque session IDs. Session tokens are never returned by the session-management API.
 - Session revocation and its immutable audit event commit in one database transaction. A mismatched owner/session pair is treated as not found.
 
@@ -50,7 +63,12 @@ Password-reset delivery and email verification are not operational until a trans
 
 The web registration and sign-in pages send JSON only to the configured API origin with `credentials: "include"`; they do not read or store session tokens. Client validation is usability-only and the API remains authoritative. Sign-in failures use one non-enumerating message for unknown account and incorrect password, rate limits receive a distinct retry-later message, and network exception details are never rendered. Password recovery and email verification UI remain unavailable until their delivery and policy controls are implemented.
 
-The portal does not infer access from URL, registration intent, or browser state. It loads the server-resolved session context, renders only returned borrower/investor capabilities, and then calls owner-bound APIs that re-authorize every action. A `401` clears authenticated rendering; failed or malformed loads do not retain partial account data. Optimistic commands use the displayed version, map stable error codes to bounded client messages, ignore server/internal exception text, and reload authoritative state after success or conflict.
+The portal does not infer access from URL, a registration field, or browser state. It loads the
+portal-specific server-resolved session context, renders only returned borrower/investor
+capabilities, and then calls owner-bound APIs that re-authorize every action. A `401` clears
+authenticated rendering; failed or malformed loads do not retain partial account data. Optimistic
+commands use the displayed version, map stable error codes to bounded client messages, ignore
+server/internal exception text, and reload authoritative state after success or conflict.
 
 Case history is fetched lazily from the own-case detail boundary, which binds case ID, applicant ID, and permitted journey type in SQL. The web client displays only the allowlisted event fields already returned by that contract. Missing/foreign cases receive the same bounded message, and no staff queue or applicant identity search is used as a fallback.
 
@@ -62,7 +80,10 @@ The role-approvals workspace resolves session context and requires `roles.assign
 
 ## Authorization
 
-The API resolves roles and permissions from the authenticated user ID. Client-supplied role, permission, or ownership claims are never authoritative.
+The API resolves the account class from the authenticated portal session. Admin permissions come
+from staff RBAC; borrower/investor capabilities come from the active physical account class and
+remain constrained by resource ownership. Client-supplied account type, role, permission, or
+ownership claims are never authoritative.
 
 The active administrator role catalogue is:
 
@@ -72,11 +93,18 @@ The active administrator role catalogue is:
 - Compliance Officer
 - Finance Officer
 
-`sme_borrower` and `investor` exist only in the temporary customer compatibility boundary. The
-database rejects them from `admin_role_grants`, and the admin catalogue/role-change workflow does
-not return or accept them.
+Borrower and investor are account classes, not roles. The active role catalogue contains only the
+five staff roles above, and `admin_role_grants` rejects any customer key. Historical
+`sme_borrower`/`investor` role definitions are inactive and retained solely where immutable
+approval evidence references their IDs; no active authentication or authorization path reads
+them.
 
-Customer compatibility signup requires a validated `registrationIntent` of `borrower` or `investor`. The auth boundary rejects any other value with the stable `400 VALIDATION_ERROR` envelope before the request reaches Better Auth. In the same PostgreSQL user-insert transaction, a database trigger grants exactly `sme_borrower` or `investor` and appends `account.registered` audit evidence. The enum cannot express staff or `super_admin`, and the API accepts no general role field at signup. The staff approval workflow now targets admin accounts and staff roles only; customer roles cannot be added through it.
+Public customer signup is selected by the exact namespaced endpoint, not by a client-supplied role
+or authority claim. The database email registry atomically reserves the normalized address for the
+matching borrower or investor account table and rejects cross-portal reuse. The API performs a
+non-disclosing registry preflight for normal duplicates, while the database constraint remains the
+race-safe authority. Better Auth vendor diagnostics are disabled at this boundary so rejected
+credential SQL parameters cannot leak into application logs.
 
 ### Break-glass administrator bootstrap
 
@@ -98,7 +126,7 @@ Administrative read APIs enforce `roles.read` and `users.read` independently. Us
 
 `audit_events`, `approval_actions`, and `onboarding_case_events` are append-only. PostgreSQL triggers reject row updates, row deletes, and table truncation. Corrections must be represented by new events.
 
-The onboarding foundation stores workflow identity/state only; regulated profile fields, documents, suitability answers, and screening/provider results are not yet collected. The database prevents an applicant from reviewing their own case, permits only one open case per applicant/journey, versions every transition, and retains corrections as new events rather than overwriting history. Customer roles receive only their own matching onboarding capabilities; compliance queue read/review is granted only to Compliance Officer and Super Admin in the current baseline.
+The onboarding foundation stores workflow identity/state only; regulated profile fields, documents, suitability answers, and screening/provider results are not yet collected. The database prevents an applicant from reviewing their own case, permits only one open case per applicant/journey, versions every transition, and retains corrections as new events rather than overwriting history. Borrower and investor account classes receive only their matching owned-onboarding capabilities; compliance queue read/review is granted only to Compliance Officer and Super Admin in the current baseline.
 
 Customer onboarding reads and commands bind both case ID and authenticated applicant ID in the database query. Borrower capabilities cannot access investor journeys and investor capabilities cannot access borrower journeys. Submission and withdrawal lock the case, verify ownership/type/current version and allowed transition, then commit state, append-only transition evidence, and business audit evidence atomically. Withdrawal requires a bounded reason and cannot cancel a case already in review or a terminal case.
 

@@ -14,6 +14,7 @@ function authWithPermissions(permissions: PermissionKey[]): AuthServices {
       user: { id: userId, email: 'staff@sproutup.ph', name: 'Staff' },
     }),
     resolveAuthorization: async () => ({
+      accountType: 'admin',
       user: { id: userId, email: 'staff@sproutup.ph', name: 'Staff' },
       roles: ['sales_officer'],
       permissions,
@@ -24,9 +25,9 @@ function authWithPermissions(permissions: PermissionKey[]): AuthServices {
 const catalogue: AccessCatalogueService = {
   listRoles: async () => [
     {
-      key: 'investor',
-      name: 'Investor',
-      category: 'customer',
+      key: 'sales_officer',
+      name: 'Sales Officer',
+      category: 'staff',
       isActive: true,
       permissions: ['sessions.read_own'],
     },
@@ -60,7 +61,7 @@ describe('access catalogue routes', () => {
     try {
       const response = await app.inject({ method: 'GET', url: '/v1/admin/roles' });
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toMatchObject({ data: [{ key: 'investor', permissions: ['sessions.read_own'] }] });
+      expect(response.json()).toMatchObject({ data: [{ key: 'sales_officer', permissions: ['sessions.read_own'] }] });
     } finally {
       await app.close();
     }

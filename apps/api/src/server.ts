@@ -1,7 +1,12 @@
 import { createDatabase } from '@sproutup/db';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
-import { createAdminAuthServices, createAuthServices } from './auth/service.js';
+import {
+  createAdminAuthServices,
+  createBorrowerAuthServices,
+  createCustomerAuthServices,
+  createInvestorAuthServices,
+} from './auth/service.js';
 import { createSessionService } from './auth/sessions-service.js';
 import { createRoleAssignmentService } from './auth/role-assignments-service.js';
 import { createAccessCatalogueService } from './auth/access-catalogue-service.js';
@@ -17,8 +22,10 @@ const config = loadConfig();
 process.env.NODE_ENV ??= config.environment;
 const database = createDatabase(config.databaseUrl);
 await database.check();
-const auth = createAuthServices(config, database.db);
 const adminAuth = createAdminAuthServices(config, database.db);
+const borrowerAuth = createBorrowerAuthServices(config, database.db);
+const investorAuth = createInvestorAuthServices(config, database.db);
+const customerAuth = createCustomerAuthServices(database.db, borrowerAuth, investorAuth);
 const sessions = createSessionService(database.db);
 const roleAssignments = createRoleAssignmentService(database.db);
 const catalogue = createAccessCatalogueService(database.db);
@@ -32,8 +39,10 @@ const app = await buildApp({
   config,
   checkDatabase: database.check,
   auth: {
-    service: auth,
+    service: customerAuth,
     adminService: adminAuth,
+    borrowerService: borrowerAuth,
+    investorService: investorAuth,
     baseUrl: config.authBaseUrl,
     sessions,
     roleAssignments,

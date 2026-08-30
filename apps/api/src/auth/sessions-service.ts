@@ -22,22 +22,52 @@ export interface SessionService {
 }
 
 export function createSessionService(database: Database): SessionService {
+  async function accountType(userId: string) {
+    const [registry] = await database
+      .select({ accountType: schema.accountEmailRegistry.accountType })
+      .from(schema.accountEmailRegistry)
+      .where(eq(schema.accountEmailRegistry.accountId, userId))
+      .limit(1);
+    return registry?.accountType ?? null;
+  }
+
   return {
     async listOwn(userId) {
-      const rows = await database
-        .select({
-          id: schema.sessions.id,
-          createdAt: schema.sessions.createdAt,
-          expiresAt: schema.sessions.expiresAt,
-          ipAddress: schema.sessions.ipAddress,
-          userAgent: schema.sessions.userAgent,
-        })
-        .from(schema.sessions)
-        .where(eq(schema.sessions.userId, userId))
-        .orderBy(desc(schema.sessions.createdAt));
+      const type = await accountType(userId);
+      const selection = type === 'admin'
+        ? await database.select({
+            id: schema.adminSessions.id,
+            createdAt: schema.adminSessions.createdAt,
+            expiresAt: schema.adminSessions.expiresAt,
+            ipAddress: schema.adminSessions.ipAddress,
+            userAgent: schema.adminSessions.userAgent,
+          }).from(schema.adminSessions)
+          .where(eq(schema.adminSessions.userId, userId))
+          .orderBy(desc(schema.adminSessions.createdAt))
+        : type === 'borrower'
+          ? await database.select({
+              id: schema.borrowerSessions.id,
+              createdAt: schema.borrowerSessions.createdAt,
+              expiresAt: schema.borrowerSessions.expiresAt,
+              ipAddress: schema.borrowerSessions.ipAddress,
+              userAgent: schema.borrowerSessions.userAgent,
+            }).from(schema.borrowerSessions)
+            .where(eq(schema.borrowerSessions.userId, userId))
+            .orderBy(desc(schema.borrowerSessions.createdAt))
+          : type === 'investor'
+            ? await database.select({
+                id: schema.investorSessions.id,
+                createdAt: schema.investorSessions.createdAt,
+                expiresAt: schema.investorSessions.expiresAt,
+                ipAddress: schema.investorSessions.ipAddress,
+                userAgent: schema.investorSessions.userAgent,
+              }).from(schema.investorSessions)
+              .where(eq(schema.investorSessions.userId, userId))
+              .orderBy(desc(schema.investorSessions.createdAt))
+            : [];
       // Better Auth stores an unresolved IP/UA as an empty string; normalise to
       // null so clients get one "unknown" representation.
-      return rows.map((row) => ({
+      return selection.map((row) => ({
         ...row,
         ipAddress: row.ipAddress?.trim() ? row.ipAddress : null,
         userAgent: row.userAgent?.trim() ? row.userAgent : null,
@@ -46,15 +76,27 @@ export function createSessionService(database: Database): SessionService {
 
     async revokeOwn(input) {
       return database.transaction(async (transaction) => {
-        const [revoked] = await transaction
-          .delete(schema.sessions)
-          .where(
-            and(
-              eq(schema.sessions.id, input.sessionId),
-              eq(schema.sessions.userId, input.userId),
-            ),
-          )
-          .returning({ id: schema.sessions.id });
+        const [registry] = await transaction
+          .select({ accountType: schema.accountEmailRegistry.accountType })
+          .from(schema.accountEmailRegistry)
+          .where(eq(schema.accountEmailRegistry.accountId, input.userId))
+          .limit(1);
+        const revoked = registry?.accountType === 'admin'
+          ? (await transaction.delete(schema.adminSessions).where(and(
+              eq(schema.adminSessions.id, input.sessionId),
+              eq(schema.adminSessions.userId, input.userId),
+            )).returning({ id: schema.adminSessions.id }))[0]
+          : registry?.accountType === 'borrower'
+            ? (await transaction.delete(schema.borrowerSessions).where(and(
+                eq(schema.borrowerSessions.id, input.sessionId),
+                eq(schema.borrowerSessions.userId, input.userId),
+              )).returning({ id: schema.borrowerSessions.id }))[0]
+            : registry?.accountType === 'investor'
+              ? (await transaction.delete(schema.investorSessions).where(and(
+                  eq(schema.investorSessions.id, input.sessionId),
+                  eq(schema.investorSessions.userId, input.userId),
+                )).returning({ id: schema.investorSessions.id }))[0]
+              : undefined;
 
         if (!revoked) {
           return false;

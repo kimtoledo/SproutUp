@@ -57,23 +57,22 @@ export async function registerWithEmail(
   if (input.password.length < 12 || input.password.length > 128) {
     return { ok: false, message: 'Use a password between 12 and 128 characters.' };
   }
-  return sendAuthRequest('/v1/auth/sign-up/email', {
+  return sendAuthRequest(`/v1/auth/${input.registrationIntent}/sign-up/email`, {
     name,
     email,
     password: input.password,
-    registrationIntent: input.registrationIntent,
   }, fetcher);
 }
 
 export async function signInWithEmail(
-  input: { email: string; password: string },
+  input: { email: string; password: string; accountType: RegistrationIntent },
   fetcher: FetchLike = fetch,
 ): Promise<AuthClientResult> {
   const email = input.email.trim().toLowerCase();
   if (!validEmail(email) || input.password.length === 0) {
     return { ok: false, message: 'Enter your email and password.' };
   }
-  return sendAuthRequest('/v1/auth/sign-in/email', {
+  return sendAuthRequest(`/v1/auth/${input.accountType}/sign-in/email`, {
     email,
     password: input.password,
   }, fetcher);

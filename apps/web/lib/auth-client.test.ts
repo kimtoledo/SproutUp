@@ -16,7 +16,7 @@ describe('web authentication client', () => {
       registrationIntent: 'borrower',
     }, fetcher)).resolves.toEqual({ ok: true });
     expect(fetcher).toHaveBeenCalledWith(
-      'https://api.sproutup.test/v1/auth/sign-up/email',
+      'https://api.sproutup.test/v1/auth/borrower/sign-up/email',
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',
@@ -24,7 +24,6 @@ describe('web authentication client', () => {
           name: 'Pilot Borrower',
           email: 'borrower@example.com',
           password: 'correct horse battery staple',
-          registrationIntent: 'borrower',
         }),
       }),
     );
@@ -44,9 +43,13 @@ describe('web authentication client', () => {
   it('uses a non-enumerating sign-in error and a distinct rate-limit message', async () => {
     const denied = vi.fn().mockResolvedValue({ ok: false, status: 401 });
     const limited = vi.fn().mockResolvedValue({ ok: false, status: 429 });
-    await expect(signInWithEmail({ email: 'user@example.com', password: 'wrong' }, denied))
+    await expect(signInWithEmail({
+      email: 'user@example.com', password: 'wrong', accountType: 'investor',
+    }, denied))
       .resolves.toEqual({ ok: false, message: 'The email or password was not accepted.' });
-    await expect(signInWithEmail({ email: 'user@example.com', password: 'wrong' }, limited))
+    await expect(signInWithEmail({
+      email: 'user@example.com', password: 'wrong', accountType: 'investor',
+    }, limited))
       .resolves.toEqual({
         ok: false,
         message: 'Too many attempts. Please wait a minute and try again.',
@@ -55,7 +58,9 @@ describe('web authentication client', () => {
 
   it('returns a stable availability message for network failures', async () => {
     const fetcher = vi.fn().mockRejectedValue(new Error('connection details must not leak'));
-    await expect(signInWithEmail({ email: 'user@example.com', password: 'secret' }, fetcher))
+    await expect(signInWithEmail({
+      email: 'user@example.com', password: 'secret', accountType: 'borrower',
+    }, fetcher))
       .resolves.toEqual({
         ok: false,
         message: 'SproutUp is temporarily unavailable. Please try again.',

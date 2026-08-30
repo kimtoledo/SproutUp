@@ -182,9 +182,9 @@ export async function acceptConsentDocumentInTransaction(
     .limit(1);
   if (!document) return { ok: false, reason: 'document_not_found' };
   const [user] = await database
-    .select({ id: schema.users.id })
-    .from(schema.users)
-    .where(eq(schema.users.id, input.userId))
+    .select({ id: schema.accountEmailRegistry.accountId })
+    .from(schema.accountEmailRegistry)
+    .where(eq(schema.accountEmailRegistry.accountId, input.userId))
     .limit(1);
   if (!user) return { ok: false, reason: 'user_not_found' };
   if (document.contentSha256 !== input.contentSha256) {

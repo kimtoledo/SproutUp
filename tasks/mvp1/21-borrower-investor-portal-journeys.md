@@ -7,7 +7,9 @@
 
 - **2026-08-19 — Onboarding state contract:** Added the shared borrower/investor case statuses and allowed transitions for draft, submission, review, information request/resubmission, approval/rejection, withdrawal, expiry, and reopening.
 - The persistence layer versions current state and retains an immutable event timeline, providing the future portal with resumable/server-authoritative workflow state. Portal routes, forms, accessibility behavior, and end-to-end journeys remain; this task stays **WIP**.
-- Registration now captures a single primary borrower/investor intent and bootstraps only the matching customer role. Additional/dual capacity remains an approved role-change operation until product policy is finalized.
+- Registration is fixed by the borrower or investor portal and creates only the matching physical
+  account class. A normalized email cannot be reused in another portal; dual capacity therefore
+  requires a future explicit product/identity policy rather than a role change.
 - The portal can now create, list, inspect, and submit its own permitted onboarding case through server-authoritative APIs. Duplicate create and stale submit attempts return explicit conflicts without corrupting state; forms/profile data and UI screens remain.
 - Information-request reasons appear in the owned immutable event timeline, and applicants can resubmit the same case using the latest version; profile/evidence correction forms remain unimplemented.
 - The portal contract now supports reasoned withdrawal from eligible owned states with optimistic version checks. Stale, unauthorized, in-review, and terminal withdrawal attempts cannot overwrite server state; UI remains unimplemented.
@@ -24,6 +26,12 @@
   the admin subdomain has no registration path and uses its isolated auth/context/sign-out APIs.
   Recommended local URLs are `admin.lvh.me:3000`, `borrower.lvh.me:3000`, and
   `investor.lvh.me:3000`.
+- **2026-08-30 — Independent customer auth runtime:** Borrower and investor web auth now calls only
+  its exact namespaced signup/sign-in endpoint, loads the matching account-class session context,
+  and signs out/revokes devices through the matching session table. Neutral localhost retains an
+  explicit account-type chooser for navigation, but it does not transmit a role or authority field.
+  Portal navigation and capability rendering use `accountType` plus server-returned permissions,
+  never customer roles.
 
 ## Scope
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   hasPermission,
+  accountTypePermissions,
   initialRolePermissions,
   permissionKeys,
   roleDefinitions,
@@ -8,7 +9,8 @@ import {
 
 describe('authorization baseline', () => {
   it('defines every approved SproutUp role exactly once', () => {
-    expect(new Set(roleDefinitions.map(({ key }) => key)).size).toBe(7);
+    expect(new Set(roleDefinitions.map(({ key }) => key)).size).toBe(5);
+    expect(roleDefinitions.every(({ category }) => category === 'staff')).toBe(true);
   });
 
   it('grants every current auth capability to Super Admin', () => {
@@ -19,9 +21,10 @@ describe('authorization baseline', () => {
     expect(
       hasPermission(
         {
+          accountType: 'investor',
           user: { id: 'user-id', email: 'investor@example.com', name: 'Investor' },
-          roles: ['investor'],
-          permissions: [...initialRolePermissions.investor],
+          roles: [],
+          permissions: [...accountTypePermissions.investor],
         },
         'roles.assign',
       ),

@@ -35,4 +35,11 @@ npm run dev:web
 
 Run `npm run dev:api` in a second terminal after configuring a reachable PostgreSQL `DATABASE_URL`. See [`docs/DEVELOPER.md`](./docs/DEVELOPER.md) for setup, health endpoints, validation, and migration commands.
 
-The authentication foundation now includes an active isolated administrator boundary at `/v1/auth/admin/*`, a distinct `sproutup_admin` cookie, staff-only session context and `admin_role_grants`, separate admin/borrower/investor account relations, and a globally unique email registry. Staff approval/reviewer foreign keys now target admin accounts and legacy admin credentials/sessions are revoked. Borrower and investor runtime auth and ownership cutover are still in progress. See [`docs/IDENTITY.md`](./docs/IDENTITY.md) and [`docs/SECURITY.md`](./docs/SECURITY.md) for the cutover and release blockers.
+Authentication is isolated by account class. Admin, borrower, and investor use separate account,
+credential, session, verification, and rate-limit tables; separate `/v1/auth/{account-type}/*`
+boundaries; and distinct HTTP-only cookie namespaces. Staff alone use RBAC through
+`admin_role_grants`; borrower and investor authorization comes from their physical account class
+plus server-enforced ownership. A globally unique email registry prevents the same normalized
+email from registering in another portal. Migration `0024` retired the legacy unified customer
+auth routes, sessions, credentials, and active customer-role grants. See
+[`docs/IDENTITY.md`](./docs/IDENTITY.md) and [`docs/SECURITY.md`](./docs/SECURITY.md).

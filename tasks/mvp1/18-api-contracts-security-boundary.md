@@ -16,6 +16,12 @@
 - Added full contracts to all ten role-assignment, revocation, lifecycle, and history operations. The contract distinguishes database-unique pending proposals from row-locked decisions and publishes hash/integrity evidence without weakening maker/checker runtime enforcement.
 - Contracted public liveness/readiness and authenticated session context, then added a global CI walk that rejects missing operation IDs, response schemas, or operational metadata on every application-owned route.
 - Added the path-major compatibility policy, a version response header on all `/v1` responses, and tested RFC 9745/RFC 8594 retirement-header generation with a minimum 180-day notice invariant. Current `v1` is explicitly not deprecated.
+- **2026-08-30 — Portal-specific auth contracts:** Replaced the unscoped customer auth/context
+  boundary with exact borrower and investor Better Auth wildcards plus
+  `/v1/borrower/session-context` and `/v1/investor/session-context`. Admin remains isolated at its
+  matching paths. Context responses include a server-resolved account class; customer roles are
+  always empty. The legacy `/v1/auth/*` and `/v1/session-context` now return `404`, and tests cover
+  cross-portal credential denial, duplicate-email privacy, exact cookies, and class-correct context.
 - The Better Auth wildcard remains provider-owned and explicitly excluded; private-file and webhook contracts plus future domain operations remain, so this task stays **WIP**.
 
 ## Scope

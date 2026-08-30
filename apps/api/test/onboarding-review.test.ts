@@ -15,6 +15,7 @@ function authWithPermissions(permissions: PermissionKey[]): AuthServices {
       user: { id: reviewerId, email: 'compliance@sproutup.ph', name: 'Compliance' },
     }),
     resolveAuthorization: async () => ({
+      accountType: 'admin',
       user: { id: reviewerId, email: 'compliance@sproutup.ph', name: 'Compliance' },
       roles: ['compliance_officer'],
       permissions,

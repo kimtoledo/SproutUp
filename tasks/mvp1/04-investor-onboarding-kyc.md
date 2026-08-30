@@ -6,7 +6,10 @@
 ## Implementation progress
 
 - **2026-08-19 — Shared workflow foundation:** Added versioned `onboarding_cases` and append-only `onboarding_case_events` for borrower/investor journeys, including one-open-case enforcement, applicant/reviewer separation, correction, expiry, and immutable transition history.
-- Email signup now requires borrower/investor intent and atomically maps investor intent only to the narrow `investor` role. The role receives own-case read/manage/submit capabilities; funding and withdrawal eligibility still depend on future approved onboarding state controls.
+- Investor signup now writes only `investor_accounts` and its matching auth tables through
+  `/v1/auth/investor/*`. The active account class receives fixed own-case capabilities with no RBAC
+  grant; funding and withdrawal eligibility still depend on future approved onboarding state
+  controls.
 - Added the same protected own-case create/list/detail/submit boundary for the investor journey, with type-specific capability checks, SQL ownership binding, one-open-case enforcement, optimistic versioning, and immutable event/audit evidence.
 - Investor cases now appear in the same capability-protected compliance queue and can be claimed for review with self-review/takeover denial and atomic reviewer/state/evidence updates; suitability/eligibility decisions remain unimplemented.
 - Assigned reviewers can request information with a versioned reason, and the investor can resubmit the same owned case without losing assignment or immutable correction history.
@@ -20,8 +23,11 @@
 - **2026-08-30 — Lifecycle completion + eligibility spine (slice S1.1):** The owner-bound `reopen` transition (`rejected|expired → draft`) and the `create` `CASE_ALREADY_APPROVED` guard apply to the investor journey too. The internal `eligibility(userId, 'investor')` projection (`none|pending|approved|expired`) is the read that commitment/withdrawal gating will enforce against (task acceptance: "unapproved, expired, or suspended investors cannot commit funds or withdraw"); `suspended` and bank-verification state layer on in slice S1.3.
 - **2026-08-30 — Investor ownership cutover:** Onboarding applicant/event attribution now uses the
   global registry entry created only by a physical portal account. PostgreSQL requires an investor
-  account for an investor case and rejects borrower/admin IDs. Investor auth runtime still needs to
-  move off compatibility auth.
+  account for an investor case and rejects borrower/admin IDs.
+- **2026-08-30 — Investor auth cutover:** Investor signup/sign-in, HTTP-only sessions, session
+  context, own-device management, and portal sign-out now use only the investor namespace. The
+  legacy unified customer auth path and investor-role authority are retired; context exposes
+  `accountType: investor`, no roles, and only server-defined investor capabilities.
 
 ## Scope
 

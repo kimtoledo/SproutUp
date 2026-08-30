@@ -20,12 +20,12 @@ describe('session service', () => {
     const sessionId = '00000000-0000-4000-8000-000000000021';
     const requestId = '00000000-0000-4000-8000-000000000022';
 
-    await database.insert(schema.users).values({
+    await database.insert(schema.borrowerAccounts).values({
       id: userId,
       email: 'session-owner@example.com',
       name: 'Session Owner',
     });
-    await database.insert(schema.sessions).values({
+    await database.insert(schema.borrowerSessions).values({
       id: sessionId,
       userId,
       token: 'test-only-session-token',
@@ -37,7 +37,7 @@ describe('session service', () => {
     expect(
       await sessions.revokeOwn({
         userId,
-        roles: ['investor'],
+        roles: [],
         sessionId,
         requestId,
       }),
@@ -54,7 +54,7 @@ describe('session service', () => {
   it('cannot revoke a session owned by another user', async () => {
     const ownerId = '00000000-0000-4000-8000-000000000020';
     const sessionId = '00000000-0000-4000-8000-000000000023';
-    await database.insert(schema.sessions).values({
+    await database.insert(schema.borrowerSessions).values({
       id: sessionId,
       userId: ownerId,
       token: 'other-test-only-session-token',
@@ -65,7 +65,7 @@ describe('session service', () => {
     expect(
       await sessions.revokeOwn({
         userId: '00000000-0000-4000-8000-000000000099',
-        roles: ['investor'],
+        roles: [],
         sessionId,
         requestId: '00000000-0000-4000-8000-000000000098',
       }),

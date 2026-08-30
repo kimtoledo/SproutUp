@@ -16,6 +16,7 @@ function authWithPermissions(permissions: PermissionKey[]): AuthServices {
       user: { id: makerId, email: 'maker@sproutup.ph', name: 'Maker' },
     }),
     resolveAuthorization: async () => ({
+      accountType: 'admin',
       user: { id: makerId, email: 'maker@sproutup.ph', name: 'Maker' },
       roles: ['super_admin'],
       permissions,
@@ -59,7 +60,7 @@ describe('maker/checker role assignment routes', () => {
       ok: true,
       request: {
         id: approvalId,
-        payload: { targetUserId: targetId, roleKey: 'investor' },
+        payload: { targetUserId: targetId, roleKey: 'compliance_officer' },
         payloadHash: 'a'.repeat(64),
         makerUserId: makerId,
         reason: 'Approved investor onboarding',
@@ -81,11 +82,11 @@ describe('maker/checker role assignment routes', () => {
       const response = await app.inject({
         method: 'POST',
         url: '/v1/admin/role-assignments',
-        payload: { targetUserId: targetId, roleKey: 'investor', reason: 'Approved investor onboarding' },
+        payload: { targetUserId: targetId, roleKey: 'compliance_officer', reason: 'Approved compliance access' },
       });
       expect(response.statusCode).toBe(201);
       expect(propose).toHaveBeenCalledWith(
-        expect.objectContaining({ makerUserId: makerId, targetUserId: targetId, roleKey: 'investor' }),
+        expect.objectContaining({ makerUserId: makerId, targetUserId: targetId, roleKey: 'compliance_officer' }),
       );
     } finally {
       await app.close();

@@ -1,4 +1,4 @@
-import { permissionKeys, roleKeys } from '@sproutup/shared';
+import { accountTypes, permissionKeys, roleKeys } from '@sproutup/shared';
 import { errorResponseSchema, successResponse } from './onboarding-schemas.js';
 
 export const sessionIdParameters = {
@@ -40,7 +40,7 @@ export const roleSummarySchema = {
   properties: {
     key: { type: 'string', enum: [...roleKeys] },
     name: { type: 'string' },
-    category: { type: 'string', enum: ['staff', 'customer'] },
+    category: { type: 'string', enum: ['staff'] },
     isActive: { type: 'boolean' },
     permissions: { type: 'array', items: { type: 'string', enum: [...permissionKeys] } },
   },
@@ -70,8 +70,9 @@ export const sessionListResponses = {
 export const authorizationContextSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['user', 'roles', 'permissions'],
+  required: ['accountType', 'user', 'roles', 'permissions'],
   properties: {
+    accountType: { type: 'string', enum: [...accountTypes] },
     user: {
       type: 'object',
       additionalProperties: false,

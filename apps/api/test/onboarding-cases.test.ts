@@ -15,8 +15,9 @@ function authWithPermissions(permissions: PermissionKey[]): AuthServices {
       user: { id: applicantId, email: 'borrower@sproutup.ph', name: 'Borrower' },
     }),
     resolveAuthorization: async () => ({
+      accountType: 'borrower',
       user: { id: applicantId, email: 'borrower@sproutup.ph', name: 'Borrower' },
-      roles: ['sme_borrower'],
+      roles: [],
       permissions,
     }),
   };

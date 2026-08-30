@@ -37,6 +37,7 @@ beforeAll(async () => {
     '0021_backfill-portal-identities.sql',
     '0022_mean_toad_men.sql',
     '0023_real_daredevil.sql',
+    '0024_customer-auth-cutover.sql',
   ]) {
     const sql = await readFile(new URL(`../migrations/${migration}`, import.meta.url), 'utf8');
     await pglite.exec(sql.replaceAll('--> statement-breakpoint', ''));

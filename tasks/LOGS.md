@@ -34,6 +34,58 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Borrower/investor auth runtime cutover and legacy customer-auth retirement
+
+**Status:** Done
+
+### Updated
+
+- Mounted `/v1/auth/borrower/*` and `/v1/auth/investor/*` as Better Auth wildcards over the separate
+  physical `borrower_accounts`/`investor_accounts` tables and their own credential, session,
+  verification, and rate-limit tables, each behind its own HTTP-only `sproutup_borrower` /
+  `sproutup_investor` cookie. Added `/v1/borrower/session-context` and
+  `/v1/investor/session-context`, returning a server-resolved `accountType` and fixed class
+  capabilities; customer roles are always empty and ownership is still enforced from the
+  authenticated session, never a client-supplied ID.
+- Added migration `0024_customer-auth-cutover.sql`. It aborts up front if any legacy customer
+  identity has an ambiguous role grant, then exactly reconciles `borrower_accounts` /
+  `investor_accounts` and their credentials for any account created after the prior `0023`
+  ownership-cutover backfill, invalidates every remaining legacy `sessions`/verification/rate-limit
+  row tied to a customer identity, removes active `sme_borrower`/`investor` grants from the legacy
+  `user_roles` table, and leaves the unified customer auth namespace write-inert.
+- Retired the unscoped `/v1/auth/*` and `/v1/session-context` routes (now `404`) along with the
+  borrower/investor registration-intent trigger and customer-role bootstrap superseded by the
+  physical signup namespaces.
+- Updated web auth client/routing (`apps/web/lib/auth-client.ts`, `auth-routing.ts`,
+  `portal-client.ts`) and the portal/auth-card UI to call only the exact namespaced endpoint for the
+  active subdomain, load the matching account-class session context, and sign out/revoke devices
+  through the matching session table; navigation and capability rendering use `accountType` plus
+  server-returned permissions, never a role.
+- Updated `docs/IDENTITY.md`, `docs/SECURITY.md`, `docs/TECH_STACK.md`, `README.md`, and tasks
+  `02`, `03`, `04`, `18`, and `21` to record the cutover and remove now-inaccurate references to the
+  compatibility auth boundary.
+
+### Decisions
+
+- Borrower and investor authentication is permanently isolated by physical account class; there is
+  no unscoped customer auth path and no customer RBAC role going forward.
+
+### Open items
+
+- Password-reset/email-verification delivery, MFA/OTP, audit integration into each privileged
+  workflow, final grants, and emergency access remain open across the auth task.
+- An orphan, unwired `packages/db/src/schema/borrower.ts` (KYB profile / beneficial-owner tables)
+  was found uncommitted in the working tree with no migration and no import from
+  `schema/index.ts`; it is not part of this cutover and needs to be evaluated, wired in, or
+  discarded when task 03's Philippine borrower profile work resumes.
+
+### Next
+
+- Full repository gate passed: API 137, web 87, database 31, and shared 28 tests (283 total),
+  lint/typecheck across all workspaces, API/Next production builds, and database readiness.
+- Continue task 02 with password-reset/email-verification delivery and MFA, or resume task 03/04
+  with the Philippine borrower/investor profile fields.
+
 ## 2026-08-30 — Portal account ownership and actor foreign-key cutover
 
 **Status:** Done

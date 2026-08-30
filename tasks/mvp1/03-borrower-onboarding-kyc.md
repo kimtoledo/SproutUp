@@ -7,7 +7,9 @@
 
 - **2026-08-19 — Shared workflow foundation:** Added versioned `onboarding_cases` and append-only `onboarding_case_events` for borrower/investor journeys, without encoding unresolved entity types, required fields/documents, or provider policy.
 - The database permits one open borrower case per user, separates applicant/reviewer identities, and preserves every state transition. The shared state machine supports draft → submitted → review → information/decision plus correction/re-KYC reopening.
-- Email signup now accepts only an explicit borrower/investor intent and atomically maps borrower intent to the narrow `sme_borrower` customer role. That role receives own-case read/manage/submit capabilities but no staff review permission.
+- Borrower signup now writes only `borrower_accounts` and its matching auth tables through
+  `/v1/auth/borrower/*`. The active account class receives fixed own-case capabilities but no staff
+  review permission; no borrower RBAC grant is created.
 - Added protected own-case create/list/detail/submit APIs. They bind ownership in database queries, enforce the borrower journey capability, prevent duplicate open cases, require optimistic version matches, and atomically append transition/audit evidence.
 - Added the first staff compliance queue and review-start command with separate read/review capabilities, bounded filters, applicant/reviewer separation, optimistic versioning, assignment ownership, and immutable transition/audit evidence.
 - Added reasoned information requests restricted to the assigned reviewer plus applicant resubmission on the same case/version timeline, meeting the correction-without-duplicate-account foundation.
@@ -24,7 +26,11 @@
 - **2026-08-30 — Borrower ownership cutover:** Onboarding applicant/event attribution now uses the
   global registry entry created only by a physical portal account. PostgreSQL requires a borrower
   account for a borrower case and rejects investor/admin IDs, so host selection or a legacy role
-  cannot change the journey class. Borrower auth runtime still needs to move off compatibility auth.
+  cannot change the journey class.
+- **2026-08-30 — Borrower auth cutover:** Borrower signup/sign-in, HTTP-only sessions, session
+  context, own-device management, and portal sign-out now use only the borrower namespace. The
+  legacy unified customer auth path and `sme_borrower` authority are retired; context exposes
+  `accountType: borrower`, no roles, and only server-defined borrower capabilities.
 
 ## Scope
 

@@ -23,6 +23,9 @@ export {
 } from './money';
 export {
   hasPermission,
+  accountTypePermissions,
+  accountTypeSchema,
+  accountTypes,
   initialRolePermissions,
   permissionDefinitions,
   permissionKeySchema,
@@ -30,6 +33,7 @@ export {
   roleDefinitions,
   roleKeySchema,
   roleKeys,
+  type AccountType,
   type AuthorizationContext,
   type PermissionKey,
   type RoleKey,

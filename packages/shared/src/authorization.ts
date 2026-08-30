@@ -6,9 +6,9 @@ export const roleKeys = [
   'credit_analyst',
   'compliance_officer',
   'finance_officer',
-  'sme_borrower',
-  'investor',
 ] as const;
+
+export const accountTypes = ['admin', 'borrower', 'investor'] as const;
 
 export const permissionKeys = [
   'users.read',
@@ -32,23 +32,23 @@ export const permissionKeys = [
 ] as const;
 
 export const roleKeySchema = z.enum(roleKeys);
+export const accountTypeSchema = z.enum(accountTypes);
 export const permissionKeySchema = z.enum(permissionKeys);
 
 export type RoleKey = z.infer<typeof roleKeySchema>;
+export type AccountType = z.infer<typeof accountTypeSchema>;
 export type PermissionKey = z.infer<typeof permissionKeySchema>;
 
 export const roleDefinitions: ReadonlyArray<{
   key: RoleKey;
   name: string;
-  category: 'staff' | 'customer';
+  category: 'staff';
 }> = [
   { key: 'super_admin', name: 'Super Admin', category: 'staff' },
   { key: 'sales_officer', name: 'Sales Officer', category: 'staff' },
   { key: 'credit_analyst', name: 'Credit Analyst', category: 'staff' },
   { key: 'compliance_officer', name: 'Compliance Officer', category: 'staff' },
   { key: 'finance_officer', name: 'Finance Officer', category: 'staff' },
-  { key: 'sme_borrower', name: 'SME Borrower', category: 'customer' },
-  { key: 'investor', name: 'Investor', category: 'customer' },
 ];
 
 export const permissionDefinitions: ReadonlyArray<{
@@ -108,11 +108,17 @@ export const initialRolePermissions: Readonly<Record<RoleKey, readonly Permissio
     ...ownSessionPermissions,
   ],
   finance_officer: ['users.read', 'roles.read', 'audit.read', ...ownSessionPermissions],
-  sme_borrower: [...ownSessionPermissions, ...borrowerOnboardingPermissions],
+};
+
+/** Customer capability bundles come from the physical account class, never an RBAC grant. */
+export const accountTypePermissions: Readonly<Record<AccountType, readonly PermissionKey[]>> = {
+  admin: [],
+  borrower: [...ownSessionPermissions, ...borrowerOnboardingPermissions],
   investor: [...ownSessionPermissions, ...investorOnboardingPermissions],
 };
 
 export interface AuthorizationContext {
+  accountType: AccountType;
   user: {
     id: string;
     email: string;

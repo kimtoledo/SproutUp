@@ -14,6 +14,7 @@ function authWithPermissions(permissions: PermissionKey[]): AuthServices {
       user: { id: actorId, email: 'history@sproutup.ph', name: 'History Operator' },
     }),
     resolveAuthorization: async () => ({
+      accountType: 'admin',
       user: { id: actorId, email: 'history@sproutup.ph', name: 'History Operator' },
       roles: ['super_admin'],
       permissions,

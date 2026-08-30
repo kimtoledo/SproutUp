@@ -33,7 +33,7 @@ describe.sequential('onboarding case service', () => {
     const service = createOnboardingCaseService(orm, now);
     const created = await service.create({
       applicantUserId: applicantId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       caseType: 'borrower',
       requestId: '00000000-0000-4000-8000-000000000703',
     });
@@ -43,7 +43,7 @@ describe.sequential('onboarding case service', () => {
     await expect(
       service.create({
         applicantUserId: applicantId,
-        actorRoles: ['sme_borrower'],
+        actorRoles: [],
         caseType: 'borrower',
         requestId: '00000000-0000-4000-8000-000000000704',
       }),
@@ -68,7 +68,7 @@ describe.sequential('onboarding case service', () => {
     await expect(
       service.submit({
         applicantUserId: applicantId,
-        actorRoles: ['sme_borrower'],
+        actorRoles: [],
         allowedCaseTypes: ['borrower'],
         caseId: current.id,
         expectedVersion: 99,
@@ -78,7 +78,7 @@ describe.sequential('onboarding case service', () => {
 
     const submitted = await service.submit({
       applicantUserId: applicantId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       allowedCaseTypes: ['borrower'],
       caseId: current.id,
       expectedVersion: current.version,
@@ -90,7 +90,7 @@ describe.sequential('onboarding case service', () => {
     await expect(
       service.submit({
         applicantUserId: applicantId,
-        actorRoles: ['sme_borrower'],
+        actorRoles: [],
         allowedCaseTypes: ['borrower'],
         caseId: current.id,
         expectedVersion: submitted.case.version,
@@ -112,7 +112,7 @@ describe.sequential('onboarding case service', () => {
     if (!current) throw new Error('Expected submitted case');
     await expect(service.withdraw({
       applicantUserId: applicantId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       allowedCaseTypes: ['borrower'],
       caseId: current.id,
       expectedVersion: 99,
@@ -122,7 +122,7 @@ describe.sequential('onboarding case service', () => {
 
     const withdrawn = await service.withdraw({
       applicantUserId: applicantId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       allowedCaseTypes: ['borrower'],
       caseId: current.id,
       expectedVersion: current.version,
@@ -157,7 +157,7 @@ describe.sequential('onboarding case service', () => {
 
     await expect(service.create({
       applicantUserId: applicantId,
-      actorRoles: ['sme_borrower'],
+      actorRoles: [],
       caseType: 'borrower',
       requestId: '00000000-0000-4000-8000-00000000070a',
     })).resolves.toMatchObject({ ok: true, case: { status: 'draft' } });

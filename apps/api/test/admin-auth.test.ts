@@ -4,7 +4,12 @@ import { drizzle } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 import { schema, type Database } from '@sproutup/db';
 import { buildApp } from '../src/app.js';
-import { createAdminAuthServices, createAuthServices } from '../src/auth/service.js';
+import {
+  createAdminAuthServices,
+  createBorrowerAuthServices,
+  createCustomerAuthServices,
+  createInvestorAuthServices,
+} from '../src/auth/service.js';
 import { provisionInitialAdmin } from '../src/auth/provision-initial-admin.js';
 import type { ApiConfig } from '../src/config.js';
 import { applyMigrations } from './database-fixture.js';
@@ -28,7 +33,9 @@ const config: ApiConfig = {
 };
 
 const adminAuth = createAdminAuthServices(config, orm);
-const customerAuth = createAuthServices(config, orm);
+const borrowerAuth = createBorrowerAuthServices(config, orm);
+const investorAuth = createInvestorAuthServices(config, orm);
+const customerAuth = createCustomerAuthServices(orm, borrowerAuth, investorAuth);
 
 function authRequest(path: string, body: Record<string, unknown>, origin = config.appOrigin) {
   return new Request(`${config.authBaseUrl}${path}`, {
@@ -40,10 +47,9 @@ function authRequest(path: string, body: Record<string, unknown>, origin = confi
 
 beforeAll(async () => {
   await applyMigrations(pglite);
-  await orm.insert(schema.roles).values([
-    { key: 'super_admin', name: 'Super Admin', category: 'staff' },
-    { key: 'sme_borrower', name: 'SME Borrower', category: 'customer' },
-  ]);
+  await orm.insert(schema.roles).values({
+    key: 'super_admin', name: 'Super Admin', category: 'staff',
+  });
   await orm.insert(schema.permissions).values({
     key: 'users.read',
     description: 'Read users',
@@ -71,11 +77,10 @@ beforeAll(async () => {
     roleKey: 'super_admin',
   });
 
-  const customerSignup = await customerAuth.handler(authRequest('/v1/auth/sign-up/email', {
+  const customerSignup = await borrowerAuth.handler(authRequest('/v1/auth/borrower/sign-up/email', {
     name: 'Borrower Only',
     email: 'borrower-only@sproutup.ph',
     password: 'correct-horse-battery-staple',
-    registrationIntent: 'borrower',
   }, 'http://borrower.lvh.me:3000'));
   expect(customerSignup.status).toBe(200);
 });
@@ -123,7 +128,13 @@ describe('isolated administrator authentication', () => {
     const app = await buildApp({
       config,
       checkDatabase: async () => undefined,
-      auth: { service: customerAuth, adminService: adminAuth, baseUrl: config.authBaseUrl },
+      auth: {
+        service: customerAuth,
+        adminService: adminAuth,
+        borrowerService: borrowerAuth,
+        investorService: investorAuth,
+        baseUrl: config.authBaseUrl,
+      },
     });
     try {
       const response = await app.inject({
@@ -147,7 +158,13 @@ describe('isolated administrator authentication', () => {
     const app = await buildApp({
       config,
       checkDatabase: async () => undefined,
-      auth: { service: customerAuth, adminService: adminAuth, baseUrl: config.authBaseUrl },
+      auth: {
+        service: customerAuth,
+        adminService: adminAuth,
+        borrowerService: borrowerAuth,
+        investorService: investorAuth,
+        baseUrl: config.authBaseUrl,
+      },
     });
     try {
       const signIn = await app.inject({
@@ -182,7 +199,13 @@ describe('isolated administrator authentication', () => {
     const app = await buildApp({
       config,
       checkDatabase: async () => undefined,
-      auth: { service: customerAuth, adminService: adminAuth, baseUrl: config.authBaseUrl },
+      auth: {
+        service: customerAuth,
+        adminService: adminAuth,
+        borrowerService: borrowerAuth,
+        investorService: investorAuth,
+        baseUrl: config.authBaseUrl,
+      },
     });
     try {
       const response = await app.inject({

@@ -10,6 +10,7 @@ export type CaseStatus =
   | 'expired';
 
 export interface PortalSession {
+  accountType: 'admin' | 'borrower' | 'investor';
   user: { id: string; name: string; email: string };
   roles: string[];
   permissions: string[];
@@ -69,6 +70,17 @@ function apiBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/+$/, '');
 }
 
+function customerAccountType(): 'borrower' | 'investor' {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname.toLowerCase();
+    if (hostname === 'investor.lvh.me' || hostname === 'investors.lvh.me'
+      || hostname.startsWith('investor.') || hostname.startsWith('investors.')) {
+      return 'investor';
+    }
+  }
+  return 'borrower';
+}
+
 function requestInit(method: string, body?: Record<string, unknown>): RequestInit {
   return {
     method,
@@ -86,10 +98,13 @@ async function parseEnvelope<T>(response: Pick<Response, 'json'>): Promise<Envel
   }
 }
 
-export async function loadPortal(fetcher: FetchLike = fetch): Promise<PortalLoadResult> {
+export async function loadPortal(
+  fetcher: FetchLike = fetch,
+  accountType: 'borrower' | 'investor' = customerAccountType(),
+): Promise<PortalLoadResult> {
   try {
     const sessionResponse = await fetcher(
-      `${apiBaseUrl()}/v1/session-context`,
+      `${apiBaseUrl()}/v1/${accountType}/session-context`,
       requestInit('GET'),
     );
     if (sessionResponse.status === 401) return { ok: false, reason: 'unauthenticated' };
@@ -200,7 +215,10 @@ export function withdrawOnboardingCase(
 
 export async function signOut(fetcher: FetchLike = fetch): Promise<void> {
   try {
-    await fetcher(`${apiBaseUrl()}/v1/auth/sign-out`, requestInit('POST', {}));
+    await fetcher(
+      `${apiBaseUrl()}/v1/auth/${customerAccountType()}/sign-out`,
+      requestInit('POST', {}),
+    );
   } catch {
     // Navigation still clears the authenticated UI; the server cookie remains authoritative.
   }
