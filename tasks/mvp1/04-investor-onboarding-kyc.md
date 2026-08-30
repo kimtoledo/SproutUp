@@ -28,6 +28,16 @@
   context, own-device management, and portal sign-out now use only the investor namespace. The
   legacy unified customer auth path and investor-role authority are retired; context exposes
   `accountType: investor`, no roles, and only server-defined investor capabilities.
+- **2026-08-30 — Individual investor KYC profile capture:** Added `investor_profiles` (migration
+  `0026`) and `GET`/`POST /v1/onboarding/investor/cases/:caseId/profile`, mirroring the borrower
+  profile slice: capability- and ownership-bound to the existing
+  `investor_onboarding.read_own`/`manage_own` permissions, an upsert guarded by the profile's own
+  optimistic version, editable only while the case is `draft` or `needs_information`, with every
+  save appending an immutable `investor_profile.saved` audit event. Scope is deliberately narrow:
+  baseline natural-person identity/contact/source-of-funds fields only (full name, date of birth,
+  nationality, government ID, address, occupation, source of funds), with only `fullName` required.
+  It intentionally does **not** add institutional-investor support or a risk/suitability
+  questionnaire — see Open decisions below.
 
 ## Scope
 
@@ -55,5 +65,11 @@
 
 ## Open decisions
 
-- Individual versus institutional investor support for the pilot.
+- Individual versus institutional investor support for the pilot. The current `investor_profiles`
+  table only captures a natural person; an institutional shape (registered entity, beneficial
+  owners, similar to `borrower_profiles`) is not built until this is confirmed.
 - Investment limits and enhanced-due-diligence triggers.
+- The risk/suitability questionnaire (CKA/SAT in the legacy system) and any accredited-investor
+  concept must be redesigned against confirmed Philippine SEC/AMLC rules, not ported from the
+  legacy Singapore/MAS-shaped forms — see the legacy-conflict warning in `tasks/README.md`. Until
+  then, `sourceOfFunds` on the profile is a plain free-text declaration, not a scored questionnaire.

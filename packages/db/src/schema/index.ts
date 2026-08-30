@@ -5,6 +5,7 @@ export * from './borrower.js';
 export * from './config.js';
 export * from './consents.js';
 export * from './documents.js';
+export * from './investor.js';
 export * from './jobs.js';
 export * from './ledger.js';
 export * from './onboarding.js';

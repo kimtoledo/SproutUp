@@ -66,6 +66,10 @@ const dependencies: AppDependencies = {
       getOwn: async () => null,
       saveOwn: async () => ({ ok: false as const, reason: 'case_not_found' as const }),
     },
+    investorProfile: {
+      getOwn: async () => null,
+      saveOwn: async () => ({ ok: false as const, reason: 'case_not_found' as const }),
+    },
   },
 };
 
@@ -114,6 +118,7 @@ describe('OpenAPI contract generation', () => {
           '/v1/onboarding/cases/{caseId}/submit',
           '/v1/onboarding/cases/{caseId}/withdraw',
           '/v1/onboarding/borrower/cases/{caseId}/profile',
+          '/v1/onboarding/investor/cases/{caseId}/profile',
           '/v1/admin/onboarding/cases',
           '/v1/admin/onboarding/cases/{caseId}/start-review',
           '/v1/admin/onboarding/cases/{caseId}/request-information',
@@ -156,6 +161,8 @@ describe('OpenAPI contract generation', () => {
         ['/v1/onboarding/cases/{caseId}/reopen', 'post', 'reopenOwnOnboardingCase'],
         ['/v1/onboarding/borrower/cases/{caseId}/profile', 'get', 'getOwnBorrowerProfile'],
         ['/v1/onboarding/borrower/cases/{caseId}/profile', 'post', 'saveOwnBorrowerProfile'],
+        ['/v1/onboarding/investor/cases/{caseId}/profile', 'get', 'getOwnInvestorProfile'],
+        ['/v1/onboarding/investor/cases/{caseId}/profile', 'post', 'saveOwnInvestorProfile'],
         ['/v1/admin/onboarding/cases', 'get', 'listOnboardingReviewQueue'],
         ['/v1/admin/onboarding/cases/{caseId}', 'get', 'getOnboardingReviewCase'],
         ['/v1/admin/onboarding/cases/{caseId}/start-review', 'post', 'startOnboardingReview'],

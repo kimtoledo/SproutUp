@@ -1,0 +1,56 @@
+const nullableString = { anyOf: [{ type: 'string' }, { type: 'null' }] } as const;
+
+export const investorProfileSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: [
+    'id',
+    'caseId',
+    'version',
+    'fullName',
+    'dateOfBirth',
+    'nationality',
+    'governmentIdType',
+    'governmentIdNumber',
+    'residentialAddress',
+    'phoneNumber',
+    'occupation',
+    'sourceOfFunds',
+    'createdAt',
+    'updatedAt',
+  ],
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    caseId: { type: 'string', format: 'uuid' },
+    version: { type: 'integer', minimum: 1 },
+    fullName: { type: 'string' },
+    dateOfBirth: nullableString,
+    nationality: nullableString,
+    governmentIdType: nullableString,
+    governmentIdNumber: nullableString,
+    residentialAddress: nullableString,
+    phoneNumber: nullableString,
+    occupation: nullableString,
+    sourceOfFunds: nullableString,
+    createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' },
+  },
+} as const;
+
+export const saveInvestorProfileBody = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['fullName'],
+  properties: {
+    expectedVersion: { type: 'integer', minimum: 1 },
+    fullName: { type: 'string', minLength: 1, maxLength: 300 },
+    dateOfBirth: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+    nationality: { type: 'string', minLength: 1, maxLength: 80 },
+    governmentIdType: { type: 'string', minLength: 1, maxLength: 100 },
+    governmentIdNumber: { type: 'string', minLength: 1, maxLength: 60 },
+    residentialAddress: { type: 'string', minLength: 1, maxLength: 500 },
+    phoneNumber: { type: 'string', minLength: 1, maxLength: 30 },
+    occupation: { type: 'string', minLength: 1, maxLength: 200 },
+    sourceOfFunds: { type: 'string', minLength: 1, maxLength: 500 },
+  },
+} as const;

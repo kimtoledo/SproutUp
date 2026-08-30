@@ -14,7 +14,11 @@ This is a normalized domain outline for the Philippine revamp. It intentionally 
 - `admin_accounts`, `borrower_accounts`, `investor_accounts` — implemented separate account classes
 - portal-specific credentials, sessions, verifications, rate limits, routes, cookies, and session
   contexts — implemented and active for all three account classes
-- `admin_profiles`, `investor_profiles`
+- `admin_profiles`
+- `investor_profiles` — **implemented (2026-08-30)**: versioned individual investor KYC capture
+  (identity, address, government ID, source-of-funds declaration); institutional support and a
+  risk/suitability questionnaire are deliberately not built pending confirmed pilot scope and
+  Philippine-specific rules (task 04)
 - `borrower_profiles`, `beneficial_owners` — **implemented (2026-08-30)**: versioned KYB capture
   (entity type, registration, authorized contact) plus a full-replace beneficial-owner list checked
   server-side against a 100% ownership total; required fields/documents per entity type remain an

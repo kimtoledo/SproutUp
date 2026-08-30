@@ -34,6 +34,57 @@ This is the chronological handoff record for people and AI working on the revamp
 - The recommended next action.
 ```
 
+## 2026-08-30 — Individual investor KYC profile capture
+
+**Status:** WIP
+
+### Updated
+
+- Added `investor_profiles` (migration `0026_illegal_ravenous.sql`) and
+  `createInvestorProfileService` (`apps/api/src/onboarding/investor-profile-service.ts`),
+  mirroring the borrower profile slice's shape: `getOwn`/`saveOwn`, ownership- and
+  case-type-bound, editable only while the case is `draft` or `needs_information`, upserted under
+  the profile's own optimistic version, with every save appending an immutable
+  `investor_profile.saved` audit event. There is no beneficial-owner list or percentage check here
+  — an individual profile has one declared person.
+- Added `GET`/`POST /v1/onboarding/investor/cases/:caseId/profile`
+  (`apps/api/src/routes/investor-profile.ts`) with full OpenAPI contracts
+  (`openapi/investor-profile-schemas.ts`), gated by the existing
+  `investor_onboarding.read_own`/`manage_own` permissions. Wired into `AppDependencies`/`app.ts` as
+  an optional `onboarding.investorProfile` route group and into `server.ts`; extended
+  `openapi.test.ts`'s fixture and path/operation assertions.
+- Added `apps/api/test/investor-profile-service.test.ts` (4 tests) and
+  `apps/api/test/investor-profile-routes.test.ts` (7 tests).
+
+### Decisions
+
+- Scoped this slice to an **individual** investor only. The legacy `seedin-live-user` system's
+  investor KYC includes a Singapore/MAS-shaped "Customer Knowledge Assessment" and accredited-
+  investor concept (`CKAV1Form`, `AssessmentForm`, `confirm_ai`/`confirm_wealth`); per
+  `tasks/README.md`'s requirement-authority guidance, that is exactly the kind of legacy behavior
+  that must not be ported into the Philippine revamp without confirmed local rules. `sourceOfFunds`
+  on the new profile is a plain free-text declaration, not a scored questionnaire — the actual
+  risk/suitability design stays an open decision.
+- Institutional investor support (a registered-entity/beneficial-owner shape analogous to
+  `borrower_profiles`) is not built; "individual versus institutional investor support for the
+  pilot" was already an open decision in task 04 and remains one.
+
+### Open items
+
+- Task 04's pre-existing open decisions (individual-vs-institutional pilot scope, investment
+  limits/EDD triggers, and now explicitly the suitability-questionnaire redesign) are unresolved.
+- No web UI reads or writes this endpoint yet.
+- Bank-account verification (task 04's fourth scope line) has not been started.
+
+### Next
+
+- Full repository gate passed: API 172, web 87, database 31, and shared 28 tests (318 total),
+  lint/typecheck across all workspaces, API/Next production builds, and database readiness.
+- Both borrower and investor now have a KYC/KYB profile capture mechanism at parity. Reasonable
+  next candidates: the borrower/investor profile web forms (task 21), document/evidence attachment
+  tying uploads to a case (task 05 already has the underlying document store), or task 02's
+  MFA/OTP and forgot-password web pages.
+
 ## 2026-08-30 — Borrower KYB profile capture (slice S2.1)
 
 **Status:** WIP

@@ -16,6 +16,7 @@ import { createApprovalHistoryService } from './auth/approval-history-service.js
 import { createOnboardingCaseService } from './onboarding/case-service.js';
 import { createOnboardingReviewService } from './onboarding/review-service.js';
 import { createBorrowerProfileService } from './onboarding/borrower-profile-service.js';
+import { createInvestorProfileService } from './onboarding/investor-profile-service.js';
 import { selectEmailDelivery } from './notifications/email-delivery.js';
 
 const config = loadConfig();
@@ -38,6 +39,7 @@ const approvalHistory = createApprovalHistoryService(database.db);
 const onboardingCases = createOnboardingCaseService(database.db);
 const onboardingReview = createOnboardingReviewService(database.db);
 const borrowerProfile = createBorrowerProfileService(database.db);
+const investorProfile = createInvestorProfileService(database.db);
 
 const app = await buildApp({
   config,
@@ -55,7 +57,12 @@ const app = await buildApp({
     approvalLifecycle,
     approvalHistory,
   },
-  onboarding: { cases: onboardingCases, review: onboardingReview, borrowerProfile },
+  onboarding: {
+    cases: onboardingCases,
+    review: onboardingReview,
+    borrowerProfile,
+    investorProfile,
+  },
 });
 
 app.addHook('onClose', async () => {

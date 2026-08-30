@@ -26,6 +26,8 @@ import type { OnboardingReviewService } from './onboarding/review-service.js';
 import { registerOnboardingReviewRoutes } from './routes/onboarding-review.js';
 import type { BorrowerProfileService } from './onboarding/borrower-profile-service.js';
 import { registerBorrowerProfileRoutes } from './routes/borrower-profile.js';
+import type { InvestorProfileService } from './onboarding/investor-profile-service.js';
+import { registerInvestorProfileRoutes } from './routes/investor-profile.js';
 import { operation } from './openapi/operation.js';
 import { healthResponseSchema } from './openapi/system-schemas.js';
 import { apiVersionHeaders, currentApiVersionPolicy } from './openapi/api-version.js';
@@ -52,6 +54,7 @@ export interface AppDependencies {
     cases: OnboardingCaseService;
     review?: OnboardingReviewService;
     borrowerProfile?: BorrowerProfileService;
+    investorProfile?: InvestorProfileService;
   };
 }
 
@@ -283,6 +286,12 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
       await registerBorrowerProfileRoutes(app, {
         auth: dependencies.auth.service,
         profiles: dependencies.onboarding.borrowerProfile,
+      });
+    }
+    if (dependencies.onboarding.investorProfile) {
+      await registerInvestorProfileRoutes(app, {
+        auth: dependencies.auth.service,
+        profiles: dependencies.onboarding.investorProfile,
       });
     }
   }
